@@ -1,0 +1,28 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/playwright-mcp/main/config.schema.json",
+  "browser": {
+    "browserName": "chromium",
+    "launchOptions": {
+      "args": [
+        "--disable-popup-blocking",
+        "--disable-notifications",
+        "--disable-infobars",
+        "--disable-extensions",
+        "--no-first-run",
+        "--disable-default-apps",
+        "--disable-translate"
+      ]
+    },
+    "contextOptions": {
+      "viewport": { "width": 1280, "height": 800 },
+      "ignoreHTTPSErrors": true,
+      "bypassCSP": true,
+      "permissions": ["clipboard-read", "clipboard-write"]
+    }
+  },
+  "blockServiceWorkers": true,
+  "timeout": {
+    "action": 10000,
+    "navigation": 30000
+  }
+}
