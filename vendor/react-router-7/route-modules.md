@@ -204,6 +204,6 @@ export function HydrateFallback() {
 
 ## See Also
 
-- [data-loading.md](./data-loading.md) - Loader patterns
-- [actions.md](./actions.md) - Action patterns
-- [error-handling.md](./error-handling.md) - Error boundary patterns
+- `VendorReactRouter7DataLoading` - Loader patterns
+- `VendorReactRouter7Actions` - Action patterns
+- `VendorReactRouter7ErrorHandling` - Error boundary patterns

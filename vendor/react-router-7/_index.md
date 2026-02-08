@@ -23,20 +23,20 @@ Apply this framework when:
 
 ## Essential References
 
-| Topic | File | Purpose |
-|-------|------|---------|
-| Routing | [routing.md](./routing.md) | File-based route configuration and nesting |
-| Route Modules | [route-modules.md](./route-modules.md) | Understanding available exports |
-| Special Files | [special-files.md](./special-files.md) | Customizing `root.tsx` and global elements |
-| Data Loading | [data-loading.md](./data-loading.md) | Implementing loaders with streaming support |
-| Actions | [actions.md](./actions.md) | Form handling and data mutations |
-| Navigation | [navigation.md](./navigation.md) | Link components and programmatic routing |
-| Pending UI | [pending-ui.md](./pending-ui.md) | Loading indicators and optimistic updates |
-| Error Handling | [error-handling.md](./error-handling.md) | Error boundaries and recovery |
-| Type Safety | [type-safety.md](./type-safety.md) | Route module types and `href` utility |
-| Rendering Strategies | [rendering-strategies.md](./rendering-strategies.md) | SSR, SPA, and static pre-rendering |
-| Sessions | [sessions.md](./sessions.md) | Authentication and cookie management |
-| Middleware | [middleware.md](./middleware.md) | Request preprocessing (v7.9.0+) |
+| Topic | KG Entity | Purpose |
+|-------|-----------|---------|
+| Routing | `VendorReactRouter7Routing` | File-based route configuration and nesting |
+| Route Modules | `VendorReactRouter7RouteModules` | Understanding available exports |
+| Special Files | `VendorReactRouter7SpecialFiles` | Customizing `root.tsx` and global elements |
+| Data Loading | `VendorReactRouter7DataLoading` | Implementing loaders with streaming support |
+| Actions | `VendorReactRouter7Actions` | Form handling and data mutations |
+| Navigation | `VendorReactRouter7Navigation` | Link components and programmatic routing |
+| Pending UI | `VendorReactRouter7PendingUi` | Loading indicators and optimistic updates |
+| Error Handling | `VendorReactRouter7ErrorHandling` | Error boundaries and recovery |
+| Type Safety | `VendorReactRouter7TypeSafety` | Route module types and `href` utility |
+| Rendering Strategies | `VendorReactRouter7RenderingStrategies` | SSR, SPA, and static pre-rendering |
+| Sessions | `VendorReactRouter7Sessions` | Authentication and cookie management |
+| Middleware | `VendorReactRouter7Middleware` | Request preprocessing (v7.9.0+) |
 
 ## Version Requirements
 

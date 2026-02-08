@@ -292,4 +292,4 @@ secrets: ["new-secret", "old-secret"];
 ## See Also
 
 - [React Router Sessions & Cookies Documentation](https://reactrouter.com/explanation/sessions-and-cookies)
-- [middleware.md](./middleware.md) - Middleware patterns for auth
+- `VendorReactRouter7Middleware` - Middleware patterns for auth

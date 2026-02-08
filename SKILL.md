@@ -130,6 +130,10 @@ claude-boilerplate/
 - **Rules** survive context compression — they're re-injected every turn at full fidelity. Core conventions need this because they must be followed consistently, even in long sessions.
 - **Knowledge Graph** handles everything else: vendor docs (large, domain-specific, loaded on demand via `search_nodes`), bug resolutions, architecture decisions. Entities are queryable by type, content, and tags. The graph is portable (single `.memory/graph.jsonl` file) and supports relational linking between entities.
 
+### If Knowledge Graph MCP is unavailable
+
+If `search_nodes` fails or the KG MCP server is not configured, fall back to reading vendor templates directly from the skill source directory (`~/.claude/skills/webstack/vendor/`). This provides the same content without relational querying or persistent observations.
+
 ## Invocation Instructions
 
 **Check the argument:** `$ARGUMENTS` will be `init` or `update`. If not provided, ask the user which mode to use.
@@ -377,16 +381,30 @@ tags: [daisyui, ui, components]
 | `tags` | Searchable keywords for the template |
 
 **Applies conditions:**
+
+Check both `dependencies` and `devDependencies` in `package.json`. Strip version prefixes (`^`, `~`, `>=`, `=`) before comparing.
+
 | Pattern | Matches when... |
 |---------|-----------------|
 | `Always` | Always applies |
-| `react` | `react` in dependencies |
-| `react-i18next` | `react-i18next` in dependencies |
-| `daisyui@5` | `daisyui` version starts with `5.` |
-| `react-router@7.9.0+` | `react-router` version >= 7.9.0 |
-| `playwright \| "@playwright/test"` | Either package in dependencies |
-| `.forgejo/workflows \| .gitea/workflows` | Either directory exists |
-| `react-router \| next \| remix` | Any package in dependencies |
+| `react` | `react` in dependencies or devDependencies |
+| `react-i18next` | `react-i18next` in dependencies or devDependencies |
+| `daisyui@5` | `daisyui` installed, version starts with `5.` |
+| `react-router@7.9.0+` | `react-router` installed, version >= 7.9.0 (numeric semver comparison, same major only) |
+| `playwright \| "@playwright/test"` | Either package in dependencies or devDependencies (OR) |
+| `.forgejo/workflows \| .gitea/workflows` | Either directory exists in project root (OR) |
+| `react-router \| next \| remix` | Any of these packages in dependencies or devDependencies (OR) |
+| `remix-i18next & react-router@7` | Both conditions must match (AND) |
+
+**Operators:**
+| Operator | Syntax | Meaning |
+|----------|--------|---------|
+| `\|` (OR) | `a \| b` | At least one condition matches |
+| `&` (AND) | `a & b` | All conditions must match |
+| `@N` | `pkg@5` | Package version starts with `N.` (major match) |
+| `@X.Y.Z+` | `pkg@7.9.0+` | Package version >= X.Y.Z within same major (numeric semver, not string comparison) |
+
+**If version cannot be parsed**, skip the template and warn the user.
 
 **Target deployment rules:**
 | Target | Deploy to | Discovery |

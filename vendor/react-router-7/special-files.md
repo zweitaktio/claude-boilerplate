@@ -272,4 +272,4 @@ app/
 
 **Don't create a separate layout just for nav/footer** — put global UI in `root.tsx`.
 
-**Don't use flat routes when nesting makes sense** — see [routing.md](./routing.md) for proper nested route patterns.
+**Don't use flat routes when nesting makes sense** — see `VendorReactRouter7Routing` for proper nested route patterns.

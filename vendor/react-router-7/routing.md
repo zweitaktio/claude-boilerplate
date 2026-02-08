@@ -7,7 +7,7 @@ tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
 
 # Routing
 
-For file conventions (`root.tsx`, `routes.ts`, etc.), see [special-files.md](./special-files.md).
+For file conventions (`root.tsx`, `routes.ts`, etc.), see `VendorReactRouter7SpecialFiles`.
 
 ## Route Configuration
 
