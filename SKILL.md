@@ -43,6 +43,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
 - `core/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
 - `core/mcp-servers` — `.claude/**`, `.serena/**` — MCP server setup
+- `core/writing-rules` — `CLAUDE.md`, `.claude/**`, `SKILL.md`, `**/rules/**` — How to write effective agent rules
 
 Vendor docs are stored in the Knowledge Graph — use `search_nodes` + `open_nodes` when working in a specific domain.
 
@@ -88,6 +89,7 @@ claude-boilerplate/
 │   ├── code-review.md
 │   ├── e2e-testing.md
 │   ├── engineering-discipline.md
+│   ├── writing-rules.md
 │   └── monorepo.md
 ├── vendor/                     # → deployed as Knowledge Graph entities
 │   ├── daisyui-5.md            # → entity: VendorDaisyui5
