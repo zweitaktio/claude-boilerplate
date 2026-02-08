@@ -1,1 +1,1 @@
-# caude-boilerplate
+# claude-boilerplate
