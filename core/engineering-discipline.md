@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 priority: high
@@ -8,7 +8,7 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 # Engineering Discipline
 
-Work like a senior engineer: assess before acting, verify before assuming, classify before changing.
+Every change should leave the codebase in a verified working state with no regressions, a clear audit trail, and no unrelated modifications.
 
 ## Task Assessment
 
@@ -35,6 +35,14 @@ Before touching code, understand what you're dealing with.
 2. Use Context7 (`resolve-library-id` → `query-docs`) to look up API signatures for that version
 3. If the API has changed between major versions (React Router, Tailwind, DaisyUI, Payload, etc.), verify before using any pattern from memory
 4. Read error messages literally — don't pattern-match to what you expect
+
+```
+# Wrong: assume DaisyUI 5 still has form-control
+<div className="form-control">  // removed in DaisyUI 5
+
+# Right: check package.json first, see daisyui@5.x, query docs
+<fieldset className="fieldset">  // DaisyUI 5 replacement
+```
 
 **When to verify:**
 - Any library API call where the exact signature matters
@@ -84,7 +92,7 @@ Before implementing, classify the change to determine required safeguards.
 
 1. **Track progress with task lists** — create tasks for any work with 2+ steps. Mark `in_progress` before starting, `completed` when done. This gives the user visibility into what's happening and what's left.
 2. **One logical change at a time** — don't bundle unrelated changes
-3. **Verify between steps** — run checks after each meaningful change
+3. **Verify between steps** — run `yarn check` after each meaningful change
 4. **Single-variable changes** — change one thing, check. Changing three things and having it break means you don't know which one caused it.
 5. **Rollback readiness** — before complex changes, ensure you can get back to a working state
 
@@ -118,7 +126,14 @@ After 2-3 failed attempts at the same approach:
 
 ### Anti-Patterns
 
-- **Trial-and-error spirals** — random changes hoping something works. *Instead:* stop, re-read the error, trace the code path, understand why before changing what.
-- **Premature implementation** — coding before understanding the problem. *Instead:* time spent reading is proportional to complexity.
-- **Tunnel vision** — fixating on one area when the problem is elsewhere. *Instead:* follow the evidence. If your hypothesis doesn't explain the data, it's wrong.
-- **Scope creep during fixes** — "while I'm here, let me also..." *Instead:* fix the issue, create a separate task for improvements.
+- **Trial-and-error spirals** — random changes hoping something works.
+  ```
+  # Wrong: TypeError in loader, try adding ?. everywhere
+  const data = await response?.json?.()  // didn't read the actual error
+
+  # Right: read the error — "Cannot read properties of undefined (reading 'json')"
+  # response is undefined → the fetch call is wrong, not the json() call
+  ```
+- **Premature implementation** — coding before understanding the problem. Read time should be proportional to complexity.
+- **Tunnel vision** — fixating on one area when the problem is elsewhere. If your hypothesis doesn't explain the error, it's wrong — widen the search.
+- **Scope creep during fixes** — "while I'm here, let me also..." Fix the issue, create a separate task for improvements.
