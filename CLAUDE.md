@@ -68,6 +68,8 @@ When modifying any template:
 2. Bump the `version` in frontmatter (patch for wording fixes, minor for new sections, major for restructuring)
 3. Test with `/webstack update` on a project to verify the version diff shows correctly
 
+Changes are tracked two ways: `version` in frontmatter (primary) and git SHA stored in `.claude/webstack.sha` in target projects (safety net). On `/webstack update`, templates that changed in git but weren't version-bumped are flagged as `REVIEW`. On `/webstack init`, the current HEAD SHA is recorded after deployment.
+
 When adding a new template:
 
 1. Create the `.md` file in `core/` or `vendor/` with the required frontmatter fields
