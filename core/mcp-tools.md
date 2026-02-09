@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 priority: high
@@ -206,6 +206,14 @@ Context7 fetches current, version-specific documentation and code examples for l
 3. If documentation looks wrong or outdated after fetching, do NOT blindly trust it — flag the concern
 
 For **when** to use Context7 (verification discipline, version checking), see `core/engineering-discipline`.
+
+---
+
+## Playwright MCP (browser automation)
+
+When using `browser_take_screenshot`, **always set `type: "jpeg"`** — never use PNG.
+JPEG at the server's default quality produces significantly smaller images that fit
+within context limits more efficiently. PNG screenshots are unnecessarily large.
 
 ---
 
