@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.3.0
 applies: playwright | "@playwright/test"
 target: rules
 paths:
@@ -53,18 +53,20 @@ await expect(page.getByTestId("invite-dialog")).toBeVisible()
 
 ### Naming Convention
 
-Kebab-case with descriptive suffixes:
+Pattern: `{context}-{element}-{descriptor}` in kebab-case:
 
-| Suffix | Element |
-|--------|---------|
-| `-btn` | Buttons |
-| `-dialog` | Dialogs/modals |
-| `-input` | Text inputs |
-| `-select` | Dropdowns |
-| `-list` | Lists/tables |
-| `-item` | List items |
-| `-heading` | Important headings |
-| `-empty-state` | Empty state messages |
+```tsx
+<input data-testid="checkout-input-email" />
+<button data-testid="checkout-button-submit" />
+<div data-testid="cart-item-{sku}" />
+<form data-testid="login-form" />
+```
+
+| Part | Purpose | Examples |
+|------|---------|---------|
+| context | Page/feature area | `checkout`, `cart`, `login`, `product` |
+| element | Element type | `input`, `button`, `form`, `list`, `item`, `dialog` |
+| descriptor | Specific identifier | `email`, `submit`, `total`, `{sku}` |
 
 ### When to Add Test IDs
 - Interactive elements being tested (buttons, links, inputs)
@@ -77,3 +79,110 @@ Kebab-case with descriptive suffixes:
 - Elements accessed via unambiguous ARIA roles
 - URL-based navigation assertions
 - Internal implementation details not under test
+
+## Language-Independent Selectors (i18n Apps)
+
+For apps with translations, avoid text-based selectors entirely:
+
+```typescript
+// ✅ Input type selectors (best for forms)
+page.locator('input[type="email"]')
+page.locator('button[type="submit"]')
+
+// ✅ ARIA roles with regex (case-insensitive)
+page.getByRole("navigation", { name: "Main" })
+page.getByRole("dialog")
+page.getByRole("combobox")   // autocomplete inputs
+page.getByRole("listbox")    // dropdown containers
+page.getByRole("option")     // dropdown items
+
+// ✅ URL-based assertions (completely language-free)
+await expect(page).toHaveURL(/\/dashboard/)
+await expect(page).toHaveURL(/\/auth\/signin.*error=1/)
+
+// ✅ href patterns for links
+page.locator('a[href*="/auth/signin/email"]')
+
+// ❌ AVOID — breaks when locale changes
+page.getByText("Sign in")
+page.getByLabel("Password")
+page.getByRole("button", { name: "Anmelden" })
+```
+
+## Prerequisites Checklist
+
+Before running E2E tests, verify all services are running:
+
+1. **Database/services** — Docker containers or equivalent
+2. **Backend API** — server responding on expected port
+3. **Frontend** — dev server or build serving on expected port
+
+Most timeout failures in CI are caused by missing prerequisites, not test bugs.
+
+## Test Fixtures Pattern
+
+Create reusable test fixtures for common flows:
+
+```typescript
+// fixtures.ts
+import { test as base } from "@playwright/test"
+
+export const TEST_USER = { email: "testuser@test.com", password: "test" }
+
+export async function login(page, user = TEST_USER) {
+  await page.goto("/auth/signin")
+  await page.locator('input[type="email"]').fill(user.email)
+  await page.locator('input[type="password"]').fill(user.password)
+  await page.locator('button[type="submit"]').click()
+  await page.waitForURL(/\/dashboard|\/journeys/)
+}
+
+// Custom fixture for authenticated tests
+export const test = base.extend({
+  authenticatedPage: async ({ page }, use) => {
+    await login(page)
+    await use(page)
+  },
+})
+```
+
+## Test Tags
+
+Use tags to categorize and selectively run tests:
+
+```typescript
+test("should create item", { tag: ["@smoke", "@crud"] }, async ({ page }) => {
+  // ...
+})
+```
+
+```bash
+npx playwright test --grep @smoke    # Quick validation
+npx playwright test --grep @crud     # CRUD tests only
+```
+
+## Test Data Isolation
+
+**Test data persists across runs** — handle both empty and populated states:
+
+```typescript
+// ✅ Use unique names with timestamps
+const title = `Test Item ${Date.now()}`
+
+// ✅ Clean up in afterEach
+test.afterEach(async ({ page }) => {
+  await deleteTestItem(page)
+})
+
+// ✅ Handle empty vs list states
+const addButton = page.getByTestId("add-item-btn")
+  .or(page.getByTestId("empty-state-add-btn"))
+await addButton.first().click()
+```
+
+## Common Pitfalls
+
+- **Strict mode violations** — multiple elements match. Use more specific selectors (`{ name: "Main" }`) or `.first()`/`.nth()`
+- **Dialogs** — use `page.getByRole("dialog")` not text selectors
+- **Dropdown menus** — use `role="menu"` + `role="menuitem"` hierarchy
+- **Flaky waits** — prefer `waitForURL`, `toBeVisible()`, `toBeHidden()` over `waitForTimeout`

@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: payload-rest-client
 target: graph
 tags: [payload, rest-client, api, fetch, typed-client]
@@ -73,3 +73,26 @@ where: { and: [{ status: { equals: 'published' } }, { author: { equals: 'john' }
 // OR
 where: { or: [{ status: { equals: 'draft' } }, { status: { equals: 'published' } }] }
 ```
+
+## Authentication Setup
+
+Use an HTTP client (e.g., `ky`) with API key authentication for server-side requests:
+
+```typescript
+import ky from "ky"
+
+const client = ky.extend({
+  prefixUrl: process.env.PAYLOAD_API_URL,
+  headers: {
+    users: `API-Key ${process.env.PAYLOAD_API_KEY}`,
+  },
+})
+
+const data = await client.get("api/collections/journeys").json()
+```
+
+Key rules:
+- Always use the `users` header with `API-Key` prefix for server-to-server auth
+- Store the API key in environment variables — never hardcode
+- Use `ky.extend()` to configure the base client once, reuse everywhere
+- The header name `users` corresponds to the Payload auth collection name

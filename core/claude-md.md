@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 paths:
@@ -112,6 +112,46 @@ paths:
 | `src/**/*` | Everything under src/ |
 | `*.md` | Markdown in project root |
 | `src/**/*.{ts,tsx}` | .ts and .tsx under src/ |
+
+## Project Docs (`.claude/docs/`)
+
+For architecture docs, ADRs, and reference material too detailed for rules, use `.claude/docs/`:
+
+```
+.claude/
+├── CLAUDE.md
+├── rules/
+│   └── project/
+│       └── architecture-docs.md   # Index rule (auto-loaded)
+└── docs/
+    ├── architecture/              # Architecture & pattern docs
+    │   ├── checkout-flow.md
+    │   └── auth-system.md
+    └── issues/                    # Issue tracking
+        ├── open.md
+        └── resolved.md
+```
+
+**Key principles:**
+- Docs are **not auto-loaded** — they're read on-demand via the Read tool
+- Create an **index rule** in `.claude/rules/project/` that lists available docs and when to read them
+- The index rule auto-loads every turn, making docs discoverable without loading their full content
+- Use for: architecture decisions, system flows, migration plans, complex patterns, issue tracking
+- Don't use for: conventions (use rules), vendor docs (use KG entities), transient state
+
+**Example index rule:**
+```markdown
+---
+paths: ["**"]
+---
+# Architecture Docs
+Read from `.claude/docs/` before modifying related systems.
+| File | Domain |
+|------|--------|
+| architecture/checkout-flow | Payment & checkout flow |
+| architecture/auth-system | Authentication & RBAC |
+| issues/open | Known bugs — check before non-trivial work |
+```
 
 ## Structure Template
 

@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: payload@3
 target: graph
 priority: high
@@ -18,10 +18,12 @@ tags: [payload, cms, collections, api, backend, database]
 | REST API | https://payloadcms.com/docs/rest-api/overview | REST endpoints |
 | Context7 | `/payloadcms/payload` | Good coverage |
 | GitHub | https://github.com/payloadcms/payload | Source, issues, examples |
+| GitHub raw docs | https://github.com/payloadcms/payload/tree/main/docs | **Prefer for LLM access** — raw markdown, no rendering issues |
 | Discord | https://discord.com/invite/payload | Community support |
 
 ## Core Rules
 - **Never write SQL** — always use the Payload CMS API
+- **Prefer standard CRUD API over custom endpoints** — use hooks for side effects
 - Use Payload transactions for multi-record atomic operations
 - Use `Where` type for query filters
 
@@ -162,6 +164,19 @@ PostgreSQL has a 63-character limit for table and enum names. Payload auto-gener
 ### Admin UI uses SCSS modules
 Payload's admin UI uses SCSS modules internally. Custom admin components must follow Payload's styling patterns, not the project's Tailwind setup.
 
+```scss
+// ComponentName.module.scss
+.component {
+  background: var(--theme-bg);
+  color: var(--theme-text);
+  padding: var(--base);
+  border-radius: var(--radius-m);
+  &:hover { background: var(--theme-elevation-50); }
+}
+```
+
+Key CSS variables: `--theme-bg`, `--theme-text`, `--theme-border-color`, `--theme-elevation-*`, `--base`, `--radius-s/m/l`.
+
 ### Migration table after prod data import
 When importing prod data to dev, the `payload_migrations` table reflects prod's state. Dev mode creates a `dev` entry with `batch = -1`. To reset and allow dev mode to push schema changes:
 
@@ -172,6 +187,31 @@ docker exec <container> psql -U postgres -d "<database>" -c "TRUNCATE payload_mi
 Then restart the dev server — it will auto-push schema changes.
 
 ## Custom Endpoints
+
+**Minimize custom endpoints.** Use Payload's standard API for:
+- CRUD on collections (find, create, update, delete)
+- Filtering with `where`, pagination, sorting
+- Auth-filtered data (via access control)
+- Relationship depth
+
+**Use hooks for side effects** instead of custom endpoints:
+
+```typescript
+// ✅ Use afterChange hook — not POST /api/orders/send-email
+afterChange: [async ({ doc, previousDoc }) => {
+  if (doc.status === 'shipped' && previousDoc?.status !== 'shipped') {
+    await sendShippedEmail(doc)
+  }
+}]
+```
+
+**Custom endpoints ONLY for:**
+- External API integrations (Stripe webhooks, payment intents)
+- Atomic multi-collection transactions
+- Webhook handlers (signature verification)
+- Operations requiring server-side secrets
+
+### File structure
 
 Extract complex endpoints to separate files:
 

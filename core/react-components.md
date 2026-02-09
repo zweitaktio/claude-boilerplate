@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: react
 target: rules
 priority: high
@@ -221,6 +221,48 @@ const useWindowSize = () => {
 
   return size
 }
+```
+
+## API Data Safety
+
+Never use `as Type` assertions for API responses — use runtime type guards:
+
+```tsx
+// ❌ Unsafe — silently wrong if API shape changes
+const user = data as User
+
+// ✅ Safe — validates at runtime
+if (isUser(data)) {
+  // data is typed as User
+}
+
+// ✅ Parse with fallback
+const user = parseUser(data) // returns User | null
+```
+
+Create a `createTypeGuards<T>` factory for consistent guards across all API types:
+
+```typescript
+function createTypeGuards<T>(typeName: string) {
+  const singular = (data: unknown): data is T =>
+    data != null && typeof data === "object" && "id" in data && "itemType" in data
+      && (data as any).itemType === typeName
+
+  const plural = (data: unknown): data is T[] =>
+    Array.isArray(data) && data.length > 0 && data.every(singular)
+
+  const parse = (data: unknown): T | null =>
+    singular(data) ? data : null
+
+  const parseArray = (data: unknown): T[] =>
+    plural(data) ? data : []
+
+  return { singular, plural, parse, parseArray }
+}
+
+// Usage — one line per collection type
+export const { singular: isUser, parse: parseUser } = createTypeGuards<User>("user")
+export const { singular: isProduct, parse: parseProduct } = createTypeGuards<Product>("product")
 ```
 
 ## See Also

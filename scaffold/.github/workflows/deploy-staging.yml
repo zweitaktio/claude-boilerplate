@@ -1,0 +1,46 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_build-deploy.yml
+    with:
+      service: backend
+      context: ./backend
+      image: registry.example.com/myproject/backend  # Change to your registry
+      tag: staging
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
+    secrets: inherit
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/_build-deploy.yml
+    with:
+      service: frontend
+      context: ./frontend
+      image: registry.example.com/myproject/frontend  # Change to your registry
+      tag: staging
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_FRONTEND }}
+    secrets: inherit

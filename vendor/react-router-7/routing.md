@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: react-router@7
 target: graph
 tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
@@ -228,3 +228,89 @@ export function loader() {
   throw new Response("Page not found", { status: 404 })
 }
 ```
+
+## Modal Routes Pattern
+
+Render create/edit forms as modals on top of a list page using nested routes with `<Outlet />`.
+
+### Route Configuration
+
+```ts
+// routes.ts — modal routes are children of an index layout
+...prefix("expenses", [
+  layout("./expenses/_layout.tsx", { id: "expensesLoader" }, [
+    layout("./expenses/_layout-index.tsx", [
+      index("./expenses/index.tsx"),
+      route("create", "./expenses/create.tsx"),          // modal
+      route(":expenseId/update", "./expenses/update.tsx"), // modal
+    ]),
+  ]),
+])
+```
+
+Key structure:
+- `_layout.tsx` — data loader (fetches list data)
+- `_layout-index.tsx` — renders the list page + `<Outlet />` for modals
+- Child routes (`create`, `:id/update`) — render modal dialogs
+
+### Index Layout (List + Outlet)
+
+The index layout renders the list content and an `<Outlet />` where modal routes appear:
+
+```tsx
+// _layout-index.tsx
+import { Outlet } from "react-router"
+
+export default function ExpensesOverview() {
+  return (
+    <>
+      {/* List content */}
+      <div>
+        <h2>Expenses</h2>
+        <ExpenseTable />
+        <AddButton onClick={() => navigate("create")} />
+      </div>
+
+      {/* Modal routes render here */}
+      <Outlet />
+    </>
+  )
+}
+```
+
+### Modal Route Component
+
+Each modal route renders a dialog that navigates back on close:
+
+```tsx
+// create.tsx
+import { href, useNavigate, useParams } from "react-router"
+
+export default function ExpenseCreate({ loaderData }: Route.ComponentProps) {
+  const navigate = useNavigate()
+  const { journeyId = "" } = useParams()
+
+  const handleClose = () => {
+    void navigate(href("/journeys/:journeyId/expenses", { journeyId }))
+  }
+
+  return (
+    <Dialog open onOpenChange={(open) => !open && handleClose()}>
+      <DialogContent>
+        <Form method="post">
+          {/* form fields */}
+          <button type="submit">Save</button>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+```
+
+### Benefits
+
+- Direct URL access to modals (shareable, bookmarkable)
+- Browser back button closes the modal naturally
+- List page stays mounted underneath (no re-render on open/close)
+- Each modal has its own loader/action for data isolation
+- Works with `useFetcher` for non-navigating submissions

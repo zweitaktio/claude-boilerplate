@@ -1,0 +1,51 @@
+version: v2.3.0
+
+serve:
+  public:
+    cors:
+      enabled: true
+      allowed_origins:
+        - http://localhost:5173
+        - http://localhost:3000
+      allowed_methods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - OPTIONS
+      allowed_headers:
+        - Authorization
+        - Content-Type
+  admin:
+    cors:
+      enabled: false
+
+urls:
+  self:
+    issuer: http://localhost:4444
+  consent: http://localhost:5173/oauth/consent
+  login: http://localhost:5173/oauth/login
+  logout: http://localhost:5173/oauth/logout
+
+oauth2:
+  expose_internal_errors: true
+
+strategies:
+  access_token: jwt
+
+ttl:
+  access_token: 1h
+  refresh_token: 720h
+  id_token: 1h
+  auth_code: 10m
+
+secrets:
+  system:
+    - change-me-in-production-min-32-chars!!
+  cookie:
+    - change-me-in-production-min-32-chars!!
+
+log:
+  level: debug
+  format: json
+  leak_sensitive_values: true

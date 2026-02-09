@@ -1,0 +1,84 @@
+name: myproject
+
+services:
+  postgres:
+    container_name: myproject-postgres
+    image: postgres:16-alpine
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: myproject
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # OPTIONAL: init script for secondary databases (e.g. Hydra)
+      # - ./config/postgres/init-extra-dbs.sql:/docker-entrypoint-initdb.d/init-extra-dbs.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mailpit:
+    container_name: myproject-mailpit
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  meilisearch:
+    container_name: myproject-meilisearch
+    image: getmeili/meilisearch:v1.35
+    ports:
+      - '7700:7700'
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: change-me-to-a-random-key
+    volumes:
+      - meilisearch-data:/meili_data
+    restart: unless-stopped
+
+  # ─── OPTIONAL: Ory Hydra OAuth2 ─────────────────────────────────
+  # Uncomment the sections below if your project uses Ory Hydra for OAuth.
+  # Also uncomment the init-hydra-db.sql volume mount in the postgres service above.
+
+  # hydra-migrate:
+  #   container_name: myproject-hydra-migrate
+  #   image: oryd/hydra:v2.3.0
+  #   command: migrate sql -e --yes
+  #   environment:
+  #     - DSN=postgres://postgres:postgres@postgres:5432/hydra?sslmode=disable
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   restart: on-failure
+
+  # hydra:
+  #   container_name: myproject-hydra
+  #   image: oryd/hydra:v2.3.0
+  #   ports:
+  #     - '4444:4444'
+  #     - '4445:4445'
+  #   command: serve all --dev --config /etc/hydra/hydra.yml
+  #   volumes:
+  #     - ./config/hydra/hydra.yml:/etc/hydra/hydra.yml:ro
+  #   environment:
+  #     - DSN=postgres://postgres:postgres@postgres:5432/hydra?sslmode=disable
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     hydra-migrate:
+  #       condition: service_completed_successfully
+  #   restart: unless-stopped
+
+volumes:
+  postgres-data:
+    driver: local
+  meilisearch-data:
+    driver: local

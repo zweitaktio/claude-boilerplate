@@ -1,0 +1,54 @@
+name: Deploy Prod
+
+on:
+  push:
+    tags: ['[0-9]*.[0-9]*.[0-9]*']
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV=$(git tag --sort=-creatordate | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | sed -n '2p')
+          echo "tag=${PREV:-$(git rev-list --max-parents=0 HEAD)}" >> $GITHUB_OUTPUT
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          base: ${{ steps.prev_tag.outputs.tag }}
+          filters: |
+            backend:
+              - 'backend/**'
+            frontend:
+              - 'frontend/**'
+
+  backend:
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_build-deploy.yml
+    with:
+      service: backend
+      context: ./backend
+      image: registry.example.com/myproject/backend  # Change to your registry
+      tag: prod
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_BACKEND }}
+    secrets: inherit
+
+  frontend:
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    uses: ./.github/workflows/_build-deploy.yml
+    with:
+      service: frontend
+      context: ./frontend
+      image: registry.example.com/myproject/frontend  # Change to your registry
+      tag: prod
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_FRONTEND }}
+    secrets: inherit

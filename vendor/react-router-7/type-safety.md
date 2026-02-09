@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: react-router@7
 target: graph
 tags: [types, typescript, typegen, href, Route, typesafe]
@@ -71,18 +71,20 @@ export default function Product({ loaderData }: Route.ComponentProps) {
 
 ## Type-Safe URLs with href
 
-The `href` utility generates type-safe URL paths:
+**All internal links MUST use `href()`.** Never manually construct URL strings.
 
 ```tsx
-import { href } from "react-router"
+import { href, Link } from "react-router"
 
-// Type-safe path generation with params
-const aboutUrl = href("/:lang?/about", { lang: "en" })
-// → "/en/about"
+// ✅ Type-safe — catches route typos at compile time
+<Link to={href("/:lang/products/:id", { lang, id: "abc123" })} />
+<Link to={href("/:lang/about", { lang })} />
 
-// Use with Link
-<Link to={href("/products/:id", { id: "abc123" })} />
+// ❌ Never manually construct URLs
+<Link to={`/${lang}/products/${id}`} />
 ```
+
+**Troubleshooting:** If route types aren't updated after changes to `routes.ts`, restart the dev server to regenerate route types.
 
 ## Typing useFetcher
 

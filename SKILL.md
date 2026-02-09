@@ -40,6 +40,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
 - `core/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
 - `core/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
+- `core/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
 - `core/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
 - `core/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
 - `core/mcp-servers` — `.claude/**`, `.serena/**` — MCP server setup
@@ -90,7 +91,8 @@ claude-boilerplate/
 │   ├── e2e-testing.md
 │   ├── engineering-discipline.md
 │   ├── writing-rules.md
-│   └── monorepo.md
+│   ├── monorepo.md
+│   └── unit-testing.md
 ├── vendor/                     # → deployed as Knowledge Graph entities
 │   ├── daisyui-5.md            # → entity: VendorDaisyui5
 │   ├── tailwind-4.md           # → entity: VendorTailwind4
@@ -115,7 +117,17 @@ claude-boilerplate/
 │   ├── ory-hydra.md
 │   ├── remark-frontmatter-schema.md
 │   ├── forgejo-actions.md
-│   └── dokploy-monorepo-cicd.md
+│   ├── dokploy-monorepo-cicd.md
+│   ├── react-hook-form-zod.md    # → entity: VendorReactHookFormZod
+│   └── project-scaffolding.md    # → entity: VendorProjectScaffolding
+├── scaffold/                    # → copied to project root on /webstack init
+│   ├── dev.sh                   # Tmux dev launcher
+│   ├── install.sh               # Bootstrap script
+│   ├── scripts/                 # Git hooks
+│   ├── services/                # Docker, sync CLI, OAuth setup
+│   ├── .github/                 # CI/CD workflows
+│   ├── backend/                 # Dockerfile, copy-types
+│   └── frontend/                # Dockerfile
 ```
 
 ## Storage Taxonomy
@@ -261,6 +273,14 @@ In addition to per-template version comparison, the skill records the boilerplat
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
+
+11. **Scaffold project infrastructure** (optional):
+    - Ask user: "Deploy scaffold files (dev scripts, Docker, sync tools, CI/CD)?"
+    - List available scaffold files from `~/.claude/skills/webstack/scaffold/`
+    - If yes, copy selected files to project root
+    - **Skip files that already exist** — warn user instead of overwriting
+    - Remind user to replace `myproject` placeholders with their project name
+    - Remind user to copy `.env.example` to `.env` and fill in credentials
 
 ### On an existing project (`/webstack update`)
 
@@ -493,6 +513,8 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/remark-frontmatter-schema.md` | `VendorRemarkFrontmatterSchema` | tooling |
 | `vendor/forgejo-actions.md` | `VendorForgejoActions` | cicd |
 | `vendor/dokploy-monorepo-cicd.md` | `VendorDokployMonorepoCicd` | cicd |
+| `vendor/react-hook-form-zod.md` | `VendorReactHookFormZod` | tooling |
+| `vendor/project-scaffolding.md` | `VendorProjectScaffolding` | tooling |
 
 For subdirectory files, the directory name + filename are joined in PascalCase.
 
@@ -508,7 +530,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
 | i18n | `VendorReactRouter7I18n` | `search_nodes("domain: i18n")` |
 | cicd | `VendorForgejoActions`, `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
-| tooling | `VendorRemarkFrontmatterSchema` | `search_nodes("domain: tooling")` |
+| tooling | `VendorRemarkFrontmatterSchema`, `VendorReactHookFormZod`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
 
 ## Automatic Updates During Work
 
