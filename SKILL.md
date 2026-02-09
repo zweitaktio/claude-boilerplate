@@ -136,6 +136,23 @@ claude-boilerplate/
 
 If `search_nodes` fails or the KG MCP server is not configured, fall back to reading vendor templates directly from the skill source directory (`~/.claude/skills/webstack/vendor/`). This provides the same content without relational querying or persistent observations.
 
+### SHA Tracking
+
+In addition to per-template version comparison, the skill records the boilerplate git SHA at the time of deployment. This provides a reliable secondary change detection mechanism.
+
+**File:** `.claude/webstack.sha` in the target project (single line: the git SHA of the boilerplate repo at deployment time).
+
+**On init:** Record the current boilerplate HEAD SHA after deployment.
+
+**On update:**
+1. Read `.claude/webstack.sha` (if it exists)
+2. Run `git -C ~/.claude/skills/webstack log --oneline <stored-sha>..HEAD -- core/ vendor/` to see which templates changed since last deployment
+3. Use this to surface changed templates even if the author forgot to bump `version:` in frontmatter
+4. Templates that appear in the git diff but have matching versions are flagged as `REVIEW` — the content changed but version wasn't bumped
+5. After deployment, update `.claude/webstack.sha` with the current HEAD
+
+**If `.claude/webstack.sha` doesn't exist** (pre-SHA projects), fall back to version-only comparison and create the file after deployment.
+
 ## Invocation Instructions
 
 **Check the argument:** `$ARGUMENTS` will be `init` or `update`. If not provided, ask the user which mode to use.
@@ -240,6 +257,11 @@ If `search_nodes` fails or the KG MCP server is not configured, fall back to rea
    - Delete approved items (files via `rm`, Serena memories via `delete_memory`)
    - **Never delete `.serena/` itself or `.serena/project.yml`** — Serena is still used for symbol tools
 
+10. **Record boilerplate SHA:**
+    ```bash
+    git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
+    ```
+
 ### On an existing project (`/webstack update`)
 
 1. **Check CLAUDE.md required sections:**
@@ -250,7 +272,13 @@ If `search_nodes` fails or the KG MCP server is not configured, fall back to rea
 
 2. **Detect stack** — same as init: read `package.json`, check file structure
 
-3. **For each applicable template**, read both sources:
+3. **Check boilerplate changes since last deployment:**
+   - Read `.claude/webstack.sha` if it exists
+   - Run `git -C ~/.claude/skills/webstack log --oneline <stored-sha>..HEAD -- core/ vendor/` to list changed templates
+   - This list supplements the version comparison in step 6 — templates with content changes but matching versions are flagged as `REVIEW`
+   - If `.claude/webstack.sha` doesn't exist, skip this step (rely on version comparison only)
+
+4. **For each applicable template**, read both sources:
 
    For `target: rules`:
    - Template: `~/.claude/skills/webstack/core/{name}.md`
@@ -260,7 +288,7 @@ If `search_nodes` fails or the KG MCP server is not configured, fall back to rea
    - Template: `~/.claude/skills/webstack/vendor/{name}.md`
    - Deployed: `open_nodes(["Vendor{PascalCaseName}"])` — check if entity exists, read `version:` observation
 
-4. **Parse frontmatter** from template files:
+5. **Parse frontmatter** from template files:
    ```yaml
    ---
    version: 1.0.0
@@ -271,32 +299,34 @@ If `search_nodes` fails or the KG MCP server is not configured, fall back to rea
 
    For KG entities, extract the `version:` observation from the entity's observations array.
 
-5. **Compare versions** and categorize each template:
+6. **Compare versions** and cross-reference with SHA diff (step 3):
 
-   | Template version | Deployed version | Action |
-   |------------------|------------------|--------|
-   | 1.1.0 | 1.0.0 | **UPDATE** — show "1.0.0 → 1.1.0" |
-   | 1.0.0 | 1.0.0 | **SKIP** — versions match |
-   | 1.0.0 | (entity missing) | **CREATE** — new |
-   | (any) | (no version observation) | **REPLACE** — legacy entity |
+   | Template version | Deployed version | In SHA diff? | Action |
+   |------------------|------------------|-------------|--------|
+   | 1.1.0 | 1.0.0 | — | **UPDATE** — show "1.0.0 → 1.1.0" |
+   | 1.0.0 | 1.0.0 | No | **SKIP** — versions match, no changes |
+   | 1.0.0 | 1.0.0 | Yes | **REVIEW** — content changed but version not bumped |
+   | 1.0.0 | (entity missing) | — | **CREATE** — new |
+   | (any) | (no version observation) | — | **REPLACE** — legacy entity |
 
-6. **Detect project-specific observations** in existing KG entities:
+7. **Detect project-specific observations** in existing KG entities:
    - Observations that are NOT part of the standard set (version, applies, tags, domain, source, content)
    - These are project-specific additions (gotchas, known issues) — preserve them
 
-7. **Propose changes to the user** in a table:
+8. **Propose changes to the user** in a table:
    ```
    | Template | Target | Action | Version | Notes |
    |----------|--------|--------|---------|-------|
    | core/tooling | rules | UPDATE | 1.3.0 → 1.4.0 | |
    | vendor/daisyui-5 | graph | UPDATE | 1.0.0 → 1.1.0 | 2 extra observations preserved |
    | vendor/tailwind-4 | graph | SKIP | 1.1.0 = 1.1.0 | |
+   | core/monorepo | rules | REVIEW | 1.1.0 = 1.1.0 | content changed (SHA diff), version not bumped |
    | core/e2e-testing | rules | SKIP | — | playwright not installed |
    ```
 
-8. **Wait for user approval**
+9. **Wait for user approval**
 
-9. **Deploy updates based on `target` field:**
+10. **Deploy updates based on `target` field:**
 
    For `target: rules` — same mechanics as init step 6.
 
@@ -312,15 +342,20 @@ If `search_nodes` fails or the KG MCP server is not configured, fall back to rea
 
    **CRITICAL:** Copy template content verbatim. Do NOT retype, summarize, or reinterpret.
 
-10. **Update config files** if changed:
+11. **Update config files** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
 
-11. **Cleanup legacy artifacts:**
+12. **Cleanup legacy artifacts:**
     - Check for old Serena memory structures (see init step 9 for full list)
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
+
+13. **Record boilerplate SHA:**
+    ```bash
+    git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
+    ```
 
 ### Migration: existing Serena memory projects
 
