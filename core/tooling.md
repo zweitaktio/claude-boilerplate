@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: Always
 target: rules
 priority: high
@@ -97,11 +97,56 @@ git show <commit>   # Inspect a commit
 - `git checkout`, `git reset`, `git revert`
 - `git push --force`, `git reset --hard`, `git clean -f` — destructive, confirm first
 
+## Tool Usage Discipline
+
+**Principle:** Prefer auditable, dedicated tools over inline shell logic. Every Bash invocation should be a short, obvious command a human can approve at a glance.
+
+### Bash Tool — Simple Commands Only
+
+Allowed uses: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`. Chaining with `&&` is fine.
+
+```bash
+# Good — obvious, reviewable
+yarn check
+git diff --staged
+docker compose -f docker-compose.dev.yml up -d
+
+# Bad — unauditable, one hallucination away from damage
+python -c "import json; data = json.load(open('config.json')); ..."
+node -e "const fs = require('fs'); fs.readdirSync('.').forEach(f => { ... })"
+for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
+```
+
+### Never Run Inline
+
+- **No inline scripts** — no `python -c`, `node -e`, `ruby -e`, bash heredocs, or multi-line awk/sed programs
+- **No loops or iteration** — no `for`, `while`, `xargs` batch operations
+- **No piped processing chains** — no `curl | jq | awk | sed` pipelines for data transformation
+
+### Use Dedicated Tools Instead
+
+| Instead of | Use |
+|------------|-----|
+| `cat`, `head`, `tail` | Read tool |
+| `grep`, `rg` | Grep tool |
+| `find`, `ls` | Glob tool |
+| `sed`, `awk` | Edit tool |
+| `echo >`, heredoc | Write tool |
+
+### When Shell Logic IS Needed — Create a Script
+
+If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
+
+1. **Create a script file** in `scripts/` (e.g., `scripts/migrate-imports.sh`)
+2. Let the user review it before execution
+3. Run it with a single Bash command: `bash scripts/migrate-imports.sh`
+4. Keep it — it becomes reusable, shareable, and versionable
+
+This applies equally to one-off tasks. A script file is always preferable to an inline command that scrolls past in an approval prompt.
+
 ## Agent Behavior
 
 ### Never Do
-- **Never write inline scripts** (bash heredocs, `node -e`, `python -c`) for file operations — use Claude Code tools (Read, Write, Edit, Glob, Grep) instead
-- **Never use bash loops or batch operations** — no `for`, `while`, `xargs` batch ops. Chaining sequential commands with `&&` is fine.
 - **Never start dev servers** — assume they're already running
 - **Never mutate git** without explicit user request (see Git Usage above)
 - **Never skip pre-commit hooks** (`--no-verify`)
