@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 priority: high
@@ -126,18 +126,69 @@ as named entities with typed relations. Data lives in `.memory/graph.jsonl` (hum
 **Relations** (active voice): `depends_on`, `replaced_by`, `requires`, `configures`, `integrates_with`
 
 ### Knowledge graph workflow rules
+
+**Loading (every session):**
 1. At session start: `search_nodes` for topics related to the current task
 2. Before domain work: `search_nodes` with domain keyword (e.g., "routing", "styling") to load vendor docs
-3. After architectural decisions: `create_entities` with type `architecture_decision`
-4. After resolving non-trivial bugs: store as `bug_resolution` with symptom, root cause, and fix
-5. When a decision is superseded: update observations on the SAME entity (delete old, add new) — do NOT create duplicates
-6. Vendor gotchas discovered during work: `add_observations` to the relevant `vendor_doc` entity
+
+**Before creating any entity:** `search_nodes` for the topic first — if a related entity exists, `add_observations` to it instead of creating a duplicate.
+
+**Recording discoveries during work:**
+3. Vendor gotchas: `add_observations` to the relevant `vendor_doc` entity
+4. Architecture decisions: `create_entities` with type `architecture_decision`
+5. Non-trivial bugs resolved: `create_entities` with type `bug_resolution`
+6. Recurring project patterns: `create_entities` with type `convention`
+7. External service integration notes: `create_entities` with type `dependency`
+8. When a decision is superseded: update observations on the SAME entity (delete old, add new)
+
+**Task completion check:** After finishing a non-trivial task, assess whether you discovered something worth persisting — a gotcha, a decision, a pattern, or a bug fix that future sessions should know about.
+
+### What good KG entries look like
+
+```
+# Good bug_resolution — specific, searchable, actionable
+Entity: HydrationMismatchOnDateFormat
+Type: bug_resolution
+Observations:
+  - "Symptom: hydration mismatch warning on pages with formatted dates"
+  - "Root cause: Date.now() returns different values on server vs client"
+  - "Fix: format dates in loader, pass as string, never call Date functions in render"
+  - "Area: Frontend"
+  - "Date: 2025-10-15"
+
+# Bad — vague, not searchable, no root cause
+Entity: DateBug
+Type: bug_resolution
+Observations:
+  - "Fixed a date formatting issue"
+```
+
+```
+# Good architecture_decision — captures the WHY
+Entity: AuthSessionStorage
+Type: architecture_decision
+Observations:
+  - "Decision: use cookie-based sessions via React Router createCookieSessionStorage"
+  - "Why: server-side only, no client JS exposure, works with SSR streaming"
+  - "Rejected: localStorage (not available in SSR), JWT in header (requires client JS)"
+  - "Date: 2025-09-20"
+
+# Good convention — captures a pattern others should follow
+Entity: FormValidationPattern
+Type: convention
+Observations:
+  - "Pattern: Conform + Zod for all form validation"
+  - "Server: parseWithZod in action, return submission.reply() on error"
+  - "Client: useForm from @conform-to/react, getFormProps/getInputProps for wiring"
+  - "Why: type-safe, progressive enhancement, works without JS"
+```
 
 ### What NOT to store in the knowledge graph
 - Transient debugging state or one-off questions
 - Information already in code comments, README, or package.json
 - Obvious language/framework defaults
 - Session progress notes (use Claude Code's auto memory instead)
+- Simple bugs fixed in one step with no broader lesson
 
 ---
 
