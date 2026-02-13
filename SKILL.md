@@ -118,7 +118,7 @@ claude-boilerplate/
 │   ├── remark-frontmatter-schema.md
 │   ├── forgejo-actions.md
 │   ├── dokploy-monorepo-cicd.md
-│   ├── react-hook-form-zod.md    # → entity: VendorReactHookFormZod
+│   ├── conform-zod.md             # → entity: VendorConformZod
 │   └── project-scaffolding.md    # → entity: VendorProjectScaffolding
 ├── scaffold/                    # → copied to project root on /webstack init
 │   ├── dev.sh                   # Tmux dev launcher
@@ -176,6 +176,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    - If missing: create it using the bootstrap template (see "CLAUDE.md Bootstrap" section)
    - If exists but missing required sections: append them
    - Show user what was created/added
+   - Note: subsequent `/webstack update` runs will check for drift in managed CLAUDE.md sections
 
 2. **Detect stack:**
    - Read `package.json` (dependencies + devDependencies)
@@ -284,11 +285,16 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 ### On an existing project (`/webstack update`)
 
-1. **Check CLAUDE.md required sections:**
-   - Read `CLAUDE.md` if it exists
-   - Check for `## Vendor Knowledge` heading — if missing, append it
-   - If old `## Vendor Memory Loading` or `## Serena Memory Protocol` exists, offer to replace with `## Vendor Knowledge`
-   - Show user what was added/changed
+1. **Assess CLAUDE.md drift** (see "CLAUDE.md Drift Checks"):
+   - Read `CLAUDE.md` in project root
+   - If missing: warn and suggest `/webstack init`, skip to step 2
+   - Check if bootstrapped: search for `## Vendor Knowledge` or known aliases (`## Knowledge Graph`, `## KG Entities`, `## Vendor Docs`)
+     - If not bootstrapped: show "not bootstrapped" message, skip detailed checks, continue to step 2
+     - If bootstrapped: run drift checks S1, S2, C1, C2, C4, C5
+   - Collect findings (C3 is deferred to after step 8)
+   - For MISSING sections: offer to append from the bootstrap template
+   - For WARN legacy sections (`## Vendor Memory Loading`, `## Serena Memory Protocol`, `## MCP Tools:`): offer to rename/remove
+   - Show drift findings to user, then continue — drift report is informational, not blocking
 
 2. **Detect stack** — same as init: read `package.json`, check file structure
 
@@ -344,9 +350,15 @@ In addition to per-template version comparison, the skill records the boilerplat
    | core/e2e-testing | rules | SKIP | — | playwright not installed |
    ```
 
-9. **Wait for user approval**
+9. **Complete drift report** (C3 check):
+   - Compare entity names in the CLAUDE.md domain table against the entities proposed for CREATE/UPDATE/SKIP in step 8
+   - Flag entities listed in the table that no longer exist (deleted templates) or were skipped (no longer applies)
+   - Flag deployed entities missing from the table
+   - Present the unified drift report (findings from step 1 + C3)
 
-10. **Deploy updates based on `target` field:**
+10. **Wait for user approval**
+
+11. **Deploy updates based on `target` field:**
 
    For `target: rules` — same mechanics as init step 6.
 
@@ -362,17 +374,17 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Copy template content verbatim. Do NOT retype, summarize, or reinterpret.
 
-11. **Update config files** if changed:
+12. **Update config files** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
 
-12. **Cleanup legacy artifacts:**
+13. **Cleanup legacy artifacts:**
     - Check for old Serena memory structures (see init step 9 for full list)
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
 
-13. **Record boilerplate SHA:**
+14. **Record boilerplate SHA:**
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
@@ -514,7 +526,7 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/forgejo-actions.md` | `VendorForgejoActions` | cicd |
 | `vendor/dokploy-monorepo-cicd.md` | `VendorDokployMonorepoCicd` | cicd |
 | `vendor/base-ui-react.md` | `VendorBaseUiReact` | styling |
-| `vendor/react-hook-form-zod.md` | `VendorReactHookFormZod` | tooling |
+| `vendor/conform-zod.md` | `VendorConformZod` | forms |
 | `vendor/project-scaffolding.md` | `VendorProjectScaffolding` | tooling |
 
 For subdirectory files, the directory name + filename are joined in PascalCase.
@@ -531,7 +543,8 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
 | i18n | `VendorReactRouter7I18n` | `search_nodes("domain: i18n")` |
 | cicd | `VendorForgejoActions`, `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
-| tooling | `VendorRemarkFrontmatterSchema`, `VendorReactHookFormZod`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
+| forms | `VendorConformZod` | `search_nodes("domain: forms")` |
+| tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
 
 ## Automatic Updates During Work
 
@@ -646,14 +659,62 @@ If CLAUDE.md exists but is missing required sections:
 1. Check for `## Vendor Knowledge` heading — if missing, append the Vendor Knowledge section
 2. Show the user what was added
 
-### Update: Ensure Required Sections Exist
+### Update: CLAUDE.md Drift Checks
 
-On `/webstack update`, check CLAUDE.md for the vendor knowledge section:
+On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. This section defines the checks.
 
-**Vendor Knowledge section:**
-1. Search for `## Vendor Knowledge` heading
-2. If missing, append the section
-3. If old `## Serena Memory Protocol` or `## Vendor Memory Loading` exists, offer to replace with `## Vendor Knowledge`
-4. If old `## MCP Tools:` section exists inline, offer to remove it (now auto-loaded via `.claude/rules/core/mcp-tools.md`)
+**Section classification:**
+
+| Section | Classification | What we check |
+|---------|---------------|---------------|
+| `# CLAUDE.md` + intro | Managed | Heading exists; intro references `.claude/rules/core/` |
+| `## Commands` | Project-specific | Heading exists (content is user-owned) |
+| `## Architecture` | Project-specific | Heading exists (content is user-owned) |
+| `## Rules` | Mixed | Heading exists; intro references `.claude/rules/core/` |
+| `## Vendor Knowledge` | Managed | Heading exists; contains domain table; references `search_nodes` |
+| `### Knowledge accumulation` | Managed | Heading exists; contains observation format strings |
+
+**Vendor Knowledge heading aliases** — accept as equivalent to `## Vendor Knowledge`:
+- `## Knowledge Graph`
+- `## KG Entities`
+- `## Vendor Docs`
+
+If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
+
+**Drift checks:**
+
+| ID | Check | Severity | How |
+|----|-------|----------|-----|
+| S1 | Required headings exist | MISSING | Check for: `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
+| S2 | Legacy section names | WARN | Flag: `## Vendor Memory Loading`, `## Serena Memory Protocol`, `## MCP Tools:` |
+| C1 | Rules intro references core rules | WARN | Text between `## Rules` and next `##` heading contains `.claude/rules/core/` |
+| C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table with `search_nodes` |
+| C3 | Domain table matches deployed entities | WARN | Entity names in table vs entities actually deployed in this update (run after step 8) |
+| C4 | Knowledge accumulation has formats | WARN | Section contains at least one of: `Pitfall:`, `GitHub:`, `Docs:` |
+| C5 | No inlined MCP tool instructions | INFO | No `## MCP Tools` section with tool names (belongs in `.claude/rules/core/mcp-tools.md`) |
+
+**Not checked (intentionally):** exact wording of managed sections, empty project-specific sections, section ordering, HTML comment placeholders.
+
+**Report format:**
+
+```
+### CLAUDE.md Drift Report
+
+| Check | Status | Finding |
+|-------|--------|---------|
+| Required headings | MISSING | `### Knowledge accumulation` not found |
+| Legacy sections | WARN | `## MCP Tools:` found — remove (now in rules) |
+| Vendor table freshness | WARN | Table lists VendorReactHookFormZod (deleted) |
+| Rules intro | PASS | — |
+```
+
+Show only WARN and MISSING findings. If all checks pass, show: "CLAUDE.md drift check: no issues detected."
+
+**If CLAUDE.md was never bootstrapped** (no `## Vendor Knowledge` and no known alias): skip detailed checks, show:
+```
+CLAUDE.md exists but has no managed sections. Run `/webstack init` to bootstrap.
+```
+
+**The drift report is informational, not blocking** — always continue with template updates regardless of findings. For MISSING sections, offer to append from bootstrap template. For legacy sections, offer to rename/remove.
 
 **Never overwrite** existing project-specific content (Commands, Architecture, Rules).

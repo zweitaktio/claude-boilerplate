@@ -1,5 +1,5 @@
 ---
-version: 1.6.1
+version: 1.7.0
 applies: Always
 target: rules
 priority: high
@@ -133,6 +133,20 @@ for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 | `sed`, `awk` | Edit tool |
 | `echo >`, heredoc | Write tool |
 
+### Edit Tool — Indentation Awareness
+
+The Edit tool cannot match literal tab characters. If the project uses tabs (check `.editorconfig` or the file itself), use these alternatives:
+
+| Edit type | Tab-safe alternative |
+|-----------|---------------------|
+| Function/method body | Serena `replace_symbol_body` (auto-indentation) |
+| Whole file or large section | Write tool (full rewrite) |
+| Config files (YAML, TOML, Makefile) | Write tool |
+
+For space-indented files, the Edit tool works normally.
+
+On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write and Serena over Edit for all file modifications.
+
 ### When Shell Logic IS Needed — Create a Script
 
 If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
@@ -212,3 +226,4 @@ Core conventions are auto-loaded from `.claude/rules/core/` — no manual loadin
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides
 2. Load KG entities for the task's domain — see `core/mcp-tools` and domain-specific rules for exact queries
+3. If `.editorconfig` exists at project root, read it — indentation style affects tool selection (see Edit Tool — Indentation Awareness above)

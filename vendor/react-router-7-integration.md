@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: react-router@7
 target: graph
 type: integration
@@ -19,72 +19,9 @@ Project-specific patterns for integrating React Router 7 with our stack. For cor
 | Context7 | `/remix-run/react-router` | Good coverage |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, examples |
 
-## Form Handling with Conform + Zod
+## Form Handling
 
-### Zod v4 Syntax
-
-**Conform + Zod v4** uses `{ error: 'msg' }` for custom error messages:
-
-```typescript
-// ✅ Zod v4 syntax
-z.string({ error: 'Required' }).email({ error: 'Invalid email' })
-
-// ❌ Zod 3 syntax (deprecated)
-z.string({ message: 'Required' })
-z.string({ required_error: 'Required' })
-```
-
-### Schema Factory Pattern (i18n-aware)
-
-Create schema factories that accept a translation function. Use `defaultT` on the server (where `t()` from react-i18next is unavailable):
-
-```typescript
-// Translation utility
-type TranslationFn = (key: string, defaultValue: string) => string
-const defaultT: TranslationFn = (_key, defaultValue) => defaultValue
-
-// Schema factory
-export const createLoginSchema = (t: TranslationFn) =>
-  z.object({
-    email: z.string({ error: t('validation.required', 'Required') })
-      .min(1, { error: t('validation.required', 'Required') })
-      .email({ error: t('validation.invalidEmail', 'Invalid email') }),
-    password: z.string({ error: t('validation.required', 'Required') })
-      .min(1, { error: t('validation.required', 'Required') }),
-  })
-
-// Server action — uses defaultT (English defaults)
-export async function action({ request }: Route.ActionArgs) {
-  const submission = parseWithZod(await request.formData(), {
-    schema: createLoginSchema(defaultT),
-  })
-  // ...
-}
-
-// Client component — uses t() for translated errors
-const schema = createLoginSchema(t)
-```
-
-### Conform + React Router Form
-
-```tsx
-const [form, fields] = useForm({
-  constraint: getZodConstraint(schema),
-  lastResult: actionData?.lastResult,
-  onValidate({ formData }) {
-    return parseWithZod(formData, { schema })
-  },
-  shouldRevalidate: 'onBlur',
-  shouldValidate: 'onBlur',
-})
-
-return (
-  <Form {...getFormProps(form)} method="POST">
-    {/* Your form field components here */}
-    <button type="submit" disabled={isSubmitting}>Submit</button>
-  </Form>
-)
-```
+See `VendorConformZod` for complete Conform + Zod form handling patterns, examples, and DaisyUI 5 styling.
 
 ### Checkbox Boolean Handling
 
