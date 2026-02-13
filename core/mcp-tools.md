@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.4.0
 applies: Always
 target: rules
 priority: high
@@ -125,70 +125,56 @@ as named entities with typed relations. Data lives in `.memory/graph.jsonl` (hum
 
 **Relations** (active voice): `depends_on`, `replaced_by`, `requires`, `configures`, `integrates_with`
 
-### Knowledge graph workflow rules
+### When to load KG entities
 
-**Loading (every session):**
-1. At session start: `search_nodes` for topics related to the current task
-2. Before domain work: `search_nodes` with domain keyword (e.g., "routing", "styling") to load vendor docs
+Domain-specific rules (`react-components`, `i18n`, `ssr-hydration`, etc.) include exact `open_nodes` / `search_nodes` queries — follow those triggers when those rules are active.
 
-**Before creating any entity:** `search_nodes` for the topic first — if a related entity exists, `add_observations` to it instead of creating a duplicate.
+For tasks outside a specific domain file's scope: run `search_nodes` with the task's primary keyword (e.g., "auth", "forms", "payments") at task start.
 
-**Recording discoveries during work:**
-3. Vendor gotchas: `add_observations` to the relevant `vendor_doc` entity
-4. Architecture decisions: `create_entities` with type `architecture_decision`
-5. Non-trivial bugs resolved: `create_entities` with type `bug_resolution`
-6. Recurring project patterns: `create_entities` with type `convention`
-7. External service integration notes: `create_entities` with type `dependency`
-8. When a decision is superseded: update observations on the SAME entity (delete old, add new)
+### When to write to KG
 
-**Task completion check:** After finishing a non-trivial task, assess whether you discovered something worth persisting — a gotcha, a decision, a pattern, or a bug fix that future sessions should know about.
+If any of these events happened during your work, write to KG before moving on:
 
-### What good KG entries look like
+1. **Bug that misled you or spanned >3 files:** `create_entities` type `bug_resolution`.
+   Include: Symptom, Root cause, Fix, Area.
 
-```
-# Good bug_resolution — specific, searchable, actionable
-Entity: HydrationMismatchOnDateFormat
-Type: bug_resolution
-Observations:
-  - "Symptom: hydration mismatch warning on pages with formatted dates"
-  - "Root cause: Date.now() returns different values on server vs client"
-  - "Fix: format dates in loader, pass as string, never call Date functions in render"
-  - "Area: Frontend"
-  - "Date: 2025-10-15"
+2. **Chose approach X over Y:** `create_entities` type `architecture_decision`.
+   Include: Decision, Why, Rejected alternatives.
 
-# Bad — vague, not searchable, no root cause
-Entity: DateBug
-Type: bug_resolution
-Observations:
-  - "Fixed a date formatting issue"
-```
+3. **Tried something that failed non-obviously:** `add_observations` to relevant `vendor_doc`.
+   Format: `"Pitfall: {what} — {why}"`
+
+4. **Found a GitHub issue explaining behavior you hit:** `add_observations` to relevant `vendor_doc`.
+   Format: `"GitHub: {url} — {summary}"`
+
+5. **Found a doc snippet that unblocked you:** `add_observations` to relevant `vendor_doc`.
+   Format: `"Docs: {key finding} (source: {url})"`
+
+6. **Established a repeating pattern:** `create_entities` type `convention`.
+   Include: Pattern, When to use, Example.
+
+Before creating any entity, run `search_nodes` first — if a near-match exists, `add_observations` instead of duplicating.
+
+If no `vendor_doc` entity exists for the library, create a minimal one: name `Vendor{PascalCaseName}`, type `vendor_doc`, first observation = the finding.
+
+### Good vs bad entries
 
 ```
-# Good architecture_decision — captures the WHY
-Entity: AuthSessionStorage
-Type: architecture_decision
-Observations:
-  - "Decision: use cookie-based sessions via React Router createCookieSessionStorage"
-  - "Why: server-side only, no client JS exposure, works with SSR streaming"
-  - "Rejected: localStorage (not available in SSR), JWT in header (requires client JS)"
-  - "Date: 2025-09-20"
+# Good bug_resolution — specific, searchable, has root cause
+Entity: HydrationMismatchOnDateFormat (bug_resolution)
+  "Symptom: hydration mismatch warning on pages with formatted dates"
+  "Root cause: Date.now() differs server vs client"
+  "Fix: format dates in loader, pass as string"
 
-# Good convention — captures a pattern others should follow
-Entity: FormValidationPattern
-Type: convention
-Observations:
-  - "Pattern: Conform + Zod for all form validation"
-  - "Server: parseWithZod in action, return submission.reply() on error"
-  - "Client: useForm from @conform-to/react, getFormProps/getInputProps for wiring"
-  - "Why: type-safe, progressive enhancement, works without JS"
+# Good vendor pitfall — saves hours next session
+Entity: VendorReactRouter7Routing (vendor_doc) — add_observations:
+  "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
+  "GitHub: https://github.com/remix-run/react-router/issues/11​234 — confirmed by maintainer"
+
+# Bad — vague, unsearchable
+Entity: DateBug (bug_resolution)
+  "Fixed a date formatting issue"
 ```
-
-### What NOT to store in the knowledge graph
-- Transient debugging state or one-off questions
-- Information already in code comments, README, or package.json
-- Obvious language/framework defaults
-- Session progress notes (use Claude Code's auto memory instead)
-- Simple bugs fixed in one step with no broader lesson
 
 ---
 

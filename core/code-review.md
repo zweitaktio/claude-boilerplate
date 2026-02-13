@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -83,7 +83,7 @@ When reviewing code, identify the domain and verify against its known best pract
 
 ## Convention Adherence
 
-Cross-reference these rules/memories when reviewing code:
+Load these before reviewing code that touches their domain:
 
 | If code touches... | Reference | Look for |
 |--------------------|-----------|----------|

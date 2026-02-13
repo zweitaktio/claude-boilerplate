@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.1
 applies: Always
 target: rules
 priority: high
@@ -144,6 +144,39 @@ If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
 
 This applies equally to one-off tasks. A script file is always preferable to an inline command that scrolls past in an approval prompt.
 
+## Payload API Scripts
+
+Helper scripts for querying the Payload CMS REST API from the CLI. Use these instead of raw `curl` commands.
+
+### `scripts/payload-api.sh` — REST API requests
+
+```bash
+# Public endpoints
+./scripts/payload-api.sh GET '/products?limit=2&depth=0'
+./scripts/payload-api.sh GET '/products/404?depth=2'
+
+# With jq filter
+PAYLOAD_JQ='{totalDocs, title: .docs[0].title}' ./scripts/payload-api.sh GET '/products?limit=1'
+
+# Authenticated (JWT from token script)
+PAYLOAD_TOKEN=$(...) ./scripts/payload-api.sh GET '/users?limit=1'
+
+# Authenticated (API key)
+PAYLOAD_API_KEY=<key> ./scripts/payload-api.sh GET '/users?limit=1'
+
+# POST with body
+./scripts/payload-api.sh POST '/products' -d '{"title":"Test"}'
+```
+
+### `scripts/payload-token.sh` — Get a JWT token
+
+```bash
+./scripts/payload-token.sh <email> <password>
+# Outputs raw JWT token on success, error to stderr on failure
+```
+
+Env: `PAYLOAD_URL` overrides the default `http://localhost:3000`.
+
 ## Agent Behavior
 
 ### Never Do
@@ -178,5 +211,4 @@ Core conventions are auto-loaded from `.claude/rules/core/` — no manual loadin
 
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides
-2. `search_nodes` in Knowledge Graph for topics related to current task
-3. Load vendor docs by domain: `search_nodes("domain: {relevant}")` → `open_nodes` (see CLAUDE.md Vendor Knowledge table)
+2. Load KG entities for the task's domain — see `core/mcp-tools` and domain-specific rules for exact queries

@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: react
 target: rules
 paths:
@@ -253,8 +253,9 @@ return <MyContext.Provider value={value}>{children}</MyContext.Provider>
 
 3. **Use `use-context-selector` library** for selector-based subscriptions.
 
+Before deciding what belongs in a loader vs client state, run `open_nodes(["VendorReactRouter7DataLoading"])`.
+
 ## See Also
 
 - `core/react-components` — Component patterns, useEffect (auto-loaded)
 - `core/ssr-hydration` — Hydration considerations for state (auto-loaded)
-- KG entity `VendorReactRouter7DataLoading` — Loader data vs client state (`search_nodes("domain: routing")`)

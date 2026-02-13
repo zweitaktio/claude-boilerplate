@@ -513,6 +513,7 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/remark-frontmatter-schema.md` | `VendorRemarkFrontmatterSchema` | tooling |
 | `vendor/forgejo-actions.md` | `VendorForgejoActions` | cicd |
 | `vendor/dokploy-monorepo-cicd.md` | `VendorDokployMonorepoCicd` | cicd |
+| `vendor/base-ui-react.md` | `VendorBaseUiReact` | styling |
 | `vendor/react-hook-form-zod.md` | `VendorReactHookFormZod` | tooling |
 | `vendor/project-scaffolding.md` | `VendorProjectScaffolding` | tooling |
 
@@ -525,7 +526,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | Domain | Entities | Search query |
 |--------|----------|-------------|
 | routing | `VendorReactRouter7*` | `search_nodes("domain: routing")` |
-| styling | `VendorDaisyui5`, `VendorTailwind4` | `search_nodes("domain: styling")` |
+| styling | `VendorDaisyui5`, `VendorTailwind4`, `VendorBaseUiReact` | `search_nodes("domain: styling")` |
 | backend | `VendorPayloadCms3`, `VendorPayloadRestClient` | `search_nodes("domain: backend")` |
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
 | i18n | `VendorReactRouter7I18n` | `search_nodes("domain: i18n")` |
@@ -534,13 +535,9 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 
 ## Automatic Updates During Work
 
-These happen outside of this skill — they are standing instructions for how conventions evolve during normal development. Include these rules in the project's `CLAUDE.md`:
+These happen outside of this skill — they are standing instructions for how conventions evolve during normal development. The write triggers and observation formats are defined in `core/mcp-tools` (deployed to `.claude/rules/core/mcp-tools.md`). The CLAUDE.md bootstrap template includes the observation format strings for easy reference.
 
-- **Vendor gotchas:** When you discover a version-specific gotcha, API difference, or undocumented behavior — `add_observations` to the relevant `vendor_doc` entity in the Knowledge Graph
-- **New bugs:** When you encounter a bug or workaround — create a Knowledge Graph entity with type `bug_resolution` including symptom, root cause, and fix/workaround
-- **Resolved bugs:** When fixing a known bug — update the Knowledge Graph entity's observations with the resolution
-- **Architecture decisions:** When making a significant decision — create a Knowledge Graph entity with type `architecture_decision` including what was decided, why, and alternatives rejected
-- **Session progress:** Use Claude Code's auto memory (`MEMORY.md`) for session notes and next steps
+Session progress → Claude Code auto memory (`MEMORY.md`), not the Knowledge Graph.
 
 ## Contributing Back to the Boilerplate
 
@@ -626,19 +623,17 @@ Load them by domain before starting work using `search_nodes`.
 | Styling | `search_nodes("domain: styling")` | VendorDaisyui5, VendorTailwind4 |
 -->
 
-**Session start:** `search_nodes` for topics related to current task.
+**Before domain work:** check the table above — load entities for the domain you're about to touch.
 
-### When to skip vendor loading
-- Simple questions/clarifications (no code changes)
-- User explicitly says "skip vendor docs"
-- Task doesn't touch the vendor's domain
+### Knowledge accumulation
 
-### Knowledge management
-- Vendor gotchas discovered → `add_observations` to the relevant `vendor_doc` entity
-- Bugs discovered → `create_entities` with type `bug_resolution`
-- Architecture decisions → `create_entities` with type `architecture_decision`
-- Session progress → Claude Code auto memory (`MEMORY.md`)
-- New project rules → add to CLAUDE.md, not the Knowledge Graph
+Write triggers are defined in `core/mcp-tools` (auto-loaded). Key observation formats:
+- Pitfalls: `"Pitfall: {what} — {why}"`
+- GitHub issues: `"GitHub: {url} — {summary}"`
+- Doc findings: `"Docs: {key finding} (source: {url})"`
+
+Session progress → Claude Code auto memory (`MEMORY.md`).
+New project rules → add to CLAUDE.md, not the Knowledge Graph.
 ```
 
 ### Init: Create CLAUDE.md

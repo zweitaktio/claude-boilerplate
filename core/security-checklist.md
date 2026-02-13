@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: Always
 target: rules
 tags: [security, auth, validation, XSS, CSRF, injection]
@@ -50,8 +50,9 @@ Apply at the proxy level (Caddy, nginx) or application level:
 | Password reset | 5/min |
 | File uploads | 20/min |
 
+Before implementing protected routes, run `open_nodes(["VendorReactRouter7Routing"])`.
+
 ## See Also
 
 - `core/code-review` — Security in code review priority (auto-loaded)
-- KG entity `VendorReactRouter7Routing` — Protected route patterns (`search_nodes("domain: routing")`)
 - `core/ssr-hydration` — Server-only code patterns (auto-loaded)

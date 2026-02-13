@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: react-router | next | remix
 target: rules
 paths:
@@ -106,8 +106,9 @@ class RateLimiter {
 - Use event-driven patterns (check-on-access) instead of polling
 - Use `useEffect` cleanup for any client-side timers
 
+Before choosing a rendering strategy, run `open_nodes(["VendorReactRouter7RenderingStrategies"])`.
+
 ## See Also
 
-- KG entity `VendorReactRouter7RenderingStrategies` — SSR loaders, streaming (`search_nodes("domain: routing")`)
 - `core/react-components` — Component patterns (auto-loaded)
 - `core/code-review` — SSR safety checks (auto-loaded)

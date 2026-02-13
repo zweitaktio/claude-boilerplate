@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: react
 target: rules
 priority: high
@@ -12,6 +12,17 @@ tags: [react, components, props, patterns, hooks, typescript]
 ---
 
 # React Component Conventions
+
+## Component Library Selection
+
+DaisyUI 5 provides CSS styling. Base UI (`@base-ui/react`) provides headless behavior and accessibility.
+
+Use DaisyUI classes alone for: buttons, cards, badges, alerts, avatars, form inputs, layout, loading states.
+Use Base UI + DaisyUI/Tailwind for: dialogs, popovers, menus, selects, comboboxes, tabs, accordions, tooltips, switches.
+
+Never use DaisyUI's CSS-only interactive components (`<dialog class="modal">`, `<div class="dropdown">`, `<details class="collapse">`) in production — they lack focus management, keyboard navigation, and ARIA state.
+
+All component wrappers must use CVA + twMerge for variants — see `VendorTailwind4` for the pattern.
 
 ## Component Declaration
 - Always `export const` arrow functions for components: `export const Foo = ({ ... }: FooProps) => { }`
@@ -265,10 +276,12 @@ export const { singular: isUser, parse: parseUser } = createTypeGuards<User>("us
 export const { singular: isProduct, parse: parseProduct } = createTypeGuards<Product>("product")
 ```
 
+Before writing DaisyUI component markup, run `open_nodes(["VendorDaisyui5"])`.
+Before writing dialogs, popovers, menus, selects, or tooltips, run `open_nodes(["VendorBaseUiReact"])`.
+Before writing route components, run `search_nodes("domain: routing")` → `open_nodes` on results.
+
 ## See Also
 
 - `core/state-management` — When to use Context vs Zustand vs Redux (auto-loaded)
 - `core/ssr-hydration` — Client-only code patterns (auto-loaded)
 - `core/i18n` — Translation in components (auto-loaded)
-- KG entity `VendorDaisyui5` — UI component styling (`search_nodes("domain: styling")`)
-- KG entities `VendorReactRouter7*` — Route component patterns (`search_nodes("domain: routing")`)

@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: daisyui@5
 target: graph
 tags: [daisyui, ui, components, tailwind, styling, themes]
@@ -230,6 +230,33 @@ Use `data-theme` attribute on `<html>` or `theme-controller` class:
 - `bg-base-300` — Even darker
 - `bg-neutral` — Neutral color
 - `bg-primary`, `bg-secondary`, `bg-accent` — Theme colors
+
+## Base UI Integration
+
+DaisyUI is CSS-only. For components that need focus management, keyboard navigation, or ARIA state management, use Base UI (`@base-ui/react`) for behavior and DaisyUI classes/theme tokens for styling. See `VendorBaseUiReact` for patterns.
+
+**Do NOT use these DaisyUI CSS-only patterns in production:**
+- `<dialog class="modal">` — no focus trap, no programmatic open/close
+- `<div class="dropdown">` — no keyboard navigation, no ARIA roles
+- `<details class="collapse">` — no ARIA expanded state
+
+Use Base UI Dialog, Menu, and Accordion instead, styled with DaisyUI theme tokens.
+
+## Class Cheatsheet
+
+```
+Buttons:   btn btn-{primary|secondary|accent|neutral|info|success|warning|error}
+                btn-{outline|soft|dash|ghost|link}  btn-{xs|sm|md|lg|xl}
+Cards:     card > card-body > card-title + card-actions
+Badges:    badge badge-{color} badge-{xs|sm|md|lg|xl}
+Alerts:    alert alert-{info|success|warning|error}
+Forms:     fieldset > label + input/select/textarea + label(hint/error)
+Layout:    join > join-item, divider, stack
+Nav:       navbar, breadcrumbs, menu > li > a
+Loading:   loading loading-{spinner|dots|ring|ball|bars|infinity} loading-{xs|sm|md|lg|xl}
+Toggle:    toggle toggle-{color} toggle-{xs|sm|md|lg|xl}
+Checkbox:  checkbox checkbox-{color} checkbox-{xs|sm|md|lg|xl}
+```
 
 ## Known Issues
 - v4 → v5 migration: all `form-control`, `label-text`, `input-bordered` classes must be replaced
