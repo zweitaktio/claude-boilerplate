@@ -102,4 +102,4 @@ cd backend && yarn check
 cd frontend && yarn check
 ```
 
-See `core/tooling` for full verification workflow.
+See `core/process/tooling` for full verification workflow.

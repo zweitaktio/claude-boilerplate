@@ -202,6 +202,45 @@ export function HydrateFallback() {
 }
 ```
 
+## Client-Only Routes
+
+For routes that must only render on the client (e.g. Three.js, D3, WebGL), combine `clientLoader` with `HydrateFallback` and `.client` module imports:
+
+```tsx
+// route file: routes/my-canvas.tsx
+import { MyCanvas } from '~/components/my-canvas.client'
+
+// No server loader → HydrateFallback on SSR, component on client
+export function clientLoader() {
+  return {}
+}
+
+export function HydrateFallback() {
+  return <div>Loading...</div>
+}
+
+export default function CanvasRoute() {
+  return <MyCanvas />
+}
+```
+
+The `.client.tsx` suffix on the component file excludes it (and its browser-only deps) from the server bundle. During SSR only `HydrateFallback` renders. After hydration, `clientLoader` resolves and the default component renders with full browser API access.
+
+## .client Module Convention
+
+Files with `.client.ts` / `.client.tsx` suffix are excluded from the server bundle. Their exports are `undefined` on the server.
+
+Use for: browser-only libraries (Three.js, D3, Leaflet), browser API wrappers (`localStorage`, `navigator`), analytics clients.
+
+```text
+app/
+├── utils.client.ts          # excluded from server bundle
+├── components/
+│   └── canvas.client.tsx     # Three.js component
+└── routes/
+    └── visualizer.tsx        # normal route, imports from .client
+```
+
 ## See Also
 
 - `VendorReactRouter7DataLoading` - Loader patterns

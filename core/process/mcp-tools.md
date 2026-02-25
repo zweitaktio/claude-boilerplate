@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: Always
 target: rules
 priority: high
@@ -43,11 +43,17 @@ for filesystem and text operations. Use Serena only for what it does better: sym
 **Recovery:**
 - `restart_language_server` — use when external edits break Serena's state
 
-### Serena workflow rules
-1. ALWAYS use `find_symbol` or `get_symbols_overview` before editing code — never guess locations
-2. ALWAYS use `find_referencing_symbols` before renaming or changing a function's signature
-3. Prefer `replace_symbol_body` over Claude Code's built-in edit tools for function/method edits
-4. Use Claude Code's native tools for: filesystem browsing, grep/ripgrep, git operations, file creation, non-symbol text edits
+### Serena triggers — use symbols, not guesses
+
+| Before you... | Run first |
+|----------------|-----------|
+| Edit a function or method body | `find_symbol` to get exact location, then `replace_symbol_body` |
+| Change an export's signature or name | `find_referencing_symbols` to find all consumers |
+| Navigate to a definition you haven't read | `find_symbol`, not grep or filename guessing |
+| Start working in an unfamiliar file | `get_symbols_overview` to see the structure |
+| Delete or move an export | `find_referencing_symbols` — if it has callers, update them first |
+
+Use Claude Code's native tools for: filesystem browsing, grep/ripgrep, git operations, file creation, non-symbol text edits.
 
 ### Disabled tools (recommended defaults for `.serena/project.yml`)
 
@@ -125,33 +131,30 @@ as named entities with typed relations. Data lives in `.memory/graph.jsonl` (hum
 
 **Relations** (active voice): `depends_on`, `replaced_by`, `requires`, `configures`, `integrates_with`
 
-### When to load KG entities
+### KG read triggers — check before you act
 
-Domain-specific rules (`react-components`, `i18n`, `ssr-hydration`, etc.) include exact `open_nodes` / `search_nodes` queries — follow those triggers when those rules are active.
+| When you... | Query | Why |
+|-------------|-------|-----|
+| Start a task in any domain | `search_nodes("domain: <domain>")` then `open_nodes` | Load vendor docs for libraries you'll touch |
+| Hit an error in library code | `search_nodes("Pitfall")` + `search_nodes("<library name>")` | Someone may have already solved this |
+| Something "should work" but doesn't | `open_nodes(["Vendor<Library>"])` and read pitfall observations | Check for recorded quirks before debugging blind |
+| Plan an approach for a non-trivial task | `search_nodes("bug_resolution")` + domain search | Avoid repeating known mistakes |
+| Work outside a domain rule's scope | `search_nodes("<primary keyword>")` | Find relevant context (auth, forms, payments, etc.) |
 
-For tasks outside a specific domain file's scope: run `search_nodes` with the task's primary keyword (e.g., "auth", "forms", "payments") at task start.
+Domain-specific rules (`react-components`, `i18n`, `ssr-hydration`, etc.) include additional `open_nodes` / `search_nodes` triggers — follow those when those rules are active.
 
-### When to write to KG
+### KG write triggers — record immediately, not later
 
-If any of these events happened during your work, write to KG before moving on:
+Don't batch these for "before moving on." Write to KG **right after the event**, while the details are fresh.
 
-1. **Bug that misled you or spanned >3 files:** `create_entities` type `bug_resolution`.
-   Include: Symptom, Root cause, Fix, Area.
-
-2. **Chose approach X over Y:** `create_entities` type `architecture_decision`.
-   Include: Decision, Why, Rejected alternatives.
-
-3. **Tried something that failed non-obviously:** `add_observations` to relevant `vendor_doc`.
-   Format: `"Pitfall: {what} — {why}"`
-
-4. **Found a GitHub issue explaining behavior you hit:** `add_observations` to relevant `vendor_doc`.
-   Format: `"GitHub: {url} — {summary}"`
-
-5. **Found a doc snippet that unblocked you:** `add_observations` to relevant `vendor_doc`.
-   Format: `"Docs: {key finding} (source: {url})"`
-
-6. **Established a repeating pattern:** `create_entities` type `convention`.
-   Include: Pattern, When to use, Example.
+| Event | Action | Format |
+|-------|--------|--------|
+| Resolved a bug that misled you or spanned >3 files | `create_entities` type `bug_resolution` | Symptom, Root cause, Fix, Area |
+| Chose approach X over Y for a reason | `create_entities` type `architecture_decision` | Decision, Why, Rejected alternatives |
+| Tried something that failed non-obviously | `add_observations` to relevant `vendor_doc` | `"Pitfall: {what} — {why}"` |
+| Found a GitHub issue explaining behavior you hit | `add_observations` to relevant `vendor_doc` | `"GitHub: {url} — {summary}"` |
+| Found a doc snippet that unblocked you | `add_observations` to relevant `vendor_doc` | `"Docs: {key finding} (source: {url})"` |
+| Established a repeating pattern | `create_entities` type `convention` | Pattern, When to use, Example |
 
 Before creating any entity, run `search_nodes` first — if a near-match exists, `add_observations` instead of duplicating.
 
@@ -191,7 +194,7 @@ Context7 fetches current, version-specific documentation and code examples for l
 2. Use the `topic` parameter to narrow results (e.g. topic: "routing" for Next.js, topic: "hooks" for React)
 3. If documentation looks wrong or outdated after fetching, do NOT blindly trust it — flag the concern
 
-For **when** to use Context7 (verification discipline, version checking), see `core/engineering-discipline`.
+For **when** to use Context7 (verification discipline, version checking), see `core/process/engineering-discipline`.
 
 ---
 

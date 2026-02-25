@@ -257,5 +257,5 @@ Before deciding what belongs in a loader vs client state, run `open_nodes(["Vend
 
 ## See Also
 
-- `core/react-components` — Component patterns, useEffect (auto-loaded)
-- `core/ssr-hydration` — Hydration considerations for state (auto-loaded)
+- `core/frontend/react-components` — Component patterns, useEffect (auto-loaded)
+- `core/frontend/ssr-hydration` — Hydration considerations for state (auto-loaded)

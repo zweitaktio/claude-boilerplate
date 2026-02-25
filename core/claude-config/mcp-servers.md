@@ -13,7 +13,7 @@ tags: [mcp, serena, context7, playwright, configuration, setup]
 # MCP Server Setup
 
 Installation and configuration reference for MCP servers.
-For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/core/mcp-tools.md`).
+For **tool usage rules**, see `core/process/mcp-tools` (auto-loaded from `.claude/rules/core/mcp-tools.md`).
 
 ## Documentation
 
@@ -94,7 +94,7 @@ Modes can be added with `--mode <name>`:
 ### Disabled Tools (in `.serena/project.yml`)
 
 Non-essential tools that duplicate Claude Code built-ins are excluded.
-See `core/mcp-tools` for the full exclusion list and rationale.
+See `core/process/mcp-tools` for the full exclusion list and rationale.
 
 ## Context7 with API Key
 

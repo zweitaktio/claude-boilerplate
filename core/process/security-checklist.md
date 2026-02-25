@@ -54,5 +54,5 @@ Before implementing protected routes, run `open_nodes(["VendorReactRouter7Routin
 
 ## See Also
 
-- `core/code-review` — Security in code review priority (auto-loaded)
-- `core/ssr-hydration` — Server-only code patterns (auto-loaded)
+- `core/process/code-review` — Security in code review priority (auto-loaded)
+- `core/frontend/ssr-hydration` — Server-only code patterns (auto-loaded)

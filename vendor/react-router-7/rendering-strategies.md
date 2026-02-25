@@ -155,6 +155,29 @@ The rendering strategy affects which loaders run where:
 | SPA        | Never runs                                 | Browser always        |
 | Pre-render | Build time                                 | Browser on navigation |
 
+## Per-Route Client-Only Rendering
+
+For individual routes that must not SSR (without setting `ssr: false` app-wide), use `clientLoader` with no server `loader` plus `HydrateFallback`:
+
+```tsx
+// routes/canvas.tsx
+import { MyCanvas } from '~/components/my-canvas.client'
+
+export function clientLoader() {
+  return {}
+}
+
+export function HydrateFallback() {
+  return <div>Loading...</div>
+}
+
+export default function CanvasRoute() {
+  return <MyCanvas />
+}
+```
+
+During SSR, only `HydrateFallback` renders. After hydration, `clientLoader` resolves (immediately, since it returns `{}`), then the default component renders. Import browser-only deps from `.client.tsx` files to exclude them from the server bundle.
+
 ## Configuration Reference
 
 ```ts

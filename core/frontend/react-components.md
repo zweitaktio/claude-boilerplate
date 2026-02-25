@@ -282,6 +282,6 @@ Before writing route components, run `search_nodes("domain: routing")` → `open
 
 ## See Also
 
-- `core/state-management` — When to use Context vs Zustand vs Redux (auto-loaded)
-- `core/ssr-hydration` — Client-only code patterns (auto-loaded)
-- `core/i18n` — Translation in components (auto-loaded)
+- `core/frontend/state-management` — When to use Context vs Zustand vs Redux (auto-loaded)
+- `core/frontend/ssr-hydration` — Client-only code patterns (auto-loaded)
+- `core/frontend/i18n` — Translation in components (auto-loaded)

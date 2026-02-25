@@ -26,25 +26,25 @@ The boilerplate provides sensible defaults, not mandates. When in doubt, ask the
 
 Core conventions are deployed to `.claude/rules/core/`. Some load on every interaction, others are **path-scoped** and only load when touching relevant files — keeping context lean.
 
-**Always loaded** (~20KB):
-- `core/tooling` — Commands, verification, git, agent behavior
-- `core/mcp-tools` — MCP tool usage rules, workflows, and division of labor
-- `core/security-checklist` — Security review standards
-- `core/code-review` — Code review standards
-- `core/engineering-discipline` — Task assessment, verification, change classification, failure protocol
-- `core/monorepo` — Directory discipline for multi-package projects
+**Always loaded** (~20KB) — `core/process/`:
+- `core/process/tooling` — Commands, verification, git, agent behavior
+- `core/process/mcp-tools` — MCP tool usage rules, workflows, and division of labor
+- `core/process/security-checklist` — Security review standards
+- `core/process/code-review` — Code review standards
+- `core/process/engineering-discipline` — Task assessment, verification, change classification, failure protocol
+- `core/process/monorepo` — Directory discipline for multi-package projects
 
 **Path-scoped** (loaded only when touching matching files):
-- `core/react-components` — `**/*.tsx`, `**/*.ts` — Component patterns, useEffect
-- `core/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand vs Redux
-- `core/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
-- `core/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
-- `core/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
-- `core/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
-- `core/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
-- `core/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
-- `core/mcp-servers` — `.claude/**`, `.serena/**` — MCP server setup
-- `core/writing-rules` — `CLAUDE.md`, `.claude/**`, `SKILL.md`, `**/rules/**` — How to write effective agent rules
+- `core/frontend/react-components` — `**/*.tsx`, `**/*.ts` — Component patterns, useEffect
+- `core/frontend/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand vs Redux
+- `core/frontend/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
+- `core/frontend/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
+- `core/testing/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
+- `core/testing/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
+- `core/claude-config/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
+- `core/claude-config/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
+- `core/claude-config/mcp-servers` — `.claude/**`, `.serena/**` — MCP server setup
+- `core/claude-config/writing-rules` — `CLAUDE.md`, `.claude/**`, `SKILL.md`, `**/rules/**` — How to write effective agent rules
 
 Vendor docs are stored in the Knowledge Graph — use `search_nodes` + `open_nodes` when working in a specific domain.
 
@@ -75,24 +75,28 @@ Then invoke in any project with `/webstack init` or `/webstack update`.
 ```
 claude-boilerplate/
 ├── SKILL.md                    # This file — orchestration only
-├── core/                       # → deployed to .claude/rules/core/
-│   ├── tooling.md
-│   ├── claude-md.md
-│   ├── claude-settings.md
-│   ├── mcp-servers.md
-│   ├── mcp-tools.md
-│   ├── playwright-mcp.config.json  # Copy to .claude/ in project
-│   ├── react-components.md
-│   ├── state-management.md
-│   ├── i18n.md
-│   ├── ssr-hydration.md
-│   ├── security-checklist.md
-│   ├── code-review.md
-│   ├── e2e-testing.md
-│   ├── engineering-discipline.md
-│   ├── writing-rules.md
-│   ├── monorepo.md
-│   └── unit-testing.md
+├── core/                       # → deployed to .claude/rules/core/ (subdir stripped)
+│   ├── process/                # Always-loaded, no path-scoping
+│   │   ├── tooling.md
+│   │   ├── mcp-tools.md
+│   │   ├── security-checklist.md
+│   │   ├── code-review.md
+│   │   ├── engineering-discipline.md
+│   │   └── monorepo.md
+│   ├── frontend/               # Path-scoped to *.tsx, *.ts
+│   │   ├── react-components.md
+│   │   ├── state-management.md
+│   │   ├── i18n.md
+│   │   └── ssr-hydration.md
+│   ├── testing/                # Path-scoped to test files
+│   │   ├── e2e-testing.md
+│   │   └── unit-testing.md
+│   ├── claude-config/          # Path-scoped to .claude/**, CLAUDE.md
+│   │   ├── claude-md.md
+│   │   ├── claude-settings.md
+│   │   ├── mcp-servers.md
+│   │   └── writing-rules.md
+│   └── playwright-mcp.config.json  # Copy to .claude/ in project
 ├── vendor/                     # → deployed as Knowledge Graph entities
 │   ├── daisyui-5.md            # → entity: VendorDaisyui5
 │   ├── tailwind-4.md           # → entity: VendorTailwind4
@@ -199,10 +203,10 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    | Template | Target | Action | Reason |
    |----------|--------|--------|--------|
-   | core/tooling | rules | CREATE | Always applies |
+   | core/process/tooling | rules | CREATE | Always applies |
    | vendor/daisyui-5 | graph | CREATE | daisyui@5.5.14 detected |
    | vendor/payload-cms-3 | graph | SKIP | payload not in dependencies |
-   | core/e2e-testing | rules | SKIP | playwright not installed |
+   | core/testing/e2e-testing | rules | SKIP | playwright not installed |
    ```
 
 5. **Wait for user approval**
@@ -211,8 +215,8 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    For `target: rules`:
    ```
-   Read: ~/.claude/skills/webstack/core/tooling.md
-   Write: .claude/rules/core/tooling.md
+   Read: ~/.claude/skills/webstack/core/process/tooling.md
+   Write: .claude/rules/core/tooling.md  (subdir stripped from target)
    ```
 
    For `target: graph` (vendor docs → Knowledge Graph entities):
@@ -307,8 +311,8 @@ In addition to per-template version comparison, the skill records the boilerplat
 4. **For each applicable template**, read both sources:
 
    For `target: rules`:
-   - Template: `~/.claude/skills/webstack/core/{name}.md`
-   - Deployed: `.claude/rules/core/{name}.md` (may not exist)
+   - Template: `~/.claude/skills/webstack/core/{subdir}/{name}.md`
+   - Deployed: `.claude/rules/core/{name}.md` (subdir stripped; may not exist)
 
    For `target: graph`:
    - Template: `~/.claude/skills/webstack/vendor/{name}.md`
@@ -343,11 +347,11 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    | Template | Target | Action | Version | Notes |
    |----------|--------|--------|---------|-------|
-   | core/tooling | rules | UPDATE | 1.3.0 → 1.4.0 | |
+   | core/process/tooling | rules | UPDATE | 1.3.0 → 1.4.0 | |
    | vendor/daisyui-5 | graph | UPDATE | 1.0.0 → 1.1.0 | 2 extra observations preserved |
    | vendor/tailwind-4 | graph | SKIP | 1.1.0 = 1.1.0 | |
-   | core/monorepo | rules | REVIEW | 1.1.0 = 1.1.0 | content changed (SHA diff), version not bumped |
-   | core/e2e-testing | rules | SKIP | — | playwright not installed |
+   | core/process/monorepo | rules | REVIEW | 1.1.0 = 1.1.0 | content changed (SHA diff), version not bumped |
+   | core/testing/e2e-testing | rules | SKIP | — | playwright not installed |
    ```
 
 9. **Complete drift report** (C3 check):
@@ -374,17 +378,48 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Copy template content verbatim. Do NOT retype, summarize, or reinterpret.
 
-12. **Update config files** if changed:
+12. **KG health check** — verify deployed entities are sound:
+
+    **a) Version match** — each vendor entity's `applies:` condition must match the project's actual installed version:
+    ```
+    open_nodes(["VendorDaisyui5"]) → applies: daisyui@5
+    package.json → daisyui@5.8.0 → PASS (major matches)
+
+    open_nodes(["VendorDaisyui5"]) → applies: daisyui@5
+    package.json → daisyui@6.1.0 → MISMATCH — entity is for v5, project has v6
+    ```
+    Flag mismatches in the report. If a template for the correct version exists, offer to replace. If not, warn that the entity may contain outdated patterns.
+
+    **b) Entity relations** — vendor entities in the same domain or with cross-domain dependencies should be linked via `create_relations`:
+
+    | Relation type | Example | When |
+    |---------------|---------|------|
+    | `same_domain` | `VendorReactRouter7Routing` ↔ `VendorReactRouter7DataLoading` | Entities share a domain |
+    | `depends_on` | `VendorDaisyui5` → `VendorTailwind4` | Library requires another |
+    | `integrates_with` | `VendorReactRouter7I18n` → `VendorReactRouter7Routing` | Cross-domain integration |
+
+    For each deployed entity, check if expected relations exist (`open_nodes` returns relations). Create missing ones. Don't duplicate existing relations.
+
+    Report findings:
+    ```
+    | Entity | Version | Relations | Issue |
+    |--------|---------|-----------|-------|
+    | VendorDaisyui5 | PASS (5.8.0) | 2 linked | — |
+    | VendorReactRouter7Routing | PASS (7.9.2) | 0 linked | MISSING: same_domain links to other RR7 entities |
+    | VendorPayloadCms3 | MISMATCH (v4 installed) | 1 linked | Entity is for v3, project has v4 |
+    ```
+
+13. **Update config files** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
 
-13. **Cleanup legacy artifacts:**
+14. **Cleanup legacy artifacts:**
     - Check for old Serena memory structures (see init step 9 for full list)
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
 
-14. **Record boilerplate SHA:**
+15. **Record boilerplate SHA:**
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
@@ -476,10 +511,10 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 **If version cannot be parsed**, skip the template and warn the user.
 
 **Target deployment rules:**
-| Target | Deploy to | Discovery |
-|--------|-----------|-----------|
-| `rules` | `.claude/rules/core/{name}.md` | Auto-discovered by Claude Code |
-| `graph` | KG entity `Vendor{PascalCaseName}` | `search_nodes` + `open_nodes` |
+| Target | Source | Deploy to | Discovery |
+|--------|--------|-----------|-----------|
+| `rules` | `core/{subdir}/{name}.md` | `.claude/rules/core/{name}.md` (subdir stripped) | Auto-discovered by Claude Code |
+| `graph` | `vendor/{name}.md` | KG entity `Vendor{PascalCaseName}` | `search_nodes` + `open_nodes` |
 
 **Version comparison rules:**
 - Parse version from YAML frontmatter (first `---` block)
@@ -548,7 +583,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 
 ## Automatic Updates During Work
 
-These happen outside of this skill — they are standing instructions for how conventions evolve during normal development. The write triggers and observation formats are defined in `core/mcp-tools` (deployed to `.claude/rules/core/mcp-tools.md`). The CLAUDE.md bootstrap template includes the observation format strings for easy reference.
+These happen outside of this skill — they are standing instructions for how conventions evolve during normal development. The write triggers and observation formats are defined in `core/process/mcp-tools` (deployed to `.claude/rules/core/mcp-tools.md`). The CLAUDE.md bootstrap template includes the observation format strings for easy reference.
 
 Session progress → Claude Code auto memory (`MEMORY.md`), not the Knowledge Graph.
 
@@ -558,7 +593,7 @@ Session progress → Claude Code auto memory (`MEMORY.md`), not the Knowledge Gr
 
 When you discover something that would help other projects:
 1. **Vendor issues:** Add to `vendor/{library}.md` in the boilerplate under "Known Issues"
-2. **General patterns:** Update the relevant `core/*.md` template
+2. **General patterns:** Update the relevant `core/{subdir}/*.md` template
 3. **New library:** Create a new `vendor/{library}.md` template with `applies` and `target: graph`
 
 Examples of what to contribute back:
@@ -640,7 +675,7 @@ Load them by domain before starting work using `search_nodes`.
 
 ### Knowledge accumulation
 
-Write triggers are defined in `core/mcp-tools` (auto-loaded). Key observation formats:
+Write triggers are defined in `core/process/mcp-tools` (auto-loaded). Key observation formats:
 - Pitfalls: `"Pitfall: {what} — {why}"`
 - GitHub issues: `"GitHub: {url} — {summary}"`
 - Doc findings: `"Docs: {key finding} (source: {url})"`

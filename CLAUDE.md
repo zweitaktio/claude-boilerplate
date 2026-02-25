@@ -20,7 +20,7 @@ Templates deploy to two targets based on their `target` frontmatter field:
 
 | Directory | Target | Deploys to | Discovery |
 |-----------|--------|------------|-----------|
-| `core/` | `rules` | `.claude/rules/core/{name}.md` in target project | Auto-loaded by Claude Code every turn |
+| `core/{subdir}/` | `rules` | `.claude/rules/core/{name}.md` in target project (subdir stripped) | Auto-loaded by Claude Code every turn |
 | `vendor/` | `graph` | Knowledge Graph entities (`vendor_doc` type) | Queried via `search_nodes` + `open_nodes` |
 | `issues/` | `graph` | Knowledge Graph entities (`bug_resolution` type) | Templates only — not deployed directly |
 
@@ -80,5 +80,5 @@ When adding a new template:
 ## Key Files
 
 - **SKILL.md** — Source of truth for skill operation: invocation logic, naming tables, domain mapping, CLAUDE.md bootstrap template
-- **core/tooling.md** — Most frequently updated core template (commands, verification workflow, git rules, agent behavior)
-- **core/claude-md.md** — Conventions for CLAUDE.md files deployed to target projects
+- **core/process/tooling.md** — Most frequently updated core template (commands, verification workflow, git rules, agent behavior)
+- **core/claude-config/claude-md.md** — Conventions for CLAUDE.md files deployed to target projects

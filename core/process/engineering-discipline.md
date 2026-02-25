@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 priority: high
@@ -26,6 +26,17 @@ Before touching code, understand what you're dealing with.
 3. Determine if changes cross package/workspace boundaries
 4. Decompose into incremental, independently verifiable steps before starting
 5. Check existing patterns in the codebase before creating anything new
+
+## Planning
+
+**Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
+
+Before finalizing a plan, check for known pitfalls:
+1. `search_nodes("domain: <relevant domain>")` — load vendor docs for libraries the task touches
+2. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
+3. Read any returned observations for gotchas, version-specific quirks, or past failures that apply
+
+Incorporate findings into the plan — flag risks, reference specific pitfalls, and choose approaches that avoid known issues. A plan that repeats a documented mistake is worse than no plan.
 
 ## Verification Discipline
 

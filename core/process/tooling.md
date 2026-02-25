@@ -1,5 +1,5 @@
 ---
-version: 1.7.0
+version: 1.8.0
 applies: Always
 target: rules
 priority: high
@@ -133,6 +133,22 @@ for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 | `sed`, `awk` | Edit tool |
 | `echo >`, heredoc | Write tool |
 
+### File Copy/Move — Use Bash, Not Read+Write
+
+When the task is to copy or move a file without modification, use `cp` or `mv` directly.
+Reading a file into context just to write it elsewhere wastes tokens and adds no value.
+
+```bash
+# Good — zero tokens spent on file content
+cp src/config.default.json src/config.json
+mv old/component.tsx new/component.tsx
+
+# Bad — entire file loaded into context for no reason
+# Read src/config.default.json → Write src/config.json (same content)
+```
+
+Only read a file when you need to understand or modify its content.
+
 ### Edit Tool — Indentation Awareness
 
 The Edit tool cannot match literal tab characters. If the project uses tabs (check `.editorconfig` or the file itself), use these alternatives:
@@ -200,10 +216,10 @@ Env: `PAYLOAD_URL` overrides the default `http://localhost:3000`.
 
 ### Always Do
 - **Use task lists** for any work with 2+ steps — create tasks, track progress, keep the user informed
-- Use platform tools that don't require manual approval (see `core/claude-settings`)
+- Use platform tools that don't require manual approval (see `core/claude-config/claude-settings`)
 - Use absolute paths when possible
 - Verify `pwd` before file operations in monorepos
-- Follow `core/engineering-discipline` for task assessment, verification, and implementation process
+- Follow `core/process/engineering-discipline` for task assessment, verification, and implementation process
 
 ## Monorepo Verification
 
@@ -225,5 +241,5 @@ Core conventions are auto-loaded from `.claude/rules/core/` — no manual loadin
 
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides
-2. Load KG entities for the task's domain — see `core/mcp-tools` and domain-specific rules for exact queries
+2. Load KG entities for the task's domain — see `core/process/mcp-tools` and domain-specific rules for exact queries
 3. If `.editorconfig` exists at project root, read it — indentation style affects tool selection (see Edit Tool — Indentation Awareness above)

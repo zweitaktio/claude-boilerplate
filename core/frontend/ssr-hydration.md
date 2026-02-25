@@ -110,5 +110,5 @@ Before choosing a rendering strategy, run `open_nodes(["VendorReactRouter7Render
 
 ## See Also
 
-- `core/react-components` — Component patterns (auto-loaded)
-- `core/code-review` — SSR safety checks (auto-loaded)
+- `core/frontend/react-components` — Component patterns (auto-loaded)
+- `core/process/code-review` — SSR safety checks (auto-loaded)

@@ -87,10 +87,10 @@ Load these before reviewing code that touches their domain:
 
 | If code touches... | Reference | Look for |
 |--------------------|-----------|----------|
-| React components | `core/react-components` (auto-loaded) | Arrow functions, Props typing, named exports |
-| Translations | `core/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
-| SSR/hydration | `core/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
-| Security | `core/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
+| React components | `core/frontend/react-components` (auto-loaded) | Arrow functions, Props typing, named exports |
+| Translations | `core/frontend/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
+| SSR/hydration | `core/frontend/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
+| Security | `core/process/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
 | UI/styling | KG `search_nodes("domain: styling")` | DaisyUI classes, v5 form patterns |
 | Tailwind | KG `search_nodes("domain: styling")` | CVA patterns, twMerge usage |
 | Routing/loaders | KG `search_nodes("domain: routing")` | Route IDs, loader types, fetcher patterns |
@@ -98,4 +98,4 @@ Load these before reviewing code that touches their domain:
 
 ## Early Bailout
 
-Fail fast after 2-3 repeated failures. See `core/engineering-discipline` Failure Protocol for the full procedure.
+Fail fast after 2-3 repeated failures. See `core/process/engineering-discipline` Failure Protocol for the full procedure.
