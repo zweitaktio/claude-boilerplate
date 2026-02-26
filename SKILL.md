@@ -310,28 +310,31 @@ In addition to per-template version comparison, the skill records the boilerplat
    - This list supplements the version comparison in step 6 — templates with content changes but matching versions are flagged as `REVIEW`
    - If `.claude/webstack.sha` doesn't exist, skip this step (rely on version comparison only)
 
-4. **For each applicable template**, read both sources:
+4. **Compare versions — don't read full files yet.**
+
+   The version number is all that matters for the comparison. Reading every template into context wastes tokens. Use targeted extraction instead:
 
    For `target: rules`:
-   - Template: `~/.claude/skills/webstack/core/{subdir}/{name}.md`
-   - Deployed: `.claude/rules/core/{name}.md` (subdir stripped; may not exist)
-
-   For `target: graph`:
-   - Template: `~/.claude/skills/webstack/vendor/{name}.md`
-   - Deployed: `open_nodes(["Vendor{PascalCaseName}"])` — check if entity exists, read `version:` observation
-
-5. **Parse frontmatter** from template files:
-   ```yaml
-   ---
-   version: 1.0.0
-   applies: daisyui@5
-   target: graph
-   ---
+   ```bash
+   # Extract just the version from template frontmatter (3 lines, not 200)
+   head -5 ~/.claude/skills/webstack/core/{subdir}/{name}.md | grep '^version:'
+   # Extract version from deployed file
+   head -5 .claude/rules/core/{name}.md | grep '^version:'
    ```
 
-   For KG entities, extract the `version:` observation from the entity's observations array.
+   For `target: graph`:
+   ```bash
+   # Template version
+   head -5 ~/.claude/skills/webstack/vendor/{name}.md | grep '^version:'
+   ```
+   ```
+   # Deployed version — single KG query, not full entity read
+   open_nodes(["Vendor{PascalCaseName}"]) → find "version:" observation
+   ```
 
-6. **Compare versions** and cross-reference with SHA diff (step 3):
+   Only read the full template content in step 11 when actually deploying an UPDATE or CREATE.
+
+5. **Build the action table** by cross-referencing versions with the SHA diff (step 3):
 
    | Template version | Deployed version | In SHA diff? | Action |
    |------------------|------------------|-------------|--------|
@@ -341,11 +344,11 @@ In addition to per-template version comparison, the skill records the boilerplat
    | 1.0.0 | (entity missing) | — | **CREATE** — new |
    | (any) | (no version observation) | — | **REPLACE** — legacy entity |
 
-7. **Detect project-specific observations** in existing KG entities:
+6. **Detect project-specific observations** in existing KG entities:
    - Observations that are NOT part of the standard set (version, applies, tags, domain, source, content)
    - These are project-specific additions (gotchas, known issues) — preserve them
 
-8. **Propose changes to the user** in a table:
+7. **Propose changes to the user** in a table:
    ```
    | Template | Target | Action | Version | Notes |
    |----------|--------|--------|---------|-------|
@@ -356,19 +359,21 @@ In addition to per-template version comparison, the skill records the boilerplat
    | core/testing/e2e-testing | rules | SKIP | — | playwright not installed |
    ```
 
-9. **Complete drift report** (C3 check):
-   - Compare entity names in the CLAUDE.md domain table against the entities proposed for CREATE/UPDATE/SKIP in step 8
+8. **Complete drift report** (C3 check):
+   - Compare entity names in the CLAUDE.md domain table against the entities proposed for CREATE/UPDATE/SKIP in step 7
    - Flag entities listed in the table that no longer exist (deleted templates) or were skipped (no longer applies)
    - Flag deployed entities missing from the table
    - Present the unified drift report (findings from step 1 + C3)
 
-10. **Wait for user approval**
+9. **Wait for user approval**
 
-11. **Deploy updates based on `target` field:**
+10. **Deploy updates based on `target` field:**
 
-   For `target: rules` — same mechanics as init step 6.
+    Read full template content **now** — only for templates marked UPDATE or CREATE.
 
-   For `target: graph` — update KG entities in place:
+    For `target: rules` — same mechanics as init step 6.
+
+    For `target: graph` — update KG entities in place:
    ```
    1. open_nodes(["VendorDaisyui5"]) — get current observations
    2. Identify standard observations: version:, applies:, tags:, domain:, source:, and content body
@@ -380,7 +385,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Copy template content verbatim. Do NOT retype, summarize, or reinterpret.
 
-12. **KG health check** — verify deployed entities are sound:
+11. **KG health check** — verify deployed entities are sound:
 
     **a) Version match** — each vendor entity's `applies:` condition must match the project's actual installed version:
     ```
@@ -411,20 +416,20 @@ In addition to per-template version comparison, the skill records the boilerplat
     | VendorPayloadCms3 | MISMATCH (v4 installed) | 1 linked | Entity is for v3, project has v4 |
     ```
 
-13. **Update config files** if changed:
+12. **Update config files** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
 
-14. **Cleanup legacy artifacts:**
+13. **Cleanup legacy artifacts:**
     - Check for old Serena memory structures (see init step 9 for full list)
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
 
-15. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
+14. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
 
     **a) KG pitfalls on vendor entities:**
-    For each deployed `vendor_doc` entity, check for project-specific observations (pitfalls, GitHub issues, doc findings added during work). These are the observations preserved in step 7/11 — if they're generalizable, they belong in the boilerplate template.
+    For each deployed `vendor_doc` entity, check for project-specific observations (pitfalls, GitHub issues, doc findings added during work). These are the observations preserved in step 6/10 — if they're generalizable, they belong in the boilerplate template.
     ```
     open_nodes(["VendorReactRouter7Routing"]) →
       "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
@@ -461,7 +466,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
     This step is informational — skip silently if no candidates are found.
 
-16. **Record boilerplate SHA:**
+15. **Record boilerplate SHA:**
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
