@@ -1,5 +1,5 @@
 ---
-version: 1.9.0
+version: 1.10.0
 applies: Always
 target: rules
 priority: high
@@ -165,6 +165,27 @@ If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
 4. Keep it — it becomes reusable, shareable, and versionable
 
 This applies equally to one-off tasks. A script file is always preferable to an inline command that scrolls past in an approval prompt.
+
+### Shell Compatibility — macOS/Darwin Baseline
+
+All shell scripts must run on macOS with its default toolchain:
+
+- **Bash 3.2** (macOS ships v3.2 due to GPLv3 — no Bash 4+ features)
+- **BSD coreutils** (`sed`, `find`, `grep`, `awk`, `xargs` — not GNU)
+
+Forbidden (Bash 4+):
+- Associative arrays (`declare -A`)
+- `${var,,}` / `${var^^}` (case conversion)
+- `|&` (pipe stderr), `coproc`, `readarray`/`mapfile`
+- `[[ $var =~ regex ]]` with stored patterns in variables
+
+Forbidden (GNU-only):
+- `sed -i 's/...'` without `''` arg — BSD requires `sed -i '' 's/...'`
+- `grep -P` (PCRE) — use `grep -E` (extended regex)
+- `find -regex` with GNU syntax — use `-name` or `-path`
+- `readlink -f` — use `realpath` or manual loop
+
+Use `#!/bin/bash` (not `#!/usr/bin/env bash`) and test on macOS before assuming portability.
 
 ## Payload API Scripts
 
