@@ -1,5 +1,5 @@
 ---
-version: 1.10.0
+version: 1.11.0
 applies: Always
 target: rules
 priority: high
@@ -165,6 +165,45 @@ If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
 4. Keep it — it becomes reusable, shareable, and versionable
 
 This applies equally to one-off tasks. A script file is always preferable to an inline command that scrolls past in an approval prompt.
+
+### Script Requirements
+
+Every script must:
+
+1. **Source secrets from `.env`** — never accept secrets as CLI arguments or hardcode them.
+   Secrets in arguments appear in `ps` output and shell history. Source from `.env` files instead.
+   ```bash
+   # Good — secrets stay out of context and process list
+   [ -f .env ] && source .env
+   curl -H "Authorization: Bearer ${API_KEY}" ...
+
+   # Bad — secret visible in context, history, and ps output
+   ./scripts/deploy.sh --token sk-1234abc
+   ```
+   The PreToolUse hook blocks `$VAR` expansion in Bash commands for this reason — scripts that source `.env` internally sidestep this by keeping secrets out of the agent's context entirely.
+
+2. **Support `--help`** — print usage, purpose, and required env vars. Another agent or human running the script months later should understand what it does without reading the source.
+   ```bash
+   if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+     echo "Usage: $(basename "$0") [options]"
+     echo ""
+     echo "Syncs product data from Stripe to the local database."
+     echo ""
+     echo "Required env vars (via .env):"
+     echo "  STRIPE_SECRET_KEY    Stripe API key"
+     echo "  PAYLOAD_URL          Payload CMS base URL (default: http://localhost:3000)"
+     echo ""
+     echo "Options:"
+     echo "  --dry-run    Show what would change without writing"
+     exit 0
+   fi
+   ```
+
+3. **Validate required env vars early** — fail fast with a clear message, not with a cryptic curl error 10 lines later.
+   ```bash
+   [ -f .env ] && source .env
+   : "${STRIPE_SECRET_KEY:?Missing STRIPE_SECRET_KEY — add it to .env}"
+   ```
 
 ### Shell Compatibility — macOS/Darwin Baseline
 
