@@ -20,6 +20,8 @@
       "permissions": ["clipboard-read", "clipboard-write"]
     }
   },
+  "outputDir": ".claude/screenshots",
+  "outputMode": "file",
   "blockServiceWorkers": true,
   "timeout": {
     "action": 10000,

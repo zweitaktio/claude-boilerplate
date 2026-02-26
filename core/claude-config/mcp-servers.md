@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.1.0
 applies: Always
 target: rules
 paths:
@@ -41,7 +41,15 @@ claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config
 
 ## Playwright Config File
 
-Copy to `.claude/playwright-mcp.config.json` in your project:
+**This config replaces any existing Playwright MCP config** in the project. On `/webstack init` or `/webstack update`, the skill copies its config to `.claude/playwright-mcp.config.json`, overwriting what's there. Project-specific tweaks should be made after deployment.
+
+If the project already has a Playwright MCP server configured with a different `--config` path, update the MCP server command to point to `.claude/playwright-mcp.config.json`:
+```bash
+claude mcp remove playwright
+claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config .claude/playwright-mcp.config.json
+```
+
+Screenshots are saved to `.claude/screenshots/` (add to `.gitignore`).
 
 ```json
 {
@@ -65,6 +73,8 @@ Copy to `.claude/playwright-mcp.config.json` in your project:
       "permissions": ["clipboard-read", "clipboard-write"]
     }
   },
+  "outputDir": ".claude/screenshots",
+  "outputMode": "file",
   "blockServiceWorkers": true,
   "timeout": {
     "action": 10000,

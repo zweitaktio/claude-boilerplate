@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.0
 applies: Always
 target: rules
 priority: high
@@ -8,10 +8,19 @@ tags: [mcp, serena, context7, knowledge-graph, tools, workflow]
 
 # MCP Tools: Serena + Knowledge Graph + Context7
 
-This project uses three MCP servers. Use their tools proactively — don't fall back to
-reading entire files, grepping, or guessing at code structure.
+## Where to get information
 
-Total tool count: ~20 (9 Serena + 9 Knowledge Graph + 2 Context7).
+| You need... | Use | NOT |
+|-------------|-----|-----|
+| Library conventions, pitfalls, known bugs | KG `search_nodes` → `open_nodes` | Reading files, grepping docs, guessing |
+| Current API signatures, function params | Context7 `resolve-library-id` → `query-docs` | Outdated memory, guessing from types |
+| Code structure, symbol locations | Serena `find_symbol`, `get_symbols_overview` | Grepping filenames, guessing paths |
+| Filesystem ops, git, text search | Claude Code built-ins | Serena duplicates (disabled) |
+| Session progress & next steps | Claude Code auto memory (`MEMORY.md`) | KG (wrong tool for ephemeral state) |
+
+**KG is authoritative** for vendor/library information — it contains curated, project-specific docs seeded by the skill. If KG and Context7 disagree, trust KG. Context7 supplements with version-specific API details the KG may not cover.
+
+**Vendor docs live in the KG only.** They are not deployed as files in the project. Never try to read vendor documentation from the filesystem — use `search_nodes` → `open_nodes`.
 
 ---
 
@@ -204,18 +213,3 @@ When using `browser_take_screenshot`, **always set `type: "jpeg"`** — never us
 JPEG at the server's default quality produces significantly smaller images that fit
 within context limits more efficiently. PNG screenshots are unnecessarily large.
 
----
-
-## Division of labor
-
-| Need | Tool |
-|---|---|
-| Find/read/edit code at symbol level | Serena |
-| Filesystem browsing, grep, git, file creation | Claude Code built-in tools |
-| Session progress & next steps | Claude Code auto memory (`MEMORY.md`) |
-| Curated vendor docs (trusted over Context7) | Knowledge Graph `search_nodes` → `open_nodes` |
-| Architectural decisions, bug resolutions | Knowledge Graph `create_entities` |
-| "Why did we choose X over Y?" | Knowledge Graph `search_nodes` |
-| Vendor gotchas discovered during work | Knowledge Graph `add_observations` to `vendor_doc` entity |
-| Correcting outdated information | Knowledge Graph `delete_observations` + `add_observations` |
-| Library/framework API lookup (supplement) | Context7 `resolve-library-id` → `query-docs` |
