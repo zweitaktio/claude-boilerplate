@@ -1,4 +1,5 @@
 #!/bin/bash
+# version: 1.0.0
 # PreToolUse hook: reject Bash commands that use environment variables.
 #
 # Blocks:
@@ -12,6 +13,28 @@
 #   $0-$9, $*            — positional params (next char is digit/* not a letter)
 #   $'\n', $'\t'         — ANSI-C quoting (next char is quote not a letter)
 #   \$VAR                — escaped dollar (intentional literal)
+#
+# Compatible with Bash 3.2 (macOS default).
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  cat <<EOF
+reject-env-prefix.sh — Block Bash commands using environment variables
+
+Hook event: PreToolUse (matcher: Bash)
+
+Blocks inline env assignments (VAR=val cmd), export statements, and
+variable expansion (\$VAR, \${VAR}). Allows shell specials, command
+substitution, and escaped dollars.
+
+Dependencies: jq
+EOF
+  exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed." >&2
+  exit 1
+fi
 
 COMMAND=$(jq -r '.tool_input.command' < /dev/stdin)
 TRIMMED="${COMMAND#"${COMMAND%%[![:space:]]*}"}"

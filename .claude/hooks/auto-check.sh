@@ -1,4 +1,5 @@
 #!/bin/bash
+# version: 1.0.0
 # PostToolUse hook: run `yarn check` after file edits in a workspace.
 #
 # Walks up from the edited file to find the nearest package.json with a "check"
@@ -6,6 +7,28 @@
 # services/*/) and single-package projects alike.
 #
 # Skips: non-code files, files outside any workspace, missing check script.
+#
+# Compatible with Bash 3.2 (macOS default).
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  cat <<EOF
+auto-check.sh — Run yarn check after file edits
+
+Hook event: PostToolUse (matcher: Edit|Write)
+
+Walks up from the edited file to find the nearest package.json with a
+"check" script, then runs yarn check there. Skips non-code files,
+files outside any workspace, and missing check scripts.
+
+Dependencies: jq, yarn
+EOF
+  exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed." >&2
+  exit 1
+fi
 
 INPUT=$(cat)
 TOOL=$(echo "$INPUT" | jq -r '.tool_name')

@@ -1,11 +1,32 @@
 #!/bin/bash
+# version: 1.0.0
 # Stop hook: verify yarn check passes in all affected workspaces before Claude stops.
 #
 # Uses git diff to find changed files, derives workspaces, runs yarn check in each.
 # Catches cross-workspace breakage (e.g., backend type changes that break frontend)
 # and anything the per-edit auto-check hook missed.
 #
-# Compatible with bash 3.2 (macOS default) — no associative arrays.
+# Compatible with Bash 3.2 (macOS default) — no associative arrays.
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  cat <<EOF
+stop-gate.sh — Verify yarn check passes before Claude stops
+
+Hook event: Stop
+
+Uses git diff to find changed files, derives workspaces, and runs
+yarn check in each. Catches cross-workspace breakage and anything the
+per-edit auto-check hook missed.
+
+Dependencies: jq, git, yarn
+EOF
+  exit 0
+fi
+
+if ! command -v jq >/dev/null 2>&1; then
+  echo "Error: jq is required but not installed." >&2
+  exit 1
+fi
 
 INPUT=$(cat)
 

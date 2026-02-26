@@ -1,5 +1,5 @@
 ---
-version: 1.11.0
+version: 1.12.0
 applies: Always
 target: rules
 priority: high
@@ -156,6 +156,8 @@ For space-indented files, the Edit tool works normally.
 On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write and Serena over Edit for all file modifications.
 
 ### When Shell Logic IS Needed — Create a Script
+
+**Bash only** — all project scripts use Bash. No Python, Node/ts-node, or other runtimes for internal tooling scripts.
 
 If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
 

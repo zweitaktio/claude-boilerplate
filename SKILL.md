@@ -419,7 +419,13 @@ In addition to per-template version comparison, the skill records the boilerplat
 12. **Update config files and hooks** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
-    - Compare `~/.claude/skills/webstack/.claude/hooks/` with `.claude/hooks/` — copy new or updated hook scripts (`chmod +x`)
+    - Compare hook versions:
+      ```bash
+      head -2 ~/.claude/skills/webstack/.claude/hooks/{name}.sh | grep '# version:'
+      head -2 .claude/hooks/{name}.sh | grep '# version:'
+      ```
+    - Same logic as rules: **UPDATE** if version increased, **SKIP** if equal, **REVIEW** if content changed but version matches
+    - New hooks (in skill but not project): **CREATE** (`chmod +x`)
     - Merge `~/.claude/skills/webstack/.claude/settings.json` hooks key into `.claude/settings.json` — add missing hook entries, don't remove project-specific hooks or overwrite other settings
 
 13. **Cleanup legacy artifacts:**

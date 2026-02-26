@@ -1,8 +1,25 @@
 #!/bin/bash
+# version: 1.0.0
 # TaskCompleted hook: trigger a code quality review on files changed during the task.
 #
 # Uses git diff to identify the scope of changes, then returns context
 # prompting Claude to run a focused review on the affected files.
+#
+# Compatible with Bash 3.2 (macOS default).
+
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+  cat <<EOF
+post-plan-review.sh — Trigger code review on changed files after task completion
+
+Hook event: TaskCompleted
+
+Uses git diff to identify changed code files, then returns context
+prompting Claude to run a focused review on the affected files.
+
+Dependencies: git
+EOF
+  exit 0
+fi
 
 INPUT=$(cat)
 
