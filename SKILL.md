@@ -416,9 +416,11 @@ In addition to per-template version comparison, the skill records the boilerplat
     | VendorPayloadCms3 | MISMATCH (v4 installed) | 1 linked | Entity is for v3, project has v4 |
     ```
 
-12. **Update config files** if changed:
+12. **Update config files and hooks** if changed:
     - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
     - If skill version is newer, update project config
+    - Compare `~/.claude/skills/webstack/.claude/hooks/` with `.claude/hooks/` — copy new or updated hook scripts (`chmod +x`)
+    - Merge `~/.claude/skills/webstack/.claude/settings.json` hooks key into `.claude/settings.json` — add missing hook entries, don't remove project-specific hooks or overwrite other settings
 
 13. **Cleanup legacy artifacts:**
     - Check for old Serena memory structures (see init step 9 for full list)
