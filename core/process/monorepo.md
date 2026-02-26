@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: Always
 target: rules
 priority: high
@@ -95,11 +95,6 @@ yarn status    # Verify all connections
 
 ## Verification
 
-Each package is verified separately — never run `yarn check` from root.
-
-```bash
-cd backend && yarn check
-cd frontend && yarn check
-```
+`yarn check` runs automatically via PostToolUse hook in the workspace where the file was edited. Each package is verified separately — the hook walks up from the edited file to find the nearest `package.json` with a `check` script.
 
 See `core/process/tooling` for full verification workflow.

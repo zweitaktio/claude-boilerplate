@@ -244,11 +244,13 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Ensure `.memory/` directory exists before creating entities. Run `mkdir -p .memory` if needed.
 
-7. **Copy config files** to project:
+7. **Deploy config files and hooks** to project:
    ```
-   Read: ~/.claude/skills/webstack/core/playwright-mcp.config.json
-   Write: .claude/playwright-mcp.config.json
+   Copy: ~/.claude/skills/webstack/core/playwright-mcp.config.json → .claude/playwright-mcp.config.json
+   Copy: ~/.claude/skills/webstack/.claude/hooks/ → .claude/hooks/ (all .sh files, chmod +x)
+   Merge: ~/.claude/skills/webstack/.claude/settings.json → .claude/settings.json (merge hooks key)
    ```
+   If `.claude/settings.json` already exists, merge the `hooks` key — don't overwrite other settings.
 
 8. **Generate the Vendor Knowledge table** in CLAUDE.md:
    - Group deployed vendor entities by domain (routing, styling, backend, auth, i18n, cicd)
@@ -419,7 +421,47 @@ In addition to per-template version comparison, the skill records the boilerplat
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
 
-15. **Record boilerplate SHA:**
+15. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
+
+    **a) KG pitfalls on vendor entities:**
+    For each deployed `vendor_doc` entity, check for project-specific observations (pitfalls, GitHub issues, doc findings added during work). These are the observations preserved in step 7/11 — if they're generalizable, they belong in the boilerplate template.
+    ```
+    open_nodes(["VendorReactRouter7Routing"]) →
+      "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
+      "GitHub: https://github.com/remix-run/react-router/issues/11234 — confirmed"
+    → BACKPORT CANDIDATE — applies to all RR7 projects
+    ```
+
+    **b) Bug resolutions:**
+    `search_nodes("bug_resolution")` — scan for entries whose root cause is in a library (not project-specific business logic). These may warrant a new pitfall on the vendor template or a new `issues/` template.
+
+    **c) Project-created KG entities without skill counterparts:**
+    `search_nodes("vendor_doc")` — find vendor entities that don't match any skill template (no `source:` observation pointing to the boilerplate). These may be candidates for new vendor templates.
+
+    **d) Project rules not in the skill:**
+    Check `.claude/rules/` for rule files outside `core/` (project-created rules). If any encode generalizable patterns, they may belong as new core templates.
+
+    Present candidates in a table:
+    ```
+    ### Backport Candidates
+
+    | Source | Type | Content | Action |
+    |--------|------|---------|--------|
+    | VendorReactRouter7Routing | pitfall | clientLoader SSR behavior | Add to vendor/react-router-7/routing.md |
+    | HydrationMismatchOnDateFormat | bug_resolution | Date.now() server/client divergence | Add to vendor/react-router-7/routing.md Known Issues |
+    | VendorStripeCheckout | vendor_doc (no source) | Project-created Stripe reference | Create vendor/stripe-checkout.md template |
+    | .claude/rules/api-conventions.md | project rule | REST naming + error shape conventions | Consider new core template |
+    ```
+
+    If the user approves backports:
+    1. Read the skill source: `~/.claude/skills/webstack/vendor/{file}.md` or `core/{subdir}/{file}.md`
+    2. Add the pitfall/content to the appropriate section
+    3. Bump the template's version (patch for pitfall additions)
+    4. Inform the user that subsequent `/webstack update` runs on other projects will pick up the change
+
+    This step is informational — skip silently if no candidates are found.
+
+16. **Record boilerplate SHA:**
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```

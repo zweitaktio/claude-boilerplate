@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: Always
 target: rules
 priority: high
@@ -103,7 +103,7 @@ Before implementing, classify the change to determine required safeguards.
 
 1. **Track progress with task lists** — create tasks for any work with 2+ steps. Mark `in_progress` before starting, `completed` when done. This gives the user visibility into what's happening and what's left.
 2. **One logical change at a time** — don't bundle unrelated changes
-3. **Verify between steps** — run `yarn check` after each meaningful change
+3. **Verify between steps** — `yarn check` runs automatically via hook after each Edit/Write; read its output before continuing
 4. **Single-variable changes** — change one thing, check. Changing three things and having it break means you don't know which one caused it.
 5. **Rollback readiness** — before complex changes, ensure you can get back to a working state
 

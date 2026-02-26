@@ -1,5 +1,5 @@
 ---
-version: 1.8.0
+version: 1.9.0
 applies: Always
 target: rules
 priority: high
@@ -10,9 +10,11 @@ tags: [tooling, yarn, check, typescript, eslint, biome, verification, git]
 
 ## Verification Commands
 
-### `yarn check` — Primary Verification (run after EVERY change)
+### `yarn check` — Primary Verification (automated via hook)
 
-The single command that validates code correctness. **Never run individual linters in isolation.**
+The single command that validates code correctness — linting, formatting, type-checking in one pass.
+
+**`yarn check` runs automatically** via a PostToolUse hook after every Edit/Write to code files. You do not need to run it manually. If it fails, the errors appear in context — fix them and continue.
 
 ```bash
 # Typical yarn check structure (order matters):
@@ -23,19 +25,9 @@ tsc --build --noEmit && \
 echo '✓ All checks passed!'
 ```
 
-| Step | Tool | Purpose |
-|------|------|---------|
-| 1 | `eslint --fix` | Lint + auto-fix, cached for speed |
-| 2 | `prettier --write` | Format all files |
-| 3 | `react-router typegen` | Generate route types (if using RR7) |
-| 4 | `tsc --build --noEmit` | Type-check without emitting |
-| 5 | `jscpd` | Copy-paste detection (DRY enforcement) — optional but recommended |
-
 **Rules:**
-- Run `yarn check` after EVERY change — non-negotiable
-- Never run `yarn tsc`, `yarn eslint`, `yarn prettier` individually
-- If check fails, fix the issues and re-run
-- Only commit when `yarn check` passes
+- Never run `yarn tsc`, `yarn eslint`, `yarn prettier` individually — `yarn check` covers all
+- Only commit when `yarn check` passes (the hook ensures you see failures)
 
 ### `yarn build` — Full Build (use sparingly)
 
@@ -223,14 +215,10 @@ Env: `PAYLOAD_URL` overrides the default `http://localhost:3000`.
 
 ## Monorepo Verification
 
-For monorepos with frontend/backend/etc:
+`yarn check` runs automatically per-workspace via the PostToolUse hook — it finds the nearest `package.json` with a `check` script from the edited file. No manual runs needed.
 
+For cross-workspace type sync (if shared types):
 ```bash
-# Verify each workspace separately
-cd frontend && yarn check
-cd backend && yarn check
-
-# Type sync after backend changes (if shared types)
 cd backend && yarn generate:types && yarn copytypes
 cd frontend && yarn typecheck
 ```
