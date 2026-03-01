@@ -70,8 +70,8 @@ cd ../frontend && yarn check
 
 | Component | Port | Log file |
 |-----------|------|----------|
-| Backend | 3000 | `/tmp/backend.log` |
-| Frontend | 5173 | `/tmp/frontend.log` |
+| Backend | 3000 | `backend/.logs/dev-server.log` |
+| Frontend | 5173 | `frontend/.logs/dev-server.log` |
 | Stripe | — | `/tmp/stripe.log` |
 | PostgreSQL | 5432 | — |
 | Meilisearch | 7700 | — |

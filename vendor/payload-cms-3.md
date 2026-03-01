@@ -146,6 +146,32 @@ req.payload.logger.info({
 - `warn` — Recoverable issues
 - `debug` — Development only
 
+## Payload MCP Plugin (`@payloadcms/plugin-mcp`)
+
+When the project uses the Payload MCP plugin, Claude Code gets direct CRUD access to collections via `mcp__payload__*` tools (e.g. `findPages`, `updateTechnologies`, `createArticles`).
+
+### Parameter format — top-level fields, no wrapper
+
+**All collection fields are top-level parameters** alongside reserved keys (`id`, `locale`, `depth`, `draft`, etc.). The plugin destructures reserved keys and sends everything else as field data to `payload.update()` / `payload.create()`.
+
+```
+# ✅ Correct — fields are top-level
+updatePages { id: 8, locale: "de", seoTitle: "New Title", noIndex: true }
+createTechnologies { title: "Redis", slug: "redis", category: "database", _status: "published" }
+
+# ❌ Wrong — data wrapper becomes a non-existent field, silently ignored
+updatePages { id: 8, data: { seoTitle: "New Title" } }
+createTechnologies { data: { title: "Redis", slug: "redis" } }
+```
+
+**The `data` wrapper pattern fails silently** — the update reports success but no fields change. This is because `data` is not a reserved key, so it ends up in `fieldData` as a field named "data" which doesn't exist in any collection schema. Payload ignores unknown fields without error.
+
+### Layout fields (blocks with Lexical JSON)
+
+Layout fields work via MCP — including nested Lexical rich-text JSON, discriminated block type unions, and deeply nested structures (columns → text blocks). No REST API fallback needed.
+
+**Caveat:** The plugin generates its Zod validation schema from the running Payload config at server startup. If block definitions change, the backend server must be restarted for MCP to accept the new schema. A stale server will reject blocks with unrecognized fields.
+
 ## Known Issues
 
 ### PostgreSQL identifier length limit
