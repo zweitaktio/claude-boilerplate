@@ -1,35 +1,31 @@
 ---
-version: 2.1.0
+version: 3.1.0
 applies: Always
 target: rules
 paths:
   - ".claude/**"
-  - ".serena/**"
   - "**/*mcp*"
   - "**/*playwright*"
-tags: [mcp, serena, context7, playwright, configuration, setup]
+tags: [mcp, typescript-lsp, context-mode, context7, playwright, configuration, setup]
 ---
 
-# MCP Server Setup
+# MCP Server & Plugin Setup
 
-Installation and configuration reference for MCP servers.
+Installation and configuration reference for MCP servers and plugins.
 For **tool usage rules**, see `core/process/mcp-tools` (auto-loaded from `.claude/rules/core/mcp-tools.md`).
 
 ## Documentation
 
-| Server | Docs | Notes |
-|--------|------|-------|
-| Serena | [Configuration](https://oraios.github.io/serena/02-usage/050_configuration.html) | Contexts, modes, project setup |
+| Server / Plugin | Docs | Notes |
+|-----------------|------|-------|
 | Context7 | [GitHub](https://github.com/upstash/context7) | Library doc lookup |
 | Playwright | [GitHub](https://github.com/microsoft/playwright-mcp) | Browser automation |
+| typescript-lsp | [Marketplace](https://code.claude.com/docs/en/discover-plugins) | Code intelligence (plugin) |
+| context-mode | [GitHub](https://github.com/claude-context-mode/context-mode) | Large output handling (plugin) |
 
 ## Setup Commands
 
 ```bash
-# Serena — semantic code analysis, symbol navigation, LSP refactoring
-# Uses claude-code context to avoid duplicating Claude Code's built-in tools
-claude mcp add serena --scope project -- uvx --from git+https://github.com/oraios/serena serena start-mcp-server --context claude-code --project $(pwd)
-
 # Context7 — library documentation lookup
 # API key optional but recommended for higher rate limits (get at context7.com/dashboard)
 claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
@@ -37,6 +33,17 @@ claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
 # Playwright — browser automation, screenshots, testing
 # Uses config file for sane defaults (popups disabled, HTTPS errors ignored, etc.)
 claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config .claude/playwright-mcp.config.json
+```
+
+## Plugin Setup
+
+```bash
+# typescript-lsp — code intelligence (go-to-definition, find references, diagnostics)
+# Requires typescript-language-server binary in $PATH: npm i -g typescript-language-server typescript
+claude plugin install typescript-lsp --scope project
+
+# context-mode — sandbox execution for large outputs, context budget management
+claude plugin install context-mode@claude-context-mode --scope project
 ```
 
 ## Playwright Config File
@@ -83,29 +90,6 @@ Screenshots are saved to `.claude/screenshots/` (add to `.gitignore`).
 }
 ```
 
-## Serena Configuration
-
-### Contexts
-
-| Context | Use when... |
-|---------|-------------|
-| `claude-code` | Using Claude Code CLI — disables duplicate tools |
-| `ide` | Using IDE assistants (VSCode, Cursor, Cline) |
-| `desktop-app` | Using Claude Desktop — full toolset (default) |
-
-### Modes
-
-Modes can be added with `--mode <name>`:
-- `interactive` (default) — engage with user throughout task
-- `editing` (default) — enable code modification tools
-- `planning` — design before implementing
-- `no-onboarding` — skip project onboarding prompts
-
-### Disabled Tools (in `.serena/project.yml`)
-
-Non-essential tools that duplicate Claude Code built-ins are excluded.
-See `core/process/mcp-tools` for the full exclusion list and rationale.
-
 ## Context7 with API Key
 
 For higher rate limits, get a free key at [context7.com/dashboard](https://context7.com/dashboard):
@@ -128,6 +112,7 @@ claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp --api-ke
 
 ```bash
 claude mcp list
+claude plugin list
 ```
 
-All servers should show with `scope: project`.
+All servers should show with `scope: project`. Both plugins should show as installed.

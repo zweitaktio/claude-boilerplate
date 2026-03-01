@@ -28,7 +28,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 
 **Always loaded** (~20KB) — `core/process/`:
 - `core/process/tooling` — Commands, verification, git, agent behavior
-- `core/process/mcp-tools` — MCP tool usage rules, workflows, and division of labor
+- `core/process/mcp-tools` — MCP & plugin usage rules (typescript-lsp, KG, Context7), workflows
 - `core/process/security-checklist` — Security review standards
 - `core/process/code-review` — Code review standards
 - `core/process/engineering-discipline` — Task assessment, verification, change classification, failure protocol
@@ -43,10 +43,68 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/testing/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
 - `core/claude-config/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
 - `core/claude-config/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
-- `core/claude-config/mcp-servers` — `.claude/**`, `.serena/**` — MCP server setup
+- `core/claude-config/mcp-servers` — `.claude/**` — MCP server setup
 - `core/claude-config/writing-rules` — `CLAUDE.md`, `.claude/**`, `SKILL.md`, `**/rules/**` — How to write effective agent rules
 
+**Context budget:** Always-loaded rules total ~850 lines (~20KB). This is the per-turn baseline cost. If adding new always-loaded rules, check whether path-scoping is possible first.
+
+| Rule | Lines | Notes |
+|------|-------|-------|
+| tooling | ~300 | Largest — commands, verification, git, context-mode, agent behavior |
+| mcp-tools | ~170 | Tool usage rules, typescript-lsp triggers, KG read/write triggers |
+| engineering-discipline | ~150 | Task assessment, verification, change classification |
+| code-review | ~110 | Review standards |
+| security-checklist | ~60 | Security review checklist |
+| monorepo | ~30 | Directory discipline |
+
 Vendor docs are stored in the Knowledge Graph — use `search_nodes` + `open_nodes` when working in a specific domain.
+
+## Requirements
+
+This skill requires the following dependencies. Run the preflight check before init/update — **do not proceed if any are missing**.
+
+### CLI Tools
+
+```bash
+~/.claude/skills/webstack/scripts/preflight.sh
+```
+
+Outputs JSON with availability status. If any tool shows `"available": false`, tell the user the install command and stop.
+
+| Tool | Purpose | Install (macOS) | Install (Linux) |
+|------|---------|-----------------|-----------------|
+| `jq` | JSON parsing in evaluation scripts | `brew install jq` | `sudo apt install jq` / `sudo dnf install jq` |
+| `git` | SHA tracking, change detection | `xcode-select --install` | `sudo apt install git` |
+
+### MCP Servers
+
+Verify each by attempting a lightweight call. If any fails, show the missing server and the install command, then stop.
+
+| Server | Verify with | Purpose | Install (project-scoped) |
+|--------|------------|---------|--------------------------|
+| Knowledge Graph | `search_nodes("preflight")` | Vendor doc storage, bug resolutions, decisions | `claude mcp add memory --scope project -- npx -y @modelcontextprotocol/server-memory` |
+| Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp` |
+
+### Plugins
+
+Verify by checking if the tool is available in the current session. If missing, show the install command and stop.
+
+| Plugin | Verify with | Purpose | Install (project-scoped) |
+|--------|------------|---------|--------------------------|
+| typescript-lsp | `doctor` tool available | TypeScript code intelligence (go-to-definition, find references, diagnostics) | `claude plugin install typescript-lsp --scope project` |
+| context-mode | Any `mcp__plugin_context-mode_*` tool available | Large output handling, context budget management | `claude plugin install context-mode@claude-context-mode --scope project` |
+
+### Preflight Sequence
+
+Run this at the start of every `/webstack init` or `/webstack update`:
+
+1. Run `scripts/preflight.sh` — if exit code is non-zero, report missing CLI tools with install commands and stop
+2. Call `search_nodes("preflight")` — if the tool is not available, report "Knowledge Graph MCP server not configured" with install command and stop
+3. Call `resolve-library-id` with query `"react"` — if the tool is not available, report "Context7 MCP server not configured" with install command and stop
+4. Check if `doctor` tool is available — if not, report "typescript-lsp plugin not installed" with install command and stop
+5. Check if `mcp__plugin_context-mode_context-mode__execute` is available — if not, report "context-mode plugin not installed" with install command and stop
+
+If all checks pass, continue with the init/update flow.
 
 ## Installation
 
@@ -175,6 +233,8 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 ### On a new project (`/webstack init`)
 
+0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
+
 1. **Bootstrap CLAUDE.md:**
    - Check if `CLAUDE.md` exists in project root
    - If missing: create it using the bootstrap template (see "CLAUDE.md Bootstrap" section)
@@ -187,17 +247,11 @@ In addition to per-template version comparison, the skill records the boilerplat
    - Check file structure (`app/features/`, `.forgejo/`, `.gitea/`, etc.)
    - Note frameworks and exact versions
 
-3. **Evaluate each template's `applies` condition** from frontmatter:
-   ```yaml
-   ---
-   version: 1.0.0
-   applies: daisyui@5
-   target: rules
-   ---
+3. **Evaluate template applicability:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/evaluate-applies.sh /path/to/project
    ```
-   - Parse the `applies` field
-   - Check against detected stack (see "Applies conditions" below)
-   - Read the `target` field to determine deployment location
+   Parse the JSON output to build the action table. Each entry has `template`, `target`, `applies`, `matches` (boolean), and `reason`. If the script is unavailable or fails, fall back to manual evaluation (see `references/versioning.md` for applies condition spec).
 
 4. **Propose a plan to the user:**
    ```
@@ -252,36 +306,29 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    If `.claude/settings.json` already exists, merge the `hooks` key — don't overwrite other settings.
 
+   **Hooks inventory:**
+
+   | Hook | File | Event / Matcher | Purpose |
+   |------|------|----------------|---------|
+   | Auto-check | `auto-check.sh` | PostToolUse / `Edit\|Write` | Runs `yarn check` after code edits, finds nearest workspace |
+   | KG precheck | `kg-precheck.sh` | PreToolUse / `EnterPlanMode\|Task` | Injects KG lookup reminder when planning or spawning subagents |
+   | Env rejection | `reject-env-prefix.sh` | PreToolUse / `Bash` | Blocks `$VAR` expansion, `export VAR=`, inline env overrides |
+   | Stop gate | `stop-gate.sh` | Stop | Verifies `yarn check` passes in all affected workspaces before stopping |
+   | Post-task review | `post-plan-review.sh` | TaskCompleted | Triggers code quality review on changed files |
+
+   Each hook has a `# version:` comment on line 2. On update, compare hook versions with the same logic as rules: UPDATE if version increased, SKIP if equal, REVIEW if content changed but version matches.
+
 8. **Generate the Vendor Knowledge table** in CLAUDE.md:
    - Group deployed vendor entities by domain (routing, styling, backend, auth, i18n, cicd)
    - Replace the placeholder table in the `## Vendor Knowledge` section
    - Only include vendor entities that were actually deployed in step 6
 
-9. **Cleanup legacy artifacts** (for existing projects being re-initialized):
-   - Check for `.serena/memories/core/`, `.serena/memories/vendor/`, `.serena/memories/_index.md`
-   - Check if Serena `list_memories` returns any `vendor-*` or `core/*` entries
-   - If any found, propose cleanup:
-     ```
-     Legacy artifacts detected. These are no longer needed:
-
-     | Artifact | Action |
-     |----------|--------|
-     | .serena/memories/core/*.md | DELETE (now in .claude/rules/core/) |
-     | .serena/memories/vendor/*.md | DELETE (now in Knowledge Graph) |
-     | .serena/memories/_index.md | DELETE (no longer used) |
-     | .serena/memories/issues/*.md | DELETE (now in Knowledge Graph) |
-     | Serena memory: vendor-daisyui-5 | DELETE (now KG entity VendorDaisyui5) |
-     ```
-   - Wait for user approval before deleting anything
-   - Delete approved items (files via `rm`, Serena memories via `delete_memory`)
-   - **Never delete `.serena/` itself or `.serena/project.yml`** — Serena is still used for symbol tools
-
-10. **Record boilerplate SHA:**
+9. **Record boilerplate SHA:**
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
 
-11. **Scaffold project infrastructure** (optional):
+10. **Scaffold project infrastructure** (optional):
     - Ask user: "Deploy scaffold files (dev scripts, Docker, sync tools, CI/CD)?"
     - List available scaffold files from `~/.claude/skills/webstack/scaffold/`
     - If yes, copy selected files to project root
@@ -291,6 +338,8 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 ### On an existing project (`/webstack update`)
 
+0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
+
 1. **Assess CLAUDE.md drift** (see "CLAUDE.md Drift Checks"):
    - Read `CLAUDE.md` in project root
    - If missing: warn and suggest `/webstack init`, skip to step 2
@@ -299,10 +348,10 @@ In addition to per-template version comparison, the skill records the boilerplat
      - If bootstrapped: run drift checks S1, S2, C1, C2, C4, C5
    - Collect findings (C3 is deferred to after step 8)
    - For MISSING sections: offer to append from the bootstrap template
-   - For WARN legacy sections (`## Vendor Memory Loading`, `## Serena Memory Protocol`, `## MCP Tools:`): offer to rename/remove
+   - For WARN legacy sections (`## Vendor Memory Loading`, `## MCP Tools:`): offer to rename/remove
    - Show drift findings to user, then continue — drift report is informational, not blocking
 
-2. **Detect stack** — same as init: read `package.json`, check file structure
+2. **Detect stack and evaluate applicability** — same as init step 2-3: run `scripts/evaluate-applies.sh` against the project. The JSON output feeds into the action table in step 5.
 
 3. **Check boilerplate changes since last deployment:**
    - Read `.claude/webstack.sha` if it exists
@@ -429,7 +478,6 @@ In addition to per-template version comparison, the skill records the boilerplat
     - Merge `~/.claude/skills/webstack/.claude/settings.json` hooks key into `.claude/settings.json` — add missing hook entries, don't remove project-specific hooks or overwrite other settings
 
 13. **Cleanup legacy artifacts:**
-    - Check for old Serena memory structures (see init step 9 for full list)
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
@@ -479,122 +527,18 @@ In addition to per-template version comparison, the skill records the boilerplat
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
 
-### Migration: existing Serena memory projects
-
-On `/webstack update`, detect and offer migration from old deployment targets:
-
-**Old `.serena/memories/core/*` structure:**
-1. Check if `.serena/memories/core/tooling.md` (or similar) exists
-2. Propose migration:
-   ```
-   Detected old deployment structure (.serena/memories/core/*).
-   Migrating to .claude/rules/core/ + Knowledge Graph.
-
-   | Old location | New location | Action |
-   |-------------|-------------|--------|
-   | .serena/memories/core/tooling.md | .claude/rules/core/tooling.md | MIGRATE |
-   | .serena/memories/vendor/daisyui-5.md | KG entity: VendorDaisyui5 | MIGRATE |
-   | .serena/memories/_index.md | (removed) | DELETE |
-   | .serena/memories/issues/open.md | KG entities (bug_resolution) | MIGRATE |
-   ```
-3. Wait for approval, then execute migration
-
-**Flat Serena memory structure (vendor-*):**
-1. Check if Serena `list_memories` returns any `vendor-*` entries
-2. Propose migration:
-   ```
-   Detected flat Serena vendor memories.
-   Migrating to Knowledge Graph entities.
-
-   | Serena memory | KG entity | Action |
-   |--------------|-----------|--------|
-   | vendor-daisyui-5 | VendorDaisyui5 | MIGRATE |
-   | vendor-react-router-7-routing | VendorReactRouter7Routing | MIGRATE |
-   ```
-3. For each memory: `read_memory` → parse content → `create_entities` with taxonomy
-4. After migration, inform user they can remove old Serena memories via `delete_memory`
-
-**CLAUDE.md sections:**
-- Replace old `## Serena Memory Protocol` with `## Vendor Knowledge`
-- Replace old `## Vendor Memory Loading` with `## Vendor Knowledge`
-
 ### Template Versioning
 
-Each template file has frontmatter:
+Each template has YAML frontmatter with `version`, `applies`, `target`, `priority` (optional), and `tags`. Read `references/versioning.md` for the full schema, applies condition patterns, operators, version comparison rules, and when to bump versions.
 
-```yaml
----
-version: 1.0.0
-applies: daisyui@5
-target: graph
-tags: [daisyui, ui, components]
----
-```
-
-| Field | Purpose |
-|-------|---------|
-| `version` | Semantic version — bump when template content changes |
-| `applies` | Condition for when template applies to a project |
-| `target` | Deployment target: `rules` or `graph` |
-| `priority` | Optional. `high` = load/process first. Omit for normal priority |
-| `tags` | Searchable keywords for the template |
-
-**Applies conditions:**
-
-Check both `dependencies` and `devDependencies` in `package.json`. Strip version prefixes (`^`, `~`, `>=`, `=`) before comparing.
-
-| Pattern | Matches when... |
-|---------|-----------------|
-| `Always` | Always applies |
-| `react` | `react` in dependencies or devDependencies |
-| `react-i18next` | `react-i18next` in dependencies or devDependencies |
-| `daisyui@5` | `daisyui` installed, version starts with `5.` |
-| `react-router@7.9.0+` | `react-router` installed, version >= 7.9.0 (numeric semver comparison, same major only) |
-| `playwright \| "@playwright/test"` | Either package in dependencies or devDependencies (OR) |
-| `.forgejo/workflows \| .gitea/workflows` | Either directory exists in project root (OR) |
-| `react-router \| next \| remix` | Any of these packages in dependencies or devDependencies (OR) |
-| `remix-i18next & react-router@7` | Both conditions must match (AND) |
-
-**Operators:**
-| Operator | Syntax | Meaning |
-|----------|--------|---------|
-| `\|` (OR) | `a \| b` | At least one condition matches |
-| `&` (AND) | `a & b` | All conditions must match |
-| `@N` | `pkg@5` | Package version starts with `N.` (major match) |
-| `@X.Y.Z+` | `pkg@7.9.0+` | Package version >= X.Y.Z within same major (numeric semver, not string comparison) |
-
-**If version cannot be parsed**, skip the template and warn the user.
-
-**Target deployment rules:**
-| Target | Source | Deploy to | Discovery |
-|--------|--------|-----------|-----------|
-| `rules` | `core/{subdir}/{name}.md` | `.claude/rules/core/{name}.md` (subdir stripped) | Auto-discovered by Claude Code |
-| `graph` | `vendor/{name}.md` | KG entity `Vendor{PascalCaseName}` | `search_nodes` + `open_nodes` |
-
-**Version comparison rules:**
-- Parse version from YAML frontmatter (first `---` block)
-- If deployed version has no frontmatter → treat as legacy, always update
-- If versions match → skip unless user forces update
-- Always preserve frontmatter when deploying
-
-### When to Bump Template Versions
-
-When editing templates in the boilerplate, bump the version:
-
-| Change type | Version bump | Example |
-|-------------|--------------|---------|
-| Fix typo, clarify wording | PATCH | 1.0.0 → 1.0.1 |
-| Add new section, expand content | MINOR | 1.0.0 → 1.1.0 |
-| Restructure, breaking changes | MAJOR | 1.0.0 → 2.0.0 |
-
-**After editing a template:**
-1. Update the `version` in frontmatter
-2. Test with `/webstack update` on a project
-3. Verify the version diff shows correctly
-
-### Version awareness
-
-For vendor entities, always check the installed version in `package.json`. A `VendorDaisyui5` entity is wrong for a project on DaisyUI 4. When the version doesn't match a template, skip it and tell the user — they may want to create version-specific knowledge manually.
+**Quick reference — applies operators:**
+- `Always` — unconditional
+- `package-name` — package in dependencies/devDependencies
+- `pkg@N` — version starts with `N.` (major match)
+- `pkg@X.Y.Z+` — version >= X.Y.Z (same major)
+- `a | b` — OR (at least one matches)
+- `a & b` — AND (all must match)
+- `.dir/path` — directory exists in project root
 
 ### Vendor entity naming convention
 
@@ -684,127 +628,16 @@ Observations:
 
 ### Required CLAUDE.md Content
 
-The skill scaffolds or updates CLAUDE.md with these essential sections:
+Read the bootstrap template from `references/bootstrap-template.md` and deploy it. The template includes: Commands, Architecture, Rules, Vendor Knowledge (with domain table), and Knowledge accumulation sections.
 
-```markdown
-# CLAUDE.md
-
-Project-specific configuration. Core conventions are in `.claude/rules/core/` (auto-loaded).
-This file contains **project overrides** and **architecture context**.
-
-## Commands
-
-\`\`\`bash
-# Add project-specific commands here
-yarn build        # Build the project
-yarn check        # Run all checks
-\`\`\`
-
-See `.claude/rules/core/tooling.md` for full workflow rules.
-
-## Architecture
-
-<!-- User adds project-specific architecture here -->
-
-## Rules
-
-Core conventions are in `.claude/rules/core/` (auto-loaded by Claude Code). Add **project-specific overrides** below:
-
-### Project-Specific
-<!-- User adds project-specific rules here -->
-
-## Vendor Knowledge
-
-Vendor docs are stored as Knowledge Graph entities (type: `vendor_doc`).
-Load them by domain before starting work using `search_nodes`.
-
-<!-- GENERATED: The skill populates this table based on which vendor entities were deployed. -->
-| Task domain | Search query | Entities |
-|-------------|-------------|----------|
-<!-- Add rows here for each deployed domain. Example:
-| Routing | `search_nodes("domain: routing")` | VendorReactRouter7* |
-| Styling | `search_nodes("domain: styling")` | VendorDaisyui5, VendorTailwind4 |
--->
-
-**Before domain work:** check the table above — load entities for the domain you're about to touch.
-
-### Knowledge accumulation
-
-Write triggers are defined in `core/process/mcp-tools` (auto-loaded). Key observation formats:
-- Pitfalls: `"Pitfall: {what} — {why}"`
-- GitHub issues: `"GitHub: {url} — {summary}"`
-- Doc findings: `"Docs: {key finding} (source: {url})"`
-
-Session progress → Claude Code auto memory (`MEMORY.md`).
-New project rules → add to CLAUDE.md, not the Knowledge Graph.
-```
-
-### Init: Create CLAUDE.md
-
-On `/webstack init`, if no CLAUDE.md exists:
-1. Create CLAUDE.md with the bootstrap template above (includes Vendor Knowledge)
-2. Tell the user to fill in the Architecture and Project-Specific sections
-
-If CLAUDE.md exists but is missing required sections:
-1. Check for `## Vendor Knowledge` heading — if missing, append the Vendor Knowledge section
-2. Show the user what was added
+On `/webstack init`, if no CLAUDE.md exists: create it from the template. If it exists but is missing required sections (especially `## Vendor Knowledge`): append them.
 
 ### Update: CLAUDE.md Drift Checks
 
-On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. This section defines the checks.
+On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C5).
 
-**Section classification:**
-
-| Section | Classification | What we check |
-|---------|---------------|---------------|
-| `# CLAUDE.md` + intro | Managed | Heading exists; intro references `.claude/rules/core/` |
-| `## Commands` | Project-specific | Heading exists (content is user-owned) |
-| `## Architecture` | Project-specific | Heading exists (content is user-owned) |
-| `## Rules` | Mixed | Heading exists; intro references `.claude/rules/core/` |
-| `## Vendor Knowledge` | Managed | Heading exists; contains domain table; references `search_nodes` |
-| `### Knowledge accumulation` | Managed | Heading exists; contains observation format strings |
-
-**Vendor Knowledge heading aliases** — accept as equivalent to `## Vendor Knowledge`:
-- `## Knowledge Graph`
-- `## KG Entities`
-- `## Vendor Docs`
-
-If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
-
-**Drift checks:**
-
-| ID | Check | Severity | How |
-|----|-------|----------|-----|
-| S1 | Required headings exist | MISSING | Check for: `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
-| S2 | Legacy section names | WARN | Flag: `## Vendor Memory Loading`, `## Serena Memory Protocol`, `## MCP Tools:` |
-| C1 | Rules intro references core rules | WARN | Text between `## Rules` and next `##` heading contains `.claude/rules/core/` |
-| C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table with `search_nodes` |
-| C3 | Domain table matches deployed entities | WARN | Entity names in table vs entities actually deployed in this update (run after step 8) |
-| C4 | Knowledge accumulation has formats | WARN | Section contains at least one of: `Pitfall:`, `GitHub:`, `Docs:` |
-| C5 | No inlined MCP tool instructions | INFO | No `## MCP Tools` section with tool names (belongs in `.claude/rules/core/mcp-tools.md`) |
-
-**Not checked (intentionally):** exact wording of managed sections, empty project-specific sections, section ordering, HTML comment placeholders.
-
-**Report format:**
-
-```
-### CLAUDE.md Drift Report
-
-| Check | Status | Finding |
-|-------|--------|---------|
-| Required headings | MISSING | `### Knowledge accumulation` not found |
-| Legacy sections | WARN | `## MCP Tools:` found — remove (now in rules) |
-| Vendor table freshness | WARN | Table lists VendorReactHookFormZod (deleted) |
-| Rules intro | PASS | — |
-```
-
-Show only WARN and MISSING findings. If all checks pass, show: "CLAUDE.md drift check: no issues detected."
-
-**If CLAUDE.md was never bootstrapped** (no `## Vendor Knowledge` and no known alias): skip detailed checks, show:
-```
-CLAUDE.md exists but has no managed sections. Run `/webstack init` to bootstrap.
-```
-
-**The drift report is informational, not blocking** — always continue with template updates regardless of findings. For MISSING sections, offer to append from bootstrap template. For legacy sections, offer to rename/remove.
-
-**Never overwrite** existing project-specific content (Commands, Architecture, Rules).
+Key rules:
+- The drift report is informational, not blocking — always continue with template updates
+- For MISSING sections: offer to append from bootstrap template
+- For legacy sections (e.g., `## Vendor Memory Loading`): offer to rename/remove
+- Never overwrite existing project-specific content (Commands, Architecture, Rules)

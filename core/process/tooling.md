@@ -1,5 +1,5 @@
 ---
-version: 1.12.0
+version: 1.14.0
 applies: Always
 target: rules
 priority: high
@@ -47,19 +47,12 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 **Never start dev servers** — assume they're already running. The user manages them manually.
 
-Dev servers should tee output to disk for debugging:
-
-```bash
-# Pattern: kill existing → clear log → run with tee
-lsof -ti:5173 | xargs kill -9 2>/dev/null; \
-: > /tmp/frontend.log; \
-react-router dev 2>&1 | tee /tmp/frontend.log
-```
+Dev server logs are captured by `tmux pipe-pane` in `dev.sh` (preserves TTY for interactive output).
 
 | Component | Log location | Port |
 |-----------|--------------|------|
-| Frontend | `/tmp/frontend.log` or `./dev-server.log` | 5173 |
-| Backend | `/tmp/backend.log` | 3000 |
+| Frontend | `frontend/.logs/dev-server.log` | 5173 |
+| Backend | `backend/.logs/dev-server.log` | 3000 |
 | Stripe listener | `/tmp/stripe.log` | — |
 
 **To debug server issues:** Read the log file with the Read tool, don't restart the server.
@@ -125,6 +118,21 @@ for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 | `sed`, `awk` | Edit tool |
 | `echo >`, heredoc | Write tool |
 
+### context-mode — Large Output Handling
+
+Prefer context-mode's sandbox execution when output may be large or you only need specific data from it. Only your printed summary enters context — raw output stays in the sandbox, preserving your context budget.
+
+| Instead of | Use | When |
+|------------|-----|------|
+| Bash (command output) | context-mode `execute` | Output may exceed 20 lines (test runs, git log, API responses) |
+| Read (large file) | context-mode `execute_file` | File >50 lines and you only need specific data (logs, CSV, JSON) |
+| WebFetch | context-mode `fetch_and_index` | Fetching URL for reference — indexes for later `search` |
+| Multiple Bash + Read calls | context-mode `batch_execute` | Running 2+ commands and searching across all results in one call |
+
+**After indexing** (via `fetch_and_index`, `index`, or `batch_execute`), use `search` to query the indexed content on demand — no need to re-fetch or re-read.
+
+**When NOT to use context-mode:** Short commands with predictable output (`git status`, `yarn check`, `docker ps`), files you need to edit (use Read + Edit instead), and quick file existence checks.
+
 ### File Copy/Move — Use Bash, Not Read+Write
 
 When the task is to copy or move a file without modification, use `cp` or `mv` directly.
@@ -147,13 +155,12 @@ The Edit tool cannot match literal tab characters. If the project uses tabs (che
 
 | Edit type | Tab-safe alternative |
 |-----------|---------------------|
-| Function/method body | Serena `replace_symbol_body` (auto-indentation) |
 | Whole file or large section | Write tool (full rewrite) |
 | Config files (YAML, TOML, Makefile) | Write tool |
 
 For space-indented files, the Edit tool works normally.
 
-On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write and Serena over Edit for all file modifications.
+On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write over Edit for all file modifications.
 
 ### When Shell Logic IS Needed — Create a Script
 

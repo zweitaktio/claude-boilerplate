@@ -1,12 +1,12 @@
 ---
-version: 1.6.0
+version: 2.1.0
 applies: Always
 target: rules
 priority: high
-tags: [mcp, serena, context7, knowledge-graph, tools, workflow]
+tags: [mcp, typescript-lsp, context7, knowledge-graph, tools, workflow]
 ---
 
-# MCP Tools: Serena + Knowledge Graph + Context7
+# MCP Tools & Plugins
 
 ## Where to get information
 
@@ -14,8 +14,7 @@ tags: [mcp, serena, context7, knowledge-graph, tools, workflow]
 |-------------|-----|-----|
 | Library conventions, pitfalls, known bugs | KG `search_nodes` → `open_nodes` | Reading files, grepping docs, guessing |
 | Current API signatures, function params | Context7 `resolve-library-id` → `query-docs` | Outdated memory, guessing from types |
-| Code structure, symbol locations | Serena `find_symbol`, `get_symbols_overview` | Grepping filenames, guessing paths |
-| Filesystem ops, git, text search | Claude Code built-ins | Serena duplicates (disabled) |
+| Code structure, symbol locations, type info | typescript-lsp `goToDefinition`, `findReferences` | Grepping filenames, guessing paths |
 | Session progress & next steps | Claude Code auto memory (`MEMORY.md`) | KG (wrong tool for ephemeral state) |
 
 **KG is authoritative** for vendor/library information — it contains curated, project-specific docs seeded by the skill. If KG and Context7 disagree, trust KG. Context7 supplements with version-specific API details the KG may not cover.
@@ -24,75 +23,30 @@ tags: [mcp, serena, context7, knowledge-graph, tools, workflow]
 
 ---
 
-## Serena (semantic code intelligence)
+## typescript-lsp (code intelligence)
 
-Serena provides IDE-like capabilities via language server integration.
-Always prefer Serena's symbol tools over Claude Code's built-in file tools for
-navigating and editing code — they understand code structure, not just text.
+The typescript-lsp plugin provides two capabilities:
 
-Non-essential tools that duplicate Claude Code built-ins have been disabled.
-Use Claude Code's native `grep`/`rg`, `ls`, `find`, `cat`, file editing, and `git diff`
-for filesystem and text operations. Use Serena only for what it does better: symbols.
+1. **Automatic diagnostics** — after every Edit/Write to TypeScript files, the language server analyzes changes and reports errors, missing imports, and type issues automatically. No manual invocation needed. If diagnostics appear, fix them before moving on.
+2. **Code navigation** — precise, LSP-powered navigation that understands code structure, not just text.
 
-**Project setup (do once per session):**
-- Run `onboarding` on first session with this project (indexes the codebase)
-- Run `activate_project` if the project is not yet active
+**Available operations:**
+- `goToDefinition` — jump to where a symbol is defined
+- `findReferences` — find all usages of a symbol across the codebase
+- `hover` — get type information and documentation for a symbol
+- `documentSymbol` — list all top-level symbols in a file
 
-**Navigation — use BEFORE editing:**
-- `find_symbol` — locate functions, classes, methods, variables by name via LSP
-- `find_referencing_symbols` — find all callers/users of a symbol across the codebase
-- `get_symbols_overview` — list top-level symbols in a file (structural scan)
-
-**Editing — symbol-level precision:**
-- `replace_symbol_body` — replace the body of a function/class/method (auto-indentation)
-- `insert_after_symbol` — insert content after a symbol's definition
-- `insert_before_symbol` — insert content before a symbol's definition
-- `rename_symbol` — rename a symbol across the entire codebase via LSP refactoring
-
-**Recovery:**
-- `restart_language_server` — use when external edits break Serena's state
-
-### Serena triggers — use symbols, not guesses
+### typescript-lsp triggers — navigate before you edit
 
 | Before you... | Run first |
-|----------------|-----------|
-| Edit a function or method body | `find_symbol` to get exact location, then `replace_symbol_body` |
-| Change an export's signature or name | `find_referencing_symbols` to find all consumers |
-| Navigate to a definition you haven't read | `find_symbol`, not grep or filename guessing |
-| Start working in an unfamiliar file | `get_symbols_overview` to see the structure |
-| Delete or move an export | `find_referencing_symbols` — if it has callers, update them first |
+|---------------|-----------|
+| Edit a function or method body | `goToDefinition` to verify exact location and current shape |
+| Change an export's signature or name | `findReferences` to find all consumers |
+| Navigate to a definition you haven't read | `goToDefinition`, not grep or filename guessing |
+| Start working in an unfamiliar file | `documentSymbol` to see the structure |
+| Delete or move an export | `findReferences` — if it has callers, update them first |
 
-Use Claude Code's native tools for: filesystem browsing, grep/ripgrep, git operations, file creation, non-symbol text edits.
-
-### Disabled tools (recommended defaults for `.serena/project.yml`)
-
-The following tools are recommended for exclusion because they duplicate Claude Code built-ins
-or provide no real benefit. Check your project's `.serena/project.yml` for the actual active config:
-
-```yaml
-excluded_tools:
-  - think_about_collected_information  # Claude has built-in extended thinking
-  - think_about_task_adherence         # same
-  - think_about_whether_you_are_done   # same
-  - initial_instructions               # Claude Code reads system prompts automatically
-  - list_dir                           # Claude Code: ls, find, tree
-  - find_file                          # Claude Code: find, fd
-  - search_for_pattern                 # Claude Code: grep, rg
-  - read_file                          # Claude Code: cat, built-in file reading
-  - create_text_file                   # Claude Code: built-in file creation
-  - replace_content                    # Claude Code: sed, built-in edit — keep replace_symbol_body instead
-  - open_dashboard                     # monitoring convenience, not essential
-  - get_current_config                 # rarely needed
-  - switch_modes                       # edge case
-  - summarize_changes                  # Claude Code: git diff
-  - prepare_for_new_conversation       # Claude Code auto memory covers this
-  - check_onboarding_performed         # just run onboarding — it's idempotent
-  - write_memory                       # replaced by Knowledge Graph + Claude Code auto memory
-  - read_memory                        # replaced by Knowledge Graph search_nodes / open_nodes
-  - list_memories                      # replaced by Knowledge Graph search_nodes
-  - delete_memory                      # replaced by Knowledge Graph delete_entities
-  - edit_memory                        # replaced by Knowledge Graph delete_observations + add_observations
-```
+Use Claude Code's native Grep/Glob for: text search, file discovery, non-TypeScript files. Use typescript-lsp for: anything involving code structure, types, or symbol relationships.
 
 ---
 

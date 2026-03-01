@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.2.0
 applies: Always
 target: rules
 paths:
@@ -86,8 +86,10 @@ For MCP tools, add to the allow list:
     "allow": [
       "mcp__context7__*",
       "mcp__playwright__*",
-      "mcp__serena__*"
+      "mcp__plugin_context-mode_context-mode__*"
     ]
   }
 }
 ```
+
+Note: typescript-lsp enables Claude Code's built-in LSP tool — no MCP permission entry needed.
