@@ -80,5 +80,6 @@ When adding a new template:
 ## Key Files
 
 - **SKILL.md** — Source of truth for skill operation: invocation logic, naming tables, domain mapping, CLAUDE.md bootstrap template
-- **core/process/tooling.md** — Most frequently updated core template (commands, verification workflow, git rules, agent behavior)
+- **core/process/tooling.md** — Core always-loaded template (commands, verification, git, tool discipline, agent behavior)
+- **core/process/scripting.md** — Script requirements and shell compatibility (path-scoped to `scripts/**`, `**/*.sh`)
 - **core/claude-config/claude-md.md** — Conventions for CLAUDE.md files deployed to target projects

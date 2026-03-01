@@ -39,6 +39,8 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/frontend/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand vs Redux
 - `core/frontend/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
 - `core/frontend/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
+- `core/process/scripting` — `scripts/**`, `**/*.sh` — Script requirements, shell compatibility
+- `core/process/payload-api` — `scripts/payload-*`, `backend/**` — Payload REST API helpers
 - `core/testing/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
 - `core/testing/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
 - `core/claude-config/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
@@ -50,7 +52,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 
 | Rule | Lines | Notes |
 |------|-------|-------|
-| tooling | ~300 | Largest — commands, verification, git, context-mode, agent behavior |
+| tooling | ~195 | Commands, verification, git, tool discipline, agent behavior |
 | mcp-tools | ~170 | Tool usage rules, typescript-lsp triggers, KG read/write triggers |
 | engineering-discipline | ~150 | Task assessment, verification, change classification |
 | code-review | ~110 | Review standards |
@@ -134,13 +136,15 @@ Then invoke in any project with `/webstack init` or `/webstack update`.
 claude-boilerplate/
 ├── SKILL.md                    # This file — orchestration only
 ├── core/                       # → deployed to .claude/rules/core/ (subdir stripped)
-│   ├── process/                # Always-loaded, no path-scoping
+│   ├── process/                # Always-loaded (except path-scoped ones)
 │   │   ├── tooling.md
 │   │   ├── mcp-tools.md
 │   │   ├── security-checklist.md
 │   │   ├── code-review.md
 │   │   ├── engineering-discipline.md
-│   │   └── monorepo.md
+│   │   ├── monorepo.md
+│   │   ├── scripting.md          # Path-scoped: scripts/**, **/*.sh
+│   │   └── payload-api.md        # Path-scoped: scripts/payload-*, backend/**
 │   ├── frontend/               # Path-scoped to *.tsx, *.ts
 │   │   ├── react-components.md
 │   │   ├── state-management.md
