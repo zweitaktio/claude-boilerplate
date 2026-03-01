@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.1.0
+# version: 1.2.0
 # Evaluate which templates apply to a target project based on its package.json.
 # Outputs JSON array of {template, target, applies, matches, reason}.
 # Compatible with Bash 3.2+ (macOS and Linux). Requires jq.
@@ -55,6 +55,21 @@ if [ -z "$PKG_FILES" ]; then
   echo "Error: No package.json found in $PROJECT_PATH or its subdirectories." >&2
   exit 1
 fi
+
+# --- Collect enabled plugins from .claude/settings*.json ---
+PLUGINS_JSON="{}"
+for sf in "$PROJECT_PATH/.claude/settings.json" "$PROJECT_PATH/.claude/settings.local.json"; do
+  [ -f "$sf" ] || continue
+  merged=$(jq -s '.[0] * (.[1] | .enabledPlugins // {})' \
+    <(echo "$PLUGINS_JSON") <(cat "$sf") 2>/dev/null) && PLUGINS_JSON="$merged"
+done
+
+# --- Helper: check if a plugin is enabled ---
+plugin_exists() {
+  local name="$1"
+  # Match any enabledPlugins key starting with "name@" that is true
+  echo "$PLUGINS_JSON" | jq -e --arg n "$name" 'to_entries | any(.key | startswith($n + "@")) and any(select(.key | startswith($n + "@")).value)' >/dev/null 2>&1
+}
 
 # --- Merge deps from all package.json files, strip version prefixes ---
 DEPS_JSON=$(echo "$PKG_FILES" | tr ' ' '\n' | while read -r pf; do
@@ -118,6 +133,22 @@ semver_gte() {
   return 1
 }
 
+# --- Helper: split condition into package name and version spec ---
+# Handles scoped packages (@scope/pkg@version) by splitting on last @
+split_pkg_version() {
+  local cond="$1"
+  # Strip surrounding quotes before parsing
+  cond=$(echo "$cond" | sed 's/^"//;s/"$//')
+  # Check if string ends with @<version-like> (digits, dots, plus)
+  if echo "$cond" | grep -qE '@[0-9][0-9.+]*$'; then
+    PKG_NAME=$(echo "$cond" | sed 's/@[^@]*$//')
+    PKG_VER=$(echo "$cond" | sed 's/.*@//')
+  else
+    PKG_NAME="$cond"
+    PKG_VER=""
+  fi
+}
+
 # --- Helper: evaluate a single atomic condition ---
 # Returns 0 (match) or 1 (no match), sets REASON global
 eval_condition() {
@@ -143,65 +174,65 @@ eval_condition() {
     fi
   fi
 
-  # Package with version range: pkg@X.Y.Z+
-  if echo "$cond" | grep -qE '^[^@]+@[0-9]+\.[0-9]+\.[0-9]+\+$'; then
-    local pkg ver_min
-    pkg=$(echo "$cond" | sed 's/@.*//')
-    ver_min=$(echo "$cond" | sed 's/^[^@]*@//;s/+$//')
+  # Split into package name and version spec (handles @scope/pkg@ver)
+  split_pkg_version "$cond"
 
-    if ! pkg_exists "$pkg"; then
-      REASON="$pkg not in dependencies"
+  # Package with version range: X.Y.Z+
+  if echo "$PKG_VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+\+$'; then
+    local ver_min
+    ver_min=$(echo "$PKG_VER" | sed 's/+$//')
+
+    if ! pkg_exists "$PKG_NAME"; then
+      REASON="$PKG_NAME not in dependencies"
       return 1
     fi
 
     local installed
-    installed=$(pkg_version "$pkg")
+    installed=$(pkg_version "$PKG_NAME")
 
     if semver_gte "$installed" "$ver_min"; then
-      REASON="${pkg}@${installed} >= ${ver_min}"
+      REASON="${PKG_NAME}@${installed} >= ${ver_min}"
       return 0
     else
-      REASON="${pkg}@${installed} < ${ver_min}"
+      REASON="${PKG_NAME}@${installed} < ${ver_min}"
       return 1
     fi
   fi
 
-  # Package with major version: pkg@N
-  if echo "$cond" | grep -qE '^[^@]+@[0-9]+$'; then
-    local pkg major
-    pkg=$(echo "$cond" | sed 's/@.*//')
-    major=$(echo "$cond" | sed 's/^[^@]*@//')
+  # Package with major version: N
+  if echo "$PKG_VER" | grep -qE '^[0-9]+$'; then
+    local major="$PKG_VER"
 
-    if ! pkg_exists "$pkg"; then
-      REASON="$pkg not in dependencies"
+    if ! pkg_exists "$PKG_NAME"; then
+      REASON="$PKG_NAME not in dependencies"
       return 1
     fi
 
     local installed
-    installed=$(pkg_version "$pkg")
+    installed=$(pkg_version "$PKG_NAME")
     local inst_major
     inst_major=$(echo "$installed" | cut -d. -f1)
 
     if [ "$inst_major" = "$major" ]; then
-      REASON="${pkg}@${installed} starts with ${major}."
+      REASON="${PKG_NAME}@${installed} starts with ${major}."
       return 0
     else
-      REASON="${pkg}@${installed} does not start with ${major}."
+      REASON="${PKG_NAME}@${installed} does not start with ${major}."
       return 1
     fi
   fi
 
-  # Plain package name (possibly quoted)
-  local pkg
-  pkg=$(echo "$cond" | sed 's/^"//;s/"$//')
-
-  if pkg_exists "$pkg"; then
+  # Plain name (no version spec) — check package.json first, then plugins
+  if pkg_exists "$PKG_NAME"; then
     local installed
-    installed=$(pkg_version "$pkg")
-    REASON="${pkg}@${installed} in dependencies"
+    installed=$(pkg_version "$PKG_NAME")
+    REASON="${PKG_NAME}@${installed} in dependencies"
+    return 0
+  elif plugin_exists "$PKG_NAME"; then
+    REASON="${PKG_NAME} plugin enabled"
     return 0
   else
-    REASON="$pkg not in dependencies"
+    REASON="$PKG_NAME not in dependencies or plugins"
     return 1
   fi
 }

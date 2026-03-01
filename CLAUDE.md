@@ -44,11 +44,11 @@ tags: [daisyui, ui]      # searchable keywords
 
 The `applies` field uses these patterns:
 - `Always` — unconditional
-- `react` — package name in dependencies
+- `react` — package name in dependencies (falls back to checking enabled plugins in `.claude/settings*.json`)
 - `daisyui@5` — package version starts with `5.`
 - `react-router@7.9.0+` — version >= 7.9.0
 - `playwright | "@playwright/test"` — either package present
-- `.forgejo/workflows | .gitea/workflows` — either directory exists
+- `typescript-lsp` — Claude Code plugin enabled (bare name, auto-detected after package.json miss)
 
 ### Vendor Entity Naming
 

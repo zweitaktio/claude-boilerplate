@@ -290,27 +290,6 @@ This ensures Dokploy always pulls the freshly pushed image on deploy.
 
 5. Create Dokploy compose project with matching image tag
 
-## Forgejo/Gitea Compatibility
-
-When using with Forgejo/Gitea Actions instead of GitHub Actions:
-
-- `dorny/paths-filter` may fail — replace with `git diff` if needed:
-  ```yaml
-  - name: Check changes
-    id: filter
-    run: |
-      CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q '^backend/' && echo 'true' || echo 'false')
-      echo "backend=$CHANGED" >> $GITHUB_OUTPUT
-  ```
-
-- `cache-from: type=gha` not supported — use `type=registry`:
-  ```yaml
-  cache-from: type=registry,ref=registry.example.com/myproject/backend:cache
-  cache-to: type=registry,ref=registry.example.com/myproject/backend:cache,mode=max
-  ```
-
-See `vendor/forgejo-actions` memory for full compatibility notes.
-
 ## Known Issues
 
 ### First deployment requires manual trigger

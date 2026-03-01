@@ -33,7 +33,6 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 | `daisyui@5` | `daisyui` installed, version starts with `5.` |
 | `react-router@7.9.0+` | `react-router` installed, version >= 7.9.0 (numeric semver comparison, same major only) |
 | `playwright \| "@playwright/test"` | Either package in dependencies or devDependencies (OR) |
-| `.forgejo/workflows \| .gitea/workflows` | Either directory exists in project root (OR) |
 | `react-router \| next \| remix` | Any of these packages in dependencies or devDependencies (OR) |
 | `remix-i18next & react-router@7` | Both conditions must match (AND) |
 

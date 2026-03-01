@@ -182,7 +182,6 @@ claude-boilerplate/
 │   ├── payload-rest-client.md
 │   ├── ory-hydra.md
 │   ├── remark-frontmatter-schema.md
-│   ├── forgejo-actions.md
 │   ├── dokploy-monorepo-cicd.md
 │   ├── conform-zod.md             # → entity: VendorConformZod
 │   └── project-scaffolding.md    # → entity: VendorProjectScaffolding
@@ -248,7 +247,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 2. **Detect stack:**
    - Read `package.json` (dependencies + devDependencies)
-   - Check file structure (`app/features/`, `.forgejo/`, `.gitea/`, etc.)
+   - Check file structure (`app/features/`, etc.)
    - Note frameworks and exact versions
 
 3. **Evaluate template applicability:**
@@ -561,7 +560,6 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/payload-rest-client.md` | `VendorPayloadRestClient` | backend |
 | `vendor/ory-hydra.md` | `VendorOryHydra` | auth |
 | `vendor/remark-frontmatter-schema.md` | `VendorRemarkFrontmatterSchema` | tooling |
-| `vendor/forgejo-actions.md` | `VendorForgejoActions` | cicd |
 | `vendor/dokploy-monorepo-cicd.md` | `VendorDokployMonorepoCicd` | cicd |
 | `vendor/base-ui-react.md` | `VendorBaseUiReact` | styling |
 | `vendor/conform-zod.md` | `VendorConformZod` | forms |
@@ -580,7 +578,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | backend | `VendorPayloadCms3`, `VendorPayloadRestClient` | `search_nodes("domain: backend")` |
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
 | i18n | `VendorReactRouter7I18n` | `search_nodes("domain: i18n")` |
-| cicd | `VendorForgejoActions`, `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
+| cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
 | forms | `VendorConformZod` | `search_nodes("domain: forms")` |
 | tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
 
