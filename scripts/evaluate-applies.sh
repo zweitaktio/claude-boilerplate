@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.0.0
+# version: 1.1.0
 # Evaluate which templates apply to a target project based on its package.json.
 # Outputs JSON array of {template, target, applies, matches, reason}.
 # Compatible with Bash 3.2+ (macOS and Linux). Requires jq.
@@ -14,11 +14,12 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   echo "Usage: $(basename "$0") <project-path>"
   echo ""
   echo "Evaluate which webstack templates apply to a target project."
-  echo "Reads package.json from the project and checks each template's"
+  echo "Reads package.json from the project root and/or workspace"
+  echo "subdirectories (1 level deep) and checks each template's"
   echo "'applies' frontmatter condition against installed packages."
   echo ""
   echo "Arguments:"
-  echo "  project-path    Path to the target project root (must contain package.json)"
+  echo "  project-path    Path to the target project root (or monorepo root)"
   echo ""
   echo "Output:"
   echo "  JSON array to stdout with fields: template, target, applies, matches, reason"
@@ -34,25 +35,31 @@ if [ -z "$PROJECT_PATH" ]; then
   exit 1
 fi
 
-PACKAGE_JSON="$PROJECT_PATH/package.json"
-if [ ! -f "$PACKAGE_JSON" ]; then
-  echo "Error: $PACKAGE_JSON not found." >&2
-  exit 1
-fi
-
 if ! command -v jq >/dev/null 2>&1; then
   echo "Error: jq is required but not found. Install with: brew install jq" >&2
   exit 1
 fi
 
-# --- Load package.json deps into a temp file for repeated lookups ---
-# Merge dependencies + devDependencies into a single object, strip version prefixes
-DEPS_JSON=$(jq -r '
-  ((.dependencies // {}) + (.devDependencies // {}))
-  | to_entries
-  | map({key: .key, value: (.value | gsub("^[~^>=]*"; ""))})
-  | from_entries
-' "$PACKAGE_JSON")
+# --- Discover package.json files (root + 1 level deep for monorepos) ---
+PKG_FILES=""
+if [ -f "$PROJECT_PATH/package.json" ]; then
+  PKG_FILES="$PROJECT_PATH/package.json"
+fi
+
+for f in "$PROJECT_PATH"/*/package.json; do
+  [ -f "$f" ] || continue
+  PKG_FILES="${PKG_FILES}${PKG_FILES:+ }$f"
+done
+
+if [ -z "$PKG_FILES" ]; then
+  echo "Error: No package.json found in $PROJECT_PATH or its subdirectories." >&2
+  exit 1
+fi
+
+# --- Merge deps from all package.json files, strip version prefixes ---
+DEPS_JSON=$(echo "$PKG_FILES" | tr ' ' '\n' | while read -r pf; do
+  jq -r '((.dependencies // {}) + (.devDependencies // {}))' "$pf"
+done | jq -s 'add | to_entries | map({key: .key, value: (.value | gsub("^[~^>=]*"; ""))}) | from_entries')
 
 # --- Helper: check if a package exists in deps ---
 pkg_exists() {
