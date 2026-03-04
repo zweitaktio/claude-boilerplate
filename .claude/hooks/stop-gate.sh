@@ -95,7 +95,7 @@ while IFS= read -r WS; do
 done <<< "$WORKSPACES"
 
 if [ -n "$FAILURES" ]; then
-  echo -e "yarn check failed in affected workspaces. Fix before finishing:\n${FAILURES}" >&2
+  printf "yarn check failed in affected workspaces. Fix before finishing:\n%b\n" "$FAILURES" >&2
   exit 2
 fi
 

@@ -1,42 +1,130 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: payload
 target: rules
 paths:
   - "scripts/payload-*"
   - "backend/**"
-tags: [payload, api, scripts, rest]
+tags: [payload, api, scripts, rest, mcp, context-mode]
 ---
 
-# Payload API Scripts
+# Payload CMS Data Access
 
-Helper scripts for querying the Payload CMS REST API from the CLI. Use these instead of raw `curl` commands.
+Two workflows depending on the task. Choose the right one.
 
-## `scripts/payload-api.sh` — REST API requests
+## Workflow 1: Content Work (context-mode + payload-api.sh)
+
+When working with CMS content at scale — reviewing, writing, or translating — route reads through **context-mode + `payload-api.sh`**. This keeps raw JSON in the sandbox; only your printed summary enters context.
+
+**When to use:**
+- **Reviewing** — browsing collections, auditing SEO fields, checking content quality
+- **Writing** — reading existing entries to understand patterns before creating/updating content
+- **Translating** — comparing locales side-by-side, finding untranslated fields, reading source text before writing translations
+
+Any content task that involves reading multiple entries or large responses should start here.
 
 ```bash
-# Public endpoints
-./scripts/payload-api.sh GET '/products?limit=2&depth=0'
-./scripts/payload-api.sh GET '/products/404?depth=2'
+# Review — scan a collection for issues
+mcp__plugin_context-mode_context-mode__execute({
+  command: "bash ./scripts/payload-api.sh GET '/technologies?limit=50&locale=de&depth=0' --jq '.docs[] | {id, title, category, seoTitle}'",
+  language: "jsonl",
+  code: "print each entry, flag any with missing seoTitle"
+})
 
-# With jq filter
-PAYLOAD_JQ='{totalDocs, title: .docs[0].title}' ./scripts/payload-api.sh GET '/products?limit=1'
+# Translation — compare locales in one call
+mcp__plugin_context-mode_context-mode__batch_execute({
+  commands: [
+    "bash ./scripts/payload-api.sh GET '/technologies?limit=50&locale=en&depth=0' --jq '.docs[] | {id, title, seoTitle, seoSummary}'",
+    "bash ./scripts/payload-api.sh GET '/technologies?limit=50&locale=de&depth=0' --jq '.docs[] | {id, title, seoTitle, seoSummary}'"
+  ],
+  language: "jsonl",
+  code: "compare en vs de, list entries missing German translations"
+})
 
-# Authenticated (JWT from token script)
-PAYLOAD_TOKEN=$(...) ./scripts/payload-api.sh GET '/users?limit=1'
-
-# Authenticated (API key)
-PAYLOAD_API_KEY=<key> ./scripts/payload-api.sh GET '/users?limit=1'
-
-# POST with body
-./scripts/payload-api.sh POST '/products' -d '{"title":"Test"}'
+# Writing — read existing entry with full rich text before rewriting
+mcp__plugin_context-mode_context-mode__execute({
+  command: "bash ./scripts/payload-api.sh GET '/technologies/42?depth=0&locale=en'",
+  language: "json",
+  code: "extract summary text content (strip rich text nodes), seoTitle, seoSummary, related IDs"
+})
 ```
 
-## `scripts/payload-token.sh` — Get a JWT token
+**Rules for this workflow:**
+- **Read-only** — GET requests only, never POST/PATCH/DELETE via payload-api.sh
+- **Always use `--jq`** to select only the fields you need (skip for single-entry reads where you need the full document)
+- **Always use context-mode** (`execute` or `batch_execute`) — never run `payload-api.sh` via plain Bash
+- After reading, use `index` + `search` if you need to reference the data again later
+- Writes still go through Workflow 2 (MCP tools) — this workflow is for the read side of content tasks
+
+### payload-api.sh reference
 
 ```bash
-./scripts/payload-token.sh <email> <password>
-# Outputs raw JWT token on success, error to stderr on failure
+bash ./scripts/payload-api.sh GET '<path>' [--jq '<filter>']
+
+# Common patterns
+bash ./scripts/payload-api.sh GET '/technologies?limit=50&depth=0&locale=en'
+bash ./scripts/payload-api.sh GET '/technologies/42?depth=0&locale=en'
+bash ./scripts/payload-api.sh GET '/pages?limit=20&locale=de' --jq '.docs[] | {id, title, slug}'
+bash ./scripts/payload-api.sh GET '/menus/1?locale=en&depth=0' --jq '.items | length'
 ```
 
 Env: `PAYLOAD_URL` overrides the default `http://localhost:3000`.
+
+## Workflow 2: CRUD Operations (MCP tools)
+
+For targeted reads (single entry by ID), creates, updates, and deletes — use the Payload MCP tools (`mcp__payload__*`). These are precise operations where the response fits comfortably in context.
+
+**When to use:** fetching a specific entry to edit, creating/updating/deleting entries, any write operation.
+
+**Prohibited in this workflow:**
+- `payload-api.sh` for writes (POST/PATCH/DELETE)
+- `payload-token.sh` or any other shell-based write script
+- `curl` to any `/api/` endpoint
+- Any Bash command that writes CMS content
+
+### Usage Patterns
+
+**All fields are top-level parameters** — never wrap in a `data` object. The plugin destructures reserved keys (`id`, `locale`, `depth`, etc.) and sends the rest as field data. A `data` wrapper becomes a non-existent field that Payload silently ignores.
+
+```
+# Find with filters (small result sets only — use Workflow 1 for bulk reads)
+findTechnologies { where: { slug: { equals: "react" } }, locale: "en", limit: 1 }
+
+# Update — fields are top-level, NOT wrapped in data
+updateTechnologies { id: 89, locale: "de", seoTitle: "..." }
+
+# Create — fields are top-level
+createTechnologies { title: "...", slug: "...", category: "...", _status: "published" }
+```
+
+### Payload Validation (enforced on all writes)
+
+**CRITICAL:** Every write operation (create/update) must follow this sequence:
+
+1. **Build the payload** — construct the full JSON object with all fields
+2. **Validate** — check the payload before sending:
+   - Valid JSON (parseable, no syntax errors)
+   - No empty objects (`{}`) anywhere in arrays or nested structures — Payload rejects these
+   - No `null` values for enum fields (omit the field instead)
+   - SEO limits: `seoTitle` max 60 chars, `seoSummary` max 160 chars
+   - Relation fields contain IDs (numbers), not populated objects
+3. **Send** — only after validation passes, call the MCP tool
+
+**Empty objects are prohibited.** Arrays of blocks, columns items, or any nested structure must never contain `{}`. If a slot is unused, remove it from the array entirely. Payload will reject or silently corrupt data with empty objects.
+
+**Write to `/tmp/` first for complex payloads.** For updates with layout blocks, rich text, or other deeply nested structures: write the JSON to a temp file, validate it, then send.
+
+## Decision Table
+
+| Task | Workflow | Tool |
+|------|----------|------|
+| List entries to review content | 1 | context-mode + payload-api.sh --jq |
+| Compare en/de translations | 1 | context-mode batch_execute |
+| Audit SEO fields across a collection | 1 | context-mode + payload-api.sh --jq |
+| Read existing content before rewriting | 1 | context-mode execute |
+| Read source locale before translating | 1 | context-mode execute |
+| Scan for untranslated entries | 1 | context-mode batch_execute |
+| Fetch one entry by ID for a targeted edit | 2 | MCP find* (with where/id filter) |
+| Create a new entry | 2 | MCP create* |
+| Update/write content to an entry | 2 | MCP update* |
+| Delete an entry | 2 | MCP delete* |

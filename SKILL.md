@@ -186,7 +186,7 @@ claude-boilerplate/
 │   ├── conform-zod.md             # → entity: VendorConformZod
 │   └── project-scaffolding.md    # → entity: VendorProjectScaffolding
 ├── scaffold/                    # → copied to project root on /webstack init
-│   ├── dev.sh                   # Tmux dev launcher
+│   ├── dev.sh                   # Tmux dev launcher (optional: stripe listener pane)
 │   ├── install.sh               # Bootstrap script
 │   ├── scripts/                 # Git hooks
 │   ├── services/                # Docker, sync CLI, OAuth setup
@@ -336,8 +336,9 @@ In addition to per-template version comparison, the skill records the boilerplat
     - List available scaffold files from `~/.claude/skills/webstack/scaffold/`
     - If yes, copy selected files to project root
     - **Skip files that already exist** — warn user instead of overwriting
-    - Remind user to replace `myproject` placeholders with their project name
+    - Ask user for their project name, then replace `myproject` placeholders in `dev.sh` (session name) and any other scaffold files
     - Remind user to copy `.env.example` to `.env` and fill in credentials
+    - **Stripe CLI** is optional — `dev.sh` includes a commented-out tmux pane for `stripe listen`. Only uncomment if the project uses Stripe webhooks.
 
 ### On an existing project (`/webstack update`)
 

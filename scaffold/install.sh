@@ -6,6 +6,12 @@ REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== Project Installation ==="
 
+# Update Yarn
+echo ""
+echo "=== Yarn ==="
+corepack enable
+yarn set version stable
+
 # Clean and install backend
 echo ""
 echo "=== Backend ==="
