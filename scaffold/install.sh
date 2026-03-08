@@ -6,16 +6,14 @@ REPO_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 echo "=== Project Installation ==="
 
-# Update Yarn
-echo ""
-echo "=== Yarn ==="
+# Enable corepack (once)
 corepack enable
-yarn set version stable
 
 # Clean and install backend
 echo ""
 echo "=== Backend ==="
 cd "$REPO_ROOT/backend"
+yarn set version stable
 rm -rf node_modules
 yarn install
 
@@ -23,6 +21,7 @@ yarn install
 echo ""
 echo "=== Frontend ==="
 cd "$REPO_ROOT/frontend"
+yarn set version stable
 rm -rf node_modules
 yarn install
 
@@ -30,6 +29,7 @@ yarn install
 echo ""
 echo "=== Services ==="
 cd "$REPO_ROOT/services"
+yarn set version stable
 rm -rf node_modules
 yarn install
 

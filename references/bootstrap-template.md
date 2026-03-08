@@ -10,6 +10,9 @@ Deploy this template when creating or updating CLAUDE.md in target projects. The
 Project-specific configuration. Core conventions are in `.claude/rules/core/` (auto-loaded).
 This file contains **project overrides** and **architecture context**.
 
+> **Setup:** Plugins and shared MCP servers require one-time user setup.
+> Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` if tools are missing.
+
 ## Commands
 
 \`\`\`bash

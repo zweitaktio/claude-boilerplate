@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.3.0
 applies: payload
 target: rules
 paths:
@@ -9,6 +9,17 @@ tags: [payload, api, scripts, rest, mcp, context-mode]
 ---
 
 # Payload CMS Data Access
+
+## Prerequisites
+
+Payload MCP requires two things:
+
+1. **Backend plugin**: `@payloadcms/plugin-mcp` added to your Payload config (project dependency)
+2. **Claude MCP server**: `claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp`
+
+The backend must be running for MCP tools to work. If `mcp__payload__*` tools are unavailable, fall back to Workflow 1 (context-mode + payload-api.sh) for all operations.
+
+## Choosing a Workflow
 
 Two workflows depending on the task. Choose the right one.
 
@@ -50,9 +61,8 @@ mcp__plugin_context-mode_context-mode__execute({
 ```
 
 **Rules for this workflow:**
-- **Read-only** — GET requests only, never POST/PATCH/DELETE via payload-api.sh
-- **Always use `--jq`** to select only the fields you need (skip for single-entry reads where you need the full document)
-- **Always use context-mode** (`execute` or `batch_execute`) — never run `payload-api.sh` via plain Bash
+- **Read-only** — use `--jq` to select only the fields you need (skip for single-entry reads where you need the full document)
+- **Use context-mode** (`execute` or `batch_execute`) for sandbox processing
 - After reading, use `index` + `search` if you need to reference the data again later
 - Writes still go through Workflow 2 (MCP tools) — this workflow is for the read side of content tasks
 
@@ -76,15 +86,11 @@ For targeted reads (single entry by ID), creates, updates, and deletes — use t
 
 **When to use:** fetching a specific entry to edit, creating/updating/deleting entries, any write operation.
 
-**Prohibited in this workflow:**
-- `payload-api.sh` for writes (POST/PATCH/DELETE)
-- `payload-token.sh` or any other shell-based write script
-- `curl` to any `/api/` endpoint
-- Any Bash command that writes CMS content
+All write operations use MCP tools exclusively (enforced by hook).
 
 ### Usage Patterns
 
-**All fields are top-level parameters** — never wrap in a `data` object. The plugin destructures reserved keys (`id`, `locale`, `depth`, etc.) and sends the rest as field data. A `data` wrapper becomes a non-existent field that Payload silently ignores.
+**All fields are top-level parameters.** The plugin destructures reserved keys (`id`, `locale`, `depth`, etc.) and sends the rest as field data. A `data` wrapper becomes a non-existent field that Payload silently ignores.
 
 ```
 # Find with filters (small result sets only — use Workflow 1 for bulk reads)
@@ -104,8 +110,8 @@ createTechnologies { title: "...", slug: "...", category: "...", _status: "publi
 1. **Build the payload** — construct the full JSON object with all fields
 2. **Validate** — check the payload before sending:
    - Valid JSON (parseable, no syntax errors)
-   - No empty objects (`{}`) anywhere in arrays or nested structures — Payload rejects these
-   - No `null` values for enum fields (omit the field instead)
+   - Empty objects (`{}`) in arrays or nested structures — Payload rejects these (hook warns)
+   - `null` values for enum fields cause silent corruption — omit the field instead (hook warns)
    - SEO limits: `seoTitle` max 60 chars, `seoSummary` max 160 chars
    - Relation fields contain IDs (numbers), not populated objects
 3. **Send** — only after validation passes, call the MCP tool

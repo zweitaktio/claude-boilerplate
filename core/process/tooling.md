@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.2.0
 applies: Always
 target: rules
 priority: high
@@ -26,8 +26,7 @@ echo '✓ All checks passed!'
 ```
 
 **Rules:**
-- Never run `yarn tsc`, `yarn eslint`, `yarn prettier` individually — `yarn check` covers all
-- Only commit when `yarn check` passes (the hook ensures you see failures)
+- Only commit when `yarn check` passes
 
 ### `yarn build` — Full Build (use sparingly)
 
@@ -45,7 +44,7 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 ## Dev Server Logs
 
-**Never start dev servers** — assume they're already running. The user manages them manually.
+Dev servers are managed by the user and assumed to be running.
 
 Dev server logs are captured by `tmux pipe-pane` in `dev.sh` (preserves TTY for interactive output).
 
@@ -59,7 +58,7 @@ Dev server logs are captured by `tmux pipe-pane` in `dev.sh` (preserves TTY for 
 
 ## Git Usage
 
-**Git is read-only** — use it to look up information, never to mutate.
+**Git is read-only** — use it to look up information. Mutations require explicit user request.
 
 ### Allowed (read-only)
 ```bash
@@ -74,13 +73,11 @@ git show <commit>   # Inspect a commit
 ### Commit Rules
 - Only commit when user explicitly requests
 - Only push when user explicitly requests
-- Never add co-authorship lines, agent attribution, or AI-generated markers to commits
-- Commit messages: concise, imperative, no conventional-commit prefixes (no "feat:", "fix:", etc.)
-- Never skip pre-commit hooks (`--no-verify`)
+- Commit messages: concise, imperative mood
 
-### Never Do Without Explicit Request
+### These commands require explicit user confirmation:
 - `git checkout`, `git reset`, `git revert`
-- `git push --force`, `git reset --hard`, `git clean -f` — destructive, confirm first
+- `git push --force`, `git reset --hard`, `git clean -f`
 
 ## Tool Usage Discipline
 
@@ -102,11 +99,7 @@ node -e "const fs = require('fs'); fs.readdirSync('.').forEach(f => { ... })"
 for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 ```
 
-### Never Run Inline
-
-- **No inline scripts** — no `python -c`, `node -e`, `ruby -e`, bash heredocs, or multi-line awk/sed programs
-- **No loops or iteration** — no `for`, `while`, `xargs` batch operations
-- **No piped processing chains** — no `curl | jq | awk | sed` pipelines for data transformation
+### Never Run Inline (enforced by hook)
 
 ### Use Dedicated Tools Instead
 
@@ -162,14 +155,11 @@ For space-indented files, the Edit tool works normally.
 
 On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write over Edit for all file modifications.
 
-For script writing standards and shell compatibility, see `core/process/scripting`.
+### Shell Scripts — Cross-Platform Compatibility
+
+Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths. For detailed requirements, see `core/process/scripting`.
 
 ## Agent Behavior
-
-### Never Do
-- **Never start dev servers** — assume they're already running
-- **Never mutate git** without explicit user request (see Git Usage above)
-- **Never skip pre-commit hooks** (`--no-verify`)
 
 ### Always Do
 - **Use task lists** for any work with 2+ steps — create tasks, track progress, keep the user informed

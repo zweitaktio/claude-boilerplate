@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 paths:
@@ -69,13 +69,13 @@ All shell scripts must run on macOS with its default toolchain:
 - **Bash 3.2** (macOS ships v3.2 due to GPLv3 — no Bash 4+ features)
 - **BSD coreutils** (`sed`, `find`, `grep`, `awk`, `xargs` — not GNU)
 
-Forbidden (Bash 4+):
+Bash 4+ (blocked by hook — macOS ships 3.2):
 - Associative arrays (`declare -A`)
 - `${var,,}` / `${var^^}` (case conversion)
 - `|&` (pipe stderr), `coproc`, `readarray`/`mapfile`
 - `[[ $var =~ regex ]]` with stored patterns in variables
 
-Forbidden (GNU-only):
+GNU-only (blocked by hook — macOS uses BSD):
 - `sed -i 's/...'` without `''` arg — BSD requires `sed -i '' 's/...'`
 - `grep -P` (PCRE) — use `grep -E` (extended regex)
 - `find -regex` with GNU syntax — use `-name` or `-path`

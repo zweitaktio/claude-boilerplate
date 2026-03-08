@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.0
 applies: react
 target: rules
 priority: high
@@ -25,17 +25,16 @@ Never use DaisyUI's CSS-only interactive components (`<dialog class="modal">`, `
 All component wrappers must use CVA + twMerge for variants — see `VendorTailwind4` for the pattern.
 
 ## Component Declaration
-- Always `export const` arrow functions for components: `export const Foo = ({ ... }: FooProps) => { }`
-- No `React.FC` — type props inline on the function parameter
+- Components use `export const` arrow functions with inline props typing: `export const Foo = ({ ... }: FooProps) => { }`
 - **Exception: React Router route exports** — use named `function` declarations for `loader`, `action`, `clientLoader`, `clientAction`, `meta`, `links`, `headers`, `shouldRevalidate`, `ErrorBoundary`, `HydrateFallback` (framework requirement)
 
 ## Props Typing
 - Define a named `Props` interface for every component (e.g. `FooProps`)
 - Type inline on destructured params: `({ title }: FooProps) =>`
-- Never `React.FC<FooProps>`, never inline untyped props, never `any`
+- Never inline untyped props, never `any`
 
 ## Exports
-- Always named exports — no default exports
+- Named exports preferred (hook warns on default exports)
 - Exception: route components require `export default` per framework convention; use `export default ComponentName` at bottom of file
 
 ## File Organization

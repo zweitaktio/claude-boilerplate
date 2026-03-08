@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.2.0
+# version: 1.3.0
 # Evaluate which templates apply to a target project based on its package.json.
 # Outputs JSON array of {template, target, applies, matches, reason}.
 # Compatible with Bash 3.2+ (macOS and Linux). Requires jq.
@@ -57,8 +57,9 @@ if [ -z "$PKG_FILES" ]; then
 fi
 
 # --- Collect enabled plugins from .claude/settings*.json ---
+# Check user-level settings first, then project settings (project overrides user)
 PLUGINS_JSON="{}"
-for sf in "$PROJECT_PATH/.claude/settings.json" "$PROJECT_PATH/.claude/settings.local.json"; do
+for sf in "$HOME/.claude/settings.json" "$PROJECT_PATH/.claude/settings.json" "$PROJECT_PATH/.claude/settings.local.json"; do
   [ -f "$sf" ] || continue
   merged=$(jq -s '.[0] * (.[1] | .enabledPlugins // {})' \
     <(echo "$PLUGINS_JSON") <(cat "$sf") 2>/dev/null) && PLUGINS_JSON="$merged"
