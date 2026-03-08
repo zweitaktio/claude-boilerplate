@@ -48,7 +48,6 @@ The `applies` field uses these patterns:
 - `daisyui@5` — package version starts with `5.`
 - `react-router@7.9.0+` — version >= 7.9.0
 - `playwright | "@playwright/test"` — either package present
-- `typescript-lsp` — Claude Code plugin enabled (bare name, auto-detected after package.json miss)
 
 ### Vendor Entity Naming
 
@@ -76,6 +75,10 @@ When adding a new template:
 2. Set the correct `applies` condition and `target`
 3. For vendor templates: add the entity name and domain to the naming/mapping tables in SKILL.md
 4. For core templates: decide if always-loaded or path-scoped (add `paths` frontmatter if scoped)
+
+## Scripts
+
+Scripts in `scripts/` are part of the skill and run on developer machines. They must be compatible with both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths.
 
 ## Key Files
 

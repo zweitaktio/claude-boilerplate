@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/reject-env-prefix.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh bash-guard"
           }
         ]
       },
@@ -15,7 +15,43 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/kg-precheck.sh"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh research-gate"
+          }
+        ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh code-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__context7__query-docs",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh context7-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__playwright__browser_take_screenshot",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh screenshot-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__payload__*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh payload-guard"
           }
         ]
       }
@@ -28,6 +64,32 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auto-check.sh",
             "timeout": 120
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh i18n-extract-reminder"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh kg-discipline"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__memory__create_entities|mcp__memory__add_observations",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh kg-discipline"
+          }
+        ]
+      },
+      {
+        "matcher": "mcp__context7__resolve-library-id",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh context7-guard"
           }
         ]
       }
@@ -57,7 +119,6 @@
     ]
   },
   "enabledPlugins": {
-    "context-mode@claude-context-mode": true,
-    "typescript-lsp@claude-plugins-official": true
+    "context-mode@claude-context-mode": true
   }
 }

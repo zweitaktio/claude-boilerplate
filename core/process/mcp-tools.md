@@ -1,9 +1,9 @@
 ---
-version: 2.1.0
+version: 2.3.0
 applies: Always
 target: rules
 priority: high
-tags: [mcp, typescript-lsp, context7, knowledge-graph, tools, workflow]
+tags: [mcp, context7, knowledge-graph, tools, workflow]
 ---
 
 # MCP Tools & Plugins
@@ -14,39 +14,11 @@ tags: [mcp, typescript-lsp, context7, knowledge-graph, tools, workflow]
 |-------------|-----|-----|
 | Library conventions, pitfalls, known bugs | KG `search_nodes` → `open_nodes` | Reading files, grepping docs, guessing |
 | Current API signatures, function params | Context7 `resolve-library-id` → `query-docs` | Outdated memory, guessing from types |
-| Code structure, symbol locations, type info | typescript-lsp `goToDefinition`, `findReferences` | Grepping filenames, guessing paths |
 | Session progress & next steps | Claude Code auto memory (`MEMORY.md`) | KG (wrong tool for ephemeral state) |
 
 **KG is authoritative** for vendor/library information — it contains curated, project-specific docs seeded by the skill. If KG and Context7 disagree, trust KG. Context7 supplements with version-specific API details the KG may not cover.
 
 **Vendor docs live in the KG only.** They are not deployed as files in the project. Never try to read vendor documentation from the filesystem — use `search_nodes` → `open_nodes`.
-
----
-
-## typescript-lsp (code intelligence)
-
-The typescript-lsp plugin provides two capabilities:
-
-1. **Automatic diagnostics** — after every Edit/Write to TypeScript files, the language server analyzes changes and reports errors, missing imports, and type issues automatically. No manual invocation needed. If diagnostics appear, fix them before moving on.
-2. **Code navigation** — precise, LSP-powered navigation that understands code structure, not just text.
-
-**Available operations:**
-- `goToDefinition` — jump to where a symbol is defined
-- `findReferences` — find all usages of a symbol across the codebase
-- `hover` — get type information and documentation for a symbol
-- `documentSymbol` — list all top-level symbols in a file
-
-### typescript-lsp triggers — navigate before you edit
-
-| Before you... | Run first |
-|---------------|-----------|
-| Edit a function or method body | `goToDefinition` to verify exact location and current shape |
-| Change an export's signature or name | `findReferences` to find all consumers |
-| Navigate to a definition you haven't read | `goToDefinition`, not grep or filename guessing |
-| Start working in an unfamiliar file | `documentSymbol` to see the structure |
-| Delete or move an export | `findReferences` — if it has callers, update them first |
-
-Use Claude Code's native Grep/Glob for: text search, file discovery, non-TypeScript files. Use typescript-lsp for: anything involving code structure, types, or symbol relationships.
 
 ---
 
@@ -99,6 +71,8 @@ as named entities with typed relations. Data lives in `.memory/graph.jsonl` (hum
 | When you... | Query | Why |
 |-------------|-------|-----|
 | Start a task in any domain | `search_nodes("domain: <domain>")` then `open_nodes` | Load vendor docs for libraries you'll touch |
+| Begin planning a task | `search_nodes("architecture_decision")` + domain search | Load past decisions and pitfalls before writing code |
+| Switch domains mid-task | `search_nodes("domain: <new domain>")` then `open_nodes` | Each domain has its own pitfalls and patterns |
 | Hit an error in library code | `search_nodes("Pitfall")` + `search_nodes("<library name>")` | Someone may have already solved this |
 | Something "should work" but doesn't | `open_nodes(["Vendor<Library>"])` and read pitfall observations | Check for recorded quirks before debugging blind |
 | Plan an approach for a non-trivial task | `search_nodes("bug_resolution")` + domain search | Avoid repeating known mistakes |
@@ -108,7 +82,7 @@ Domain-specific rules (`react-components`, `i18n`, `ssr-hydration`, etc.) includ
 
 ### KG write triggers — record immediately, not later
 
-Don't batch these for "before moving on." Write to KG **right after the event**, while the details are fresh.
+The kg-discipline hook reminds you after 4+ code file edits without a KG write. Record findings while details are fresh:
 
 | Event | Action | Format |
 |-------|--------|--------|
@@ -142,6 +116,12 @@ Entity: DateBug (bug_resolution)
   "Fixed a date formatting issue"
 ```
 
+### KG in the planning-execution cycle
+
+1. **Task start** (before coding): `search_nodes("architecture_decision")` + `search_nodes("domain: <domain>")` + `search_nodes("bug_resolution")` — load decisions, vendor docs, and known bugs
+2. **During execution** (unexpected behavior): `search_nodes("Pitfall")` + `search_nodes("<library name>")` — check if already solved; if new, record immediately via `add_observations`
+3. **Task end** (verification pass): confirm all non-obvious findings are recorded — this is a check, not batch-write time
+
 ---
 
 ## Context7 (version-specific library documentation)
@@ -153,7 +133,7 @@ Context7 fetches current, version-specific documentation and code examples for l
 - `query-docs` — fetch documentation for a resolved library ID, optionally filtered by topic
 
 ### Context7 tool rules
-1. ALWAYS call `resolve-library-id` before `query-docs` — you need the exact library ID
+1. Call `resolve-library-id` before `query-docs` to get the exact library ID (enforced by hook)
 2. Use the `topic` parameter to narrow results (e.g. topic: "routing" for Next.js, topic: "hooks" for React)
 3. If documentation looks wrong or outdated after fetching, do NOT blindly trust it — flag the concern
 
@@ -163,7 +143,5 @@ For **when** to use Context7 (verification discipline, version checking), see `c
 
 ## Playwright MCP (browser automation)
 
-When using `browser_take_screenshot`, **always set `type: "jpeg"`** — never use PNG.
-JPEG at the server's default quality produces significantly smaller images that fit
-within context limits more efficiently. PNG screenshots are unnecessarily large.
+Screenshots use JPEG format (enforced by hook for context efficiency).
 

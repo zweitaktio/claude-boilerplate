@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: Always
 target: rules
 paths:
@@ -76,9 +76,14 @@ tags: [configuration, settings, permissions, hooks]
 
 Project settings override user settings for that project.
 
+**What goes where:**
+- MCP tool **permissions** → project `.claude/settings.json` (team-shared, checked into git)
+- Plugin **installations** → user scope (per developer, `claude plugin install`)
+- MCP server **installations** → user scope for generic servers (`memory`, `context7`); project scope for project-specific servers (`playwright`, `payload`)
+
 ## Adding MCP Permissions
 
-For MCP tools, add to the allow list:
+For MCP tools, add to the allow list in project `.claude/settings.json`:
 
 ```json
 {
@@ -86,10 +91,11 @@ For MCP tools, add to the allow list:
     "allow": [
       "mcp__context7__*",
       "mcp__playwright__*",
+      "mcp__memory__*",
       "mcp__plugin_context-mode_context-mode__*"
     ]
   }
 }
 ```
 
-Note: typescript-lsp enables Claude Code's built-in LSP tool — no MCP permission entry needed.
+For Payload projects, also add `"mcp__payload__*"` to the allow list.

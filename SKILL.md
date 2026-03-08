@@ -28,7 +28,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 
 **Always loaded** (~20KB) — `core/process/`:
 - `core/process/tooling` — Commands, verification, git, agent behavior
-- `core/process/mcp-tools` — MCP & plugin usage rules (typescript-lsp, KG, Context7), workflows
+- `core/process/mcp-tools` — MCP & plugin usage rules (KG, Context7), workflows
 - `core/process/security-checklist` — Security review standards
 - `core/process/code-review` — Code review standards
 - `core/process/engineering-discipline` — Task assessment, verification, change classification, failure protocol
@@ -53,7 +53,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 | Rule | Lines | Notes |
 |------|-------|-------|
 | tooling | ~195 | Commands, verification, git, tool discipline, agent behavior |
-| mcp-tools | ~170 | Tool usage rules, typescript-lsp triggers, KG read/write triggers |
+| mcp-tools | ~145 | Tool usage rules, KG read/write triggers |
 | engineering-discipline | ~150 | Task assessment, verification, change classification |
 | code-review | ~110 | Review standards |
 | security-checklist | ~60 | Security review checklist |
@@ -82,29 +82,39 @@ Outputs JSON with availability status. If any tool shows `"available": false`, t
 
 Verify each by attempting a lightweight call. If any fails, show the missing server and the install command, then stop.
 
-| Server | Verify with | Purpose | Install (project-scoped) |
-|--------|------------|---------|--------------------------|
-| Knowledge Graph | `search_nodes("preflight")` | Vendor doc storage, bug resolutions, decisions | `claude mcp add memory --scope project -- npx -y @modelcontextprotocol/server-memory` |
-| Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp` |
+| Server | Verify with | Purpose | Install |
+|--------|------------|---------|---------|
+| Knowledge Graph | `search_nodes("preflight")` | Vendor doc storage, bug resolutions, decisions | `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory` |
+| Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp` |
+| Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp` |
 
 ### Plugins
 
 Verify by checking if the tool is available in the current session. If missing, show the install command and stop.
 
-| Plugin | Verify with | Purpose | Install (project-scoped) |
-|--------|------------|---------|--------------------------|
-| typescript-lsp | `doctor` tool available | TypeScript code intelligence (go-to-definition, find references, diagnostics) | `claude plugin install typescript-lsp --scope project` |
-| context-mode | Any `mcp__plugin_context-mode_*` tool available | Large output handling, context budget management | `claude plugin install context-mode@claude-context-mode --scope project` |
+| Plugin | Verify with | Purpose | Install |
+|--------|------------|---------|---------|
+| context-mode | Any `mcp__plugin_context-mode_*` tool available | Large output handling, context budget management | `claude plugin install context-mode@claude-context-mode` |
+
+### User Environment Setup (one-time)
+
+Run once per developer machine to install shared plugins and MCP servers:
+
+```bash
+~/.claude/skills/webstack/scripts/setup-user-env.sh
+```
+
+This installs user-scoped tools (context-mode, memory, context7).
+Project-specific servers (Playwright, Payload MCP) are configured during `/webstack init`.
 
 ### Preflight Sequence
 
 Run this at the start of every `/webstack init` or `/webstack update`:
 
 1. Run `scripts/preflight.sh` — if exit code is non-zero, report missing CLI tools with install commands and stop
-2. Call `search_nodes("preflight")` — if the tool is not available, report "Knowledge Graph MCP server not configured" with install command and stop
-3. Call `resolve-library-id` with query `"react"` — if the tool is not available, report "Context7 MCP server not configured" with install command and stop
-4. Check if `doctor` tool is available — if not, report "typescript-lsp plugin not installed" with install command and stop
-5. Check if `mcp__plugin_context-mode_context-mode__execute` is available — if not, report "context-mode plugin not installed" with install command and stop
+2. Call `search_nodes("preflight")` — if the tool is not available, report "Knowledge Graph MCP server not configured. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory`" and stop
+3. Call `resolve-library-id` with query `"react"` — if the tool is not available, report "Context7 MCP server not configured. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp`" and stop
+4. Check if `mcp__plugin_context-mode_context-mode__execute` is available — if not, report "context-mode plugin not installed. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude plugin install context-mode@claude-context-mode`" and stop
 
 If all checks pass, continue with the init/update flow.
 
@@ -309,13 +319,27 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    If `.claude/settings.json` already exists, merge the `hooks` key — don't overwrite other settings.
 
+   **MCP scope note:** Playwright MCP is project-scoped (installed here). Other MCP servers (memory, context7) and plugins are user-scoped — see "User Environment Setup" above.
+
+   **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
+   ```bash
+   claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
+   ```
+   This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
+
    **Hooks inventory:**
 
    | Hook | File | Event / Matcher | Purpose |
    |------|------|----------------|---------|
+   | Bash guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks env vars, inline scripts, loops, pipes, linter isolation, dev servers, git safety, shell compat, Payload CLI |
+   | Research gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|Task` | Injects KG + Context7 + WebSearch research checklist; subagent context reminder |
+   | Code guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content inspection: React.FC, default exports, .test.tsx, @testing-library, i18n, shell compat |
    | Auto-check | `auto-check.sh` | PostToolUse / `Edit\|Write` | Runs `yarn check` after code edits, finds nearest workspace |
-   | KG precheck | `kg-precheck.sh` | PreToolUse / `EnterPlanMode\|Task` | Injects KG lookup reminder when planning or spawning subagents |
-   | Env rejection | `reject-env-prefix.sh` | PreToolUse / `Bash` | Blocks `$VAR` expansion, `export VAR=`, inline env overrides |
+   | i18n extract | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds to run `yarn i18n:extract` after new t() calls |
+   | KG discipline | `kg-discipline.mjs` | PostToolUse / `Edit\|Write` + KG write tools | Tracks code file edits, reminds about KG writes after 4+ files |
+   | Context7 guard | `context7-guard.mjs` | PreToolUse / `query-docs` + PostToolUse / `resolve-library-id` | Enforces resolve-library-id before query-docs |
+   | Screenshot guard | `screenshot-guard.mjs` | PreToolUse / `browser_take_screenshot` | Enforces JPEG format for screenshots |
+   | Payload guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks for data wrapper, empty objects, null enum fields |
    | Stop gate | `stop-gate.sh` | Stop | Verifies `yarn check` passes in all affected workspaces before stopping |
    | Post-task review | `post-plan-review.sh` | TaskCompleted | Triggers code quality review on changed files |
 

@@ -1,12 +1,12 @@
 ---
-version: 3.1.0
+version: 4.1.0
 applies: Always
 target: rules
 paths:
   - ".claude/**"
   - "**/*mcp*"
   - "**/*playwright*"
-tags: [mcp, typescript-lsp, context-mode, context7, playwright, configuration, setup]
+tags: [mcp, context-mode, context7, playwright, configuration, setup]
 ---
 
 # MCP Server & Plugin Setup
@@ -20,31 +20,48 @@ For **tool usage rules**, see `core/process/mcp-tools` (auto-loaded from `.claud
 |-----------------|------|-------|
 | Context7 | [GitHub](https://github.com/upstash/context7) | Library doc lookup |
 | Playwright | [GitHub](https://github.com/microsoft/playwright-mcp) | Browser automation |
-| typescript-lsp | [Marketplace](https://code.claude.com/docs/en/discover-plugins) | Code intelligence (plugin) |
 | context-mode | [GitHub](https://github.com/claude-context-mode/context-mode) | Large output handling (plugin) |
 
 ## Setup Commands
 
 ```bash
-# Context7 — library documentation lookup
+# Knowledge Graph — user-scoped (one-time setup)
+claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory
+
+# Context7 — project-scoped
 # API key optional but recommended for higher rate limits (get at context7.com/dashboard)
 claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
 
-# Playwright — browser automation, screenshots, testing
-# Uses config file for sane defaults (popups disabled, HTTPS errors ignored, etc.)
+# Playwright — PROJECT-SCOPED (uses project-local config file)
 claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config .claude/playwright-mcp.config.json
 ```
 
 ## Plugin Setup
 
 ```bash
-# typescript-lsp — code intelligence (go-to-definition, find references, diagnostics)
-# Requires typescript-language-server binary in $PATH: npm i -g typescript-language-server typescript
-claude plugin install typescript-lsp --scope project
-
-# context-mode — sandbox execution for large outputs, context budget management
-claude plugin install context-mode@claude-context-mode --scope project
+# context-mode — user-scoped (default)
+claude plugin install context-mode@claude-context-mode
 ```
+
+## Payload MCP (Payload projects)
+
+```bash
+# Payload MCP — PROJECT-SCOPED (connects to project-specific backend)
+# Requires @payloadcms/plugin-mcp in the backend Payload config
+claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
+```
+
+## Scope Model
+
+| Tool | Scope | Reason |
+|------|-------|--------|
+| Knowledge Graph (`memory`) | **user** | Generic server, data stays in project CWD (`.memory/graph.jsonl`) |
+| Context7 (`context7`) | **project** | Set up per-project during `/webstack init` |
+| context-mode | **user** | Plugin, user is the default scope |
+| Playwright (`playwright`) | **project** | Uses project-local `--config .claude/playwright-mcp.config.json` |
+| Payload (`payload`) | **project** | HTTP transport to project-specific Payload backend URL |
+
+User-scoped tools are installed once per developer. Project-scoped tools use project-local configuration and are set up during `/webstack init`.
 
 ## Playwright Config File
 
@@ -115,4 +132,4 @@ claude mcp list
 claude plugin list
 ```
 
-All servers should show with `scope: project`. Both plugins should show as installed.
+MCP servers show with mixed scopes: `memory` at user scope, `context7` and `playwright` (and optionally `payload`) at project scope. The context-mode plugin should show as installed.
