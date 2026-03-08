@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: daisyui@5
 target: graph
 tags: [daisyui, ui, components, tailwind, styling, themes]
@@ -257,6 +257,33 @@ Loading:   loading loading-{spinner|dots|ring|ball|bars|infinity} loading-{xs|sm
 Toggle:    toggle toggle-{color} toggle-{xs|sm|md|lg|xl}
 Checkbox:  checkbox checkbox-{color} checkbox-{xs|sm|md|lg|xl}
 ```
+
+## Component Cheatsheets
+
+Source: https://daisyui.com/llms.txt (DaisyUI 5 official LLM reference)
+
+| Component | Classes |
+|-----------|---------|
+| **btn** | color: `btn-neutral/primary/secondary/accent/info/success/warning/error` · style: `btn-outline/dash/soft/ghost/link` · size: `btn-xs/sm/md/lg/xl` · modifier: `btn-wide/block/square/circle` · behavior: `btn-active/btn-disabled` |
+| **badge** | color: `badge-neutral/primary/secondary/accent/info/success/warning/error` · style: `badge-outline/dash/soft/ghost` · size: `badge-xs/sm/md/lg/xl` |
+| **card** | parts: `card-body/card-title/card-actions/figure` · size: `card-xs/sm/md/lg/xl` · modifier: `card-dash/card-border` · responsive: `sm:card-horizontal` |
+| **alert** | color: `alert-info/success/warning/error` · style: `alert-outline/dash/soft` · direction: `alert-vertical/alert-horizontal` · responsive: `sm:alert-horizontal` |
+| **tabs** | parts: `tab/tab-content` · style: `tabs-box/tabs-border/tabs-lift` · modifier: `tab-active/tab-disabled` · placement: `tabs-top/tabs-bottom` |
+| **modal** | parts: `modal-box/modal-action/modal-backdrop/modal-toggle` · modifier: `modal-open` · placement: `modal-top/middle/bottom/start/end` · use native `<dialog>` element |
+| **collapse** | parts: `collapse-title/collapse-content` · modifier: `collapse-arrow/collapse-plus/collapse-open/collapse-close` · use `name` attr for radio-group behavior |
+| **dropdown** | use `<details>`+`<summary>` or popover API or CSS focus · parts: `dropdown-content` · placement: `dropdown-top/bottom/left/right/end` · modifier: `dropdown-open/hover` |
+| **forms** | `fieldset/fieldset-legend/label/input/select/textarea/checkbox/toggle/radio/file-input/floating-label` · `join/join-item` for grouped inputs · `validator` class for HTML5 validation styling |
+| **menu** | parts: `menu-title/menu-dropdown/menu-dropdown-toggle` · modifier: `menu-disabled/active/focus` · size: `menu-xs/sm/md/lg/xl` · direction: `menu-vertical/horizontal` |
+| **skeleton** | component: `skeleton` · modifier: `skeleton-text` · use for loading states |
+| **tooltip** | placement: `tooltip-top/bottom/left/right` · color: `tooltip-primary/secondary/accent/info/success/warning/error` · modifier: `tooltip-open` |
+| **swap** | parts: `swap-on/swap-off/swap-indeterminate` · modifier: `swap-active` · style: `swap-rotate/swap-flip` |
+| **indicator** | parts: `indicator-item` · placement: `indicator-top/middle/bottom` + `indicator-start/center/end` |
+| **join** | class `join` on container, `join-item` on children · direction: `join-vertical/join-horizontal` · works with btn, input, select, etc. |
+| **loading** | style: `loading-spinner/dots/ring/ball/bars/infinity` · size: `loading-xs/sm/md/lg/xl` |
+| **status** | color: `status-primary/secondary/accent/info/success/warning/error` · size: `status-xs/sm/md/lg/xl` |
+| **list** | parts: `list-row` · vertical list with optional icons/actions |
+| **divider** | modifier: `divider-neutral/primary/secondary/accent/info/success/warning/error` · direction: `divider-vertical/horizontal` · placement: `divider-start/end` |
+| **drawer** | parts: `drawer-toggle/drawer-content/drawer-side/drawer-overlay` · placement: `drawer-end` · modifier: `drawer-open` · variant: `is-drawer-open:/is-drawer-close:` |
 
 ## Known Issues
 - v4 → v5 migration: all `form-control`, `label-text`, `input-bordered` classes must be replaced
