@@ -1,0 +1,51 @@
+name: Verify Version
+
+on:
+  workflow_call:
+    inputs:
+      url:
+        required: true
+        type: string
+      expected-tag:
+        required: true
+        type: string
+      basic-auth:
+        required: false
+        type: string
+        default: ''
+        description: 'Basic auth credentials (user:pass)'
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Poll /api/version until deployed
+        run: |
+          TIMEOUT=180
+          INTERVAL=10
+          ELAPSED=0
+
+          echo "Waiting for ${{ inputs.url }}/api/version to return sha=${{ inputs.expected-tag }}"
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            CURL_ARGS=(-s --max-time 5)
+            if [ -n "${{ inputs.basic-auth }}" ]; then
+              CURL_ARGS+=(-u "${{ inputs.basic-auth }}")
+            fi
+            BODY=$(curl "${CURL_ARGS[@]}" -w "\n%{http_code}" "${{ inputs.url }}/api/version" 2>/dev/null || true)
+            HTTP_CODE=$(echo "$BODY" | tail -1)
+            RESPONSE=$(echo "$BODY" | sed '$d')
+            SHA=$(echo "$RESPONSE" | jq -r '.sha // empty' 2>/dev/null || true)
+
+            if [ "$SHA" = "${{ inputs.expected-tag }}" ]; then
+              echo "Version verified: $SHA"
+              exit 0
+            fi
+
+            echo "HTTP $HTTP_CODE — got '$SHA', expected '${{ inputs.expected-tag }}' (${ELAPSED}s/${TIMEOUT}s)"
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "Timeout: version did not match after ${TIMEOUT}s"
+          exit 1

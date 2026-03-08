@@ -1,4 +1,4 @@
-name: Build & Deploy
+name: Build
 
 on:
   workflow_call:
@@ -15,12 +15,13 @@ on:
       tag:
         required: true
         type: string
-      dokploy-compose-id:
-        required: true
+      extra-tags:
+        required: false
         type: string
+        default: ''
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,18 +34,19 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      - name: Short SHA
+        id: sha
+        run: echo "short=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
       - uses: docker/build-push-action@v6
         with:
           context: ${{ inputs.context }}
           push: true
-          tags: ${{ inputs.image }}:${{ inputs.tag }}
+          tags: |
+            ${{ inputs.image }}:${{ inputs.tag }}
+            ${{ inputs.image }}:sha-${{ steps.sha.outputs.short }}
+            ${{ inputs.extra-tags }}
+          build-args: |
+            TAG=${{ inputs.tag }}
           cache-from: type=gha,scope=${{ inputs.service }}
           cache-to: type=gha,mode=max,scope=${{ inputs.service }}
-
-      - name: Deploy via Dokploy
-        uses: benbristow/dokploy-deploy-action@0.2.2
-        with:
-          api_token: ${{ secrets.DOKPLOY_API_KEY }}
-          application_id: ${{ inputs.dokploy-compose-id }}
-          dokploy_url: ${{ secrets.DOKPLOY_URL }}
-          service_type: compose

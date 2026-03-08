@@ -1,0 +1,34 @@
+name: Stop
+
+on:
+  workflow_call:
+    inputs:
+      dokploy-compose-id:
+        required: true
+        type: string
+
+jobs:
+  stop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Stop via Dokploy
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+        run: |
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          payload=$(jq -n --arg id "$COMPOSE_ID" '{composeId: $id}')
+
+          response=$(curl -s --max-time 60 --connect-timeout 10 -o /dev/null -w "%{http_code}" -X POST \
+            "$DOKPLOY_URL/api/compose.stop" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "$payload")
+          if [ "$response" -ne 200 ]; then
+            echo "Stop failed with status code: $response"
+            exit 1
+          fi
+          echo "Compose stopped successfully"

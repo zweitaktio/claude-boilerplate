@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 2.0.0
 applies: dokploy | .github/workflows/*dokploy* | .github/workflows/*deploy*
 target: graph
 tags: [dokploy, cicd, deployment, github-actions, docker, monorepo]
@@ -7,7 +7,7 @@ tags: [dokploy, cicd, deployment, github-actions, docker, monorepo]
 
 # Dokploy Monorepo CI/CD
 
-Reusable GitHub Actions workflow pattern for monorepo deployments with path-based filtering and Dokploy integration.
+Reusable GitHub Actions workflow pattern for monorepo deployments with path-based filtering, SHA-based image tagging, and Dokploy integration via direct API calls.
 
 ## Documentation
 
@@ -15,7 +15,7 @@ Reusable GitHub Actions workflow pattern for monorepo deployments with path-base
 |--------|-----|-------|
 | Dokploy docs | https://docs.dokploy.com | Official docs |
 | Dokploy GitHub | https://github.com/Dokploy/dokploy | Source, issues |
-| Deploy action | https://github.com/benbristow/dokploy-deploy-action | `benbristow/dokploy-deploy-action` |
+| Dokploy API | https://docs.dokploy.com/api | REST API reference |
 | paths-filter | https://github.com/dorny/paths-filter | `dorny/paths-filter` for change detection |
 | Docker build-push | https://github.com/docker/build-push-action | `docker/build-push-action` |
 | GHA reusable workflows | https://docs.github.com/en/actions/using-workflows/reusing-workflows | `workflow_call` pattern |
@@ -24,200 +24,176 @@ Reusable GitHub Actions workflow pattern for monorepo deployments with path-base
 
 This pattern provides:
 - **Path-based filtering** — only build/deploy services with actual changes
-- **Reusable workflow** — single `_build-deploy.yml` called by environment-specific workflows
+- **SHA-based image tags** — exact version tracking via `IMAGE_TAG` env var (replaces fixed alias tags)
+- **Separated concerns** — 6 reusable workflows for build, deploy, update-env, verify, stop, test
+- **Atomic env updates** — safely patches only `IMAGE_TAG` in Dokploy env, with diff verification and rollback
+- **Version verification** — polls `/api/version` endpoint until deployed SHA matches expected tag
 - **Staging on push** — deploy to staging when pushing to `main`
 - **Production on tag** — deploy to production when pushing semver tags (e.g. `1.2.3`)
-- **Dokploy integration** — trigger compose deployments via Dokploy API
+- **Stop-staging gate** — production deploy stops staging after verification succeeds
 
 ## File Structure
 
 ```
 .github/
-├── README.md                 # CI/CD documentation
+├── README.md
 └── workflows/
-    ├── _build-deploy.yml     # Reusable workflow (prefixed with _)
-    ├── deploy-staging.yml    # Staging deployment trigger
-    └── deploy-prod.yml       # Production deployment trigger
+    ├── _build.yml              # Build & push Docker image (TAG baking, extra-tags, SHA tagging)
+    ├── _deploy.yml             # Deploy via Dokploy API (trigger + poll for completion)
+    ├── _update-env.yml         # Patch IMAGE_TAG in Dokploy env (safe diff + rollback)
+    ├── _verify-version.yml     # Poll /api/version until SHA matches
+    ├── _stop.yml               # Stop Dokploy compose
+    ├── _test.yml               # Run yarn test:run in service context
+    ├── deploy-staging.yml      # Staging orchestration (push to main)
+    └── deploy-prod.yml         # Production orchestration (semver tag)
 ```
 
-## Reusable Workflow: `_build-deploy.yml`
+## Pipeline Flow
 
-```yaml
-name: Build & Deploy
-
-on:
-  workflow_call:
-    inputs:
-      service:
-        required: true
-        type: string
-      context:
-        required: true
-        type: string
-      image:
-        required: true
-        type: string
-      tag:
-        required: true
-        type: string
-      dokploy-compose-id:
-        required: true
-        type: string
-
-jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: docker/setup-buildx-action@v3
-
-      - uses: docker/login-action@v3
-        with:
-          registry: registry.example.com
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-
-      - uses: docker/build-push-action@v6
-        with:
-          context: ${{ inputs.context }}
-          push: true
-          tags: ${{ inputs.image }}:${{ inputs.tag }}
-          cache-from: type=gha,scope=${{ inputs.service }}
-          cache-to: type=gha,mode=max,scope=${{ inputs.service }}
-
-      - name: Deploy via Dokploy
-        uses: benbristow/dokploy-deploy-action@0.2.2
-        with:
-          api_token: ${{ secrets.DOKPLOY_API_KEY }}
-          application_id: ${{ inputs.dokploy-compose-id }}
-          dokploy_url: ${{ secrets.DOKPLOY_URL }}
-          service_type: compose
+```
+changes (path-filter + short SHA)
+  → test (per service, if tests exist)
+  → build (parallel per service, TAG baking)
+  → update-env (both builds gate ALL update-envs — prevents partial state)
+  → deploy (per service)
+  → verify (poll /api/version for SHA match)
+  → stop-staging (prod only, after verify)
 ```
 
-## Staging Workflow: `deploy-staging.yml`
+Key: both builds must succeed before ANY update-env runs. This prevents partial deployment state where one service has a new IMAGE_TAG but the other build failed.
 
-Triggers on push to `main`, only builds services with changes:
+## Reusable Workflows
+
+### `_build.yml` — Build & Push
 
 ```yaml
-name: Deploy Staging
+# Inputs: service, context, image, tag, extra-tags (optional)
+# Bakes TAG as build-arg, adds sha-{short} tag, supports extra-tags for :latest/:version
+uses: ./.github/workflows/_build.yml
+with:
+  service: backend
+  context: ./backend
+  image: registry.example.com/myproject/backend
+  tag: ${{ needs.changes.outputs.image-tag }}
+  extra-tags: |                                    # Production only
+    registry.example.com/myproject/backend:latest
+    registry.example.com/myproject/backend:${{ github.ref_name }}
+secrets: inherit
+```
 
-on:
-  push:
-    branches: [main]
+The `TAG` build-arg is available in your Dockerfile for baking the version into the image:
 
-jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      landingpage: ${{ steps.filter.outputs.landingpage }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'frontend/**'
-            landingpage:
-              - 'landingpage/**'
+```dockerfile
+ARG TAG=dev
+ENV APP_VERSION=$TAG
+```
 
+### `_deploy.yml` — Deploy via Dokploy API
+
+```yaml
+# Inputs: dokploy-compose-id, title (optional)
+# Triggers compose.deploy, polls compose.one for completion (180s timeout)
+uses: ./.github/workflows/_deploy.yml
+with:
+  dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
+  title: ${{ needs.changes.outputs.image-tag }}
+secrets: inherit
+```
+
+Direct `curl` to Dokploy API — no third-party action dependency.
+
+### `_update-env.yml` — Safe Env Patching
+
+```yaml
+# Inputs: dokploy-compose-id, image-tag
+# GET env → patch IMAGE_TAG → diff verify → POST update → re-read verify (rollback on failure)
+uses: ./.github/workflows/_update-env.yml
+with:
+  dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
+  image-tag: ${{ needs.changes.outputs.image-tag }}
+secrets: inherit
+```
+
+Safety: rejects if any non-IMAGE_TAG lines changed. Rolls back on verification failure.
+
+### `_verify-version.yml` — Version Verification
+
+```yaml
+# Inputs: url, expected-tag, basic-auth (optional)
+# Polls {url}/api/version, compares .sha with expected-tag (180s timeout, 10s interval)
+uses: ./.github/workflows/_verify-version.yml
+with:
+  url: ${{ vars.STAGING_BACKEND_URL }}
+  expected-tag: ${{ needs.changes.outputs.image-tag }}
+  basic-auth: ${{ vars.STAGING_BASIC_AUTH }}        # Optional, for protected staging
+```
+
+### `_stop.yml` — Stop Compose
+
+```yaml
+# Inputs: dokploy-compose-id
+# POST compose.stop — used after prod deploy to stop staging
+uses: ./.github/workflows/_stop.yml
+with:
+  dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
+secrets: inherit
+```
+
+### `_test.yml` — Run Tests
+
+```yaml
+# Inputs: context
+# checkout → corepack → setup-node 24 → yarn --immutable → yarn test:run
+uses: ./.github/workflows/_test.yml
+with:
+  context: ./backend
+```
+
+## Orchestration: `deploy-staging.yml`
+
+Triggers on push to `main`. Job chain uses `!failure() && !cancelled()` to allow partial deployment (only changed services deploy):
+
+```yaml
+changes → test-backend → build-backend ─┐
+                                         ├→ update-env-* → deploy-* → verify-*
+changes → build-frontend ───────────────┘
+```
+
+## Orchestration: `deploy-prod.yml`
+
+Same as staging plus:
+- `fetch-depth: 0` and previous tag detection for path filtering between releases
+- Extra tags: `:latest` + `:${github.ref_name}` (semver)
+- Stop-staging jobs after verify succeeds
+
+## App Requirement: `/api/version` Endpoint
+
+Your app must expose a `GET /api/version` endpoint that returns:
+
+```json
+{ "sha": "sha-abc1234" }
+```
+
+The SHA must match the `IMAGE_TAG` value set during build. Example implementation:
+
+```typescript
+// Backend (Next.js API route or Payload endpoint)
+export function GET() {
+  return Response.json({ sha: process.env.APP_VERSION ?? 'dev' })
+}
+```
+
+## Dokploy Compose Setup
+
+Each compose project uses `IMAGE_TAG` env var (set via `_update-env.yml`):
+
+```yaml
+services:
   backend:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
-    with:
-      service: backend
-      context: ./backend
-      image: registry.example.com/myproject/backend
-      tag: staging
-      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
-    secrets: inherit
-
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
-    with:
-      service: frontend
-      context: ./frontend
-      image: registry.example.com/myproject/frontend
-      tag: staging
-      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_FRONTEND }}
-    secrets: inherit
-
-  # Add more services as needed...
+    image: registry.example.com/myproject/backend:${IMAGE_TAG}
 ```
 
-## Production Workflow: `deploy-prod.yml`
-
-Triggers on semver tags, compares against previous tag:
-
-```yaml
-name: Deploy Prod
-
-on:
-  push:
-    tags: ['[0-9]*.[0-9]*.[0-9]*']
-
-jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      backend: ${{ steps.filter.outputs.backend }}
-      frontend: ${{ steps.filter.outputs.frontend }}
-      landingpage: ${{ steps.filter.outputs.landingpage }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Get previous tag
-        id: prev_tag
-        run: |
-          PREV=$(git tag --sort=-creatordate | grep -E '^[0-9]+\.[0-9]+\.[0-9]+' | sed -n '2p')
-          echo "tag=${PREV:-$(git rev-list --max-parents=0 HEAD)}" >> $GITHUB_OUTPUT
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          base: ${{ steps.prev_tag.outputs.tag }}
-          filters: |
-            backend:
-              - 'backend/**'
-            frontend:
-              - 'frontend/**'
-            landingpage:
-              - 'landingpage/**'
-
-  backend:
-    needs: changes
-    if: needs.changes.outputs.backend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
-    with:
-      service: backend
-      context: ./backend
-      image: registry.example.com/myproject/backend
-      tag: prod
-      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_BACKEND }}
-    secrets: inherit
-
-  frontend:
-    needs: changes
-    if: needs.changes.outputs.frontend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
-    with:
-      service: frontend
-      context: ./frontend
-      image: registry.example.com/myproject/frontend
-      tag: prod
-      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_FRONTEND }}
-    secrets: inherit
-
-  # Add more services as needed...
-```
+No `pull_policy: always` needed — each deploy uses a unique SHA-based tag.
 
 ## Required Secrets
 
@@ -238,21 +214,11 @@ Set in GitHub → Settings → Secrets and variables → Actions → Variables:
 |----------|-------------|
 | `DOKPLOY_COMPOSE_ID_STAGING_{SERVICE}` | Compose ID for staging environment |
 | `DOKPLOY_COMPOSE_ID_PROD_{SERVICE}` | Compose ID for production environment |
+| `STAGING_{SERVICE}_URL` | Staging URL for version verification (e.g. `https://staging.example.com`) |
+| `PROD_{SERVICE}_URL` | Production URL for version verification |
+| `STAGING_BASIC_AUTH` | Basic auth for protected staging (optional, format: `user:pass`) |
 
 Find Compose IDs in Dokploy dashboard URL: `https://<dokploy>/dashboard/project/.../services/compose/<composeId>`.
-
-## Dokploy Compose Setup
-
-Each compose project must use fixed alias tags with `pull_policy: always`:
-
-```yaml
-services:
-  backend:
-    image: registry.example.com/myproject/backend:staging  # or :prod
-    pull_policy: always
-```
-
-This ensures Dokploy always pulls the freshly pushed image on deploy.
 
 ## Adding a New Service
 
@@ -269,26 +235,53 @@ This ensures Dokploy always pulls the freshly pushed image on deploy.
      newservice: ${{ steps.filter.outputs.newservice }}
    ```
 
-3. Add deployment job:
+3. Add test job (if tests exist):
    ```yaml
-   newservice:
+   test-newservice:
      needs: changes
      if: needs.changes.outputs.newservice == 'true'
-     uses: ./.github/workflows/_build-deploy.yml
+     uses: ./.github/workflows/_test.yml
+     with:
+       context: ./newservice
+   ```
+
+4. Add build job (needs test if present, otherwise just changes):
+   ```yaml
+   build-newservice:
+     needs: [changes, test-newservice]
+     if: needs.changes.outputs.newservice == 'true'
+     uses: ./.github/workflows/_build.yml
      with:
        service: newservice
        context: ./newservice
        image: registry.example.com/myproject/newservice
-       tag: staging  # or prod
-       dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_NEWSERVICE }}
+       tag: ${{ needs.changes.outputs.image-tag }}
      secrets: inherit
    ```
 
-4. Add GitHub variables for compose IDs:
+5. Add update-env job (needs ALL builds — not just its own):
+   ```yaml
+   update-env-newservice:
+     needs: [changes, build-backend, build-frontend, build-newservice]
+     if: ${{ !failure() && !cancelled() && needs.changes.outputs.newservice == 'true' }}
+     uses: ./.github/workflows/_update-env.yml
+     with:
+       dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_NEWSERVICE }}
+       image-tag: ${{ needs.changes.outputs.image-tag }}
+     secrets: inherit
+   ```
+
+6. Add deploy and verify jobs following the same pattern.
+
+7. Add GitHub variables:
    - `DOKPLOY_COMPOSE_ID_STAGING_NEWSERVICE`
    - `DOKPLOY_COMPOSE_ID_PROD_NEWSERVICE`
+   - `STAGING_NEWSERVICE_URL`
+   - `PROD_NEWSERVICE_URL`
 
-5. Create Dokploy compose project with matching image tag
+8. Create Dokploy compose project with `IMAGE_TAG` env var in the compose file.
+
+9. Add `/api/version` endpoint to the service.
 
 ## Known Issues
 
@@ -302,3 +295,6 @@ backend:
   - 'backend/**'
   - 'shared/**'
 ```
+
+### update-env needs ALL builds
+The `!failure() && !cancelled()` condition with all builds in `needs` is intentional. If one build fails, no env updates happen for any service. This prevents deploying a frontend that expects a new backend API that failed to build.

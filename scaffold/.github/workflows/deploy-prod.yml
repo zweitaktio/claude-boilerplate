@@ -10,6 +10,7 @@ jobs:
     outputs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
+      image-tag: ${{ steps.sha.outputs.short }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,27 +29,116 @@ jobs:
               - 'backend/**'
             frontend:
               - 'frontend/**'
+      - name: Short SHA
+        id: sha
+        run: echo "short=sha-$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-  backend:
+  test-backend:
     needs: changes
     if: needs.changes.outputs.backend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
+    uses: ./.github/workflows/_test.yml
+    with:
+      context: ./backend
+
+  # test-frontend:
+  #   needs: changes
+  #   if: needs.changes.outputs.frontend == 'true'
+  #   uses: ./.github/workflows/_test.yml
+  #   with:
+  #     context: ./frontend
+
+  build-backend:
+    needs: [changes, test-backend]
+    if: needs.changes.outputs.backend == 'true'
+    uses: ./.github/workflows/_build.yml
     with:
       service: backend
       context: ./backend
       image: registry.example.com/myproject/backend  # Change to your registry
-      tag: prod
-      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_BACKEND }}
+      tag: ${{ needs.changes.outputs.image-tag }}
+      extra-tags: |
+        registry.example.com/myproject/backend:${{ github.ref_name }}
+        registry.example.com/myproject/backend:latest
     secrets: inherit
 
-  frontend:
+  build-frontend:
     needs: changes
     if: needs.changes.outputs.frontend == 'true'
-    uses: ./.github/workflows/_build-deploy.yml
+    uses: ./.github/workflows/_build.yml
     with:
       service: frontend
       context: ./frontend
       image: registry.example.com/myproject/frontend  # Change to your registry
-      tag: prod
+      tag: ${{ needs.changes.outputs.image-tag }}
+      extra-tags: |
+        registry.example.com/myproject/frontend:${{ github.ref_name }}
+        registry.example.com/myproject/frontend:latest
+    secrets: inherit
+
+  update-env-backend:
+    needs: [changes, build-backend, build-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.backend == 'true' }}
+    uses: ./.github/workflows/_update-env.yml
+    with:
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_BACKEND }}
+      image-tag: ${{ needs.changes.outputs.image-tag }}
+    secrets: inherit
+
+  update-env-frontend:
+    needs: [changes, build-backend, build-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.frontend == 'true' }}
+    uses: ./.github/workflows/_update-env.yml
+    with:
       dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_FRONTEND }}
+      image-tag: ${{ needs.changes.outputs.image-tag }}
+    secrets: inherit
+
+  deploy-backend:
+    needs: [changes, build-backend, build-frontend, update-env-backend, update-env-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.backend == 'true' }}
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_BACKEND }}
+      title: ${{ needs.changes.outputs.image-tag }}
+    secrets: inherit
+
+  deploy-frontend:
+    needs: [changes, build-backend, build-frontend, update-env-backend, update-env-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.frontend == 'true' }}
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_PROD_FRONTEND }}
+      title: ${{ needs.changes.outputs.image-tag }}
+    secrets: inherit
+
+  verify-backend:
+    needs: [changes, deploy-backend, deploy-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.backend == 'true' }}
+    uses: ./.github/workflows/_verify-version.yml
+    with:
+      url: ${{ vars.PROD_BACKEND_URL }}
+      expected-tag: ${{ needs.changes.outputs.image-tag }}
+
+  verify-frontend:
+    needs: [changes, deploy-backend, deploy-frontend]
+    if: ${{ !failure() && !cancelled() && needs.changes.outputs.frontend == 'true' }}
+    uses: ./.github/workflows/_verify-version.yml
+    with:
+      url: ${{ vars.PROD_FRONTEND_URL }}
+      expected-tag: ${{ needs.changes.outputs.image-tag }}
+
+  stop-staging-backend:
+    needs: [verify-backend, verify-frontend]
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/_stop.yml
+    with:
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_BACKEND }}
+    secrets: inherit
+
+  stop-staging-frontend:
+    needs: [verify-backend, verify-frontend]
+    if: ${{ !failure() && !cancelled() }}
+    uses: ./.github/workflows/_stop.yml
+    with:
+      dokploy-compose-id: ${{ vars.DOKPLOY_COMPOSE_ID_STAGING_FRONTEND }}
     secrets: inherit

@@ -1,0 +1,82 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      dokploy-compose-id:
+        required: true
+        type: string
+      title:
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Deploy via Dokploy
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+          TITLE: ${{ inputs.title }}
+        run: |
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          if [ -n "$TITLE" ]; then
+            payload=$(jq -n --arg id "$COMPOSE_ID" --arg title "$TITLE" \
+              '{composeId: $id, title: $title}')
+          else
+            payload=$(jq -n --arg id "$COMPOSE_ID" '{composeId: $id}')
+          fi
+
+          response=$(curl -s --max-time 60 --connect-timeout 10 -o /dev/null -w "%{http_code}" -X POST \
+            "$DOKPLOY_URL/api/compose.deploy" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "$payload")
+          if [ "$response" -ne 200 ]; then
+            echo "Deployment failed with status code: $response"
+            exit 1
+          fi
+          echo "Deployment triggered successfully"
+
+      - name: Wait for Dokploy deployment to complete
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+        run: |
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          TIMEOUT=180
+          INTERVAL=10
+          ELAPSED=0
+
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(curl -sf --max-time 10 \
+              "$DOKPLOY_URL/api/compose.one?composeId=$COMPOSE_ID" \
+              -H "Accept: application/json" \
+              -H "x-api-key: $DOKPLOY_API_KEY" | jq -r '.composeStatus // empty')
+
+            case "$STATUS" in
+              done|idle)
+                echo "Deployment complete (status: $STATUS)"
+                exit 0
+                ;;
+              error)
+                echo "Deployment failed (status: error)"
+                exit 1
+                ;;
+              *)
+                echo "Status: $STATUS (${ELAPSED}s/${TIMEOUT}s)"
+                ;;
+            esac
+
+            sleep $INTERVAL
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+          echo "Timeout: deployment did not complete after ${TIMEOUT}s"
+          exit 1

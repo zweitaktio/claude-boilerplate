@@ -1,0 +1,136 @@
+name: Update Env
+
+on:
+  workflow_call:
+    inputs:
+      dokploy-compose-id:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+
+jobs:
+  update-env:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Get current env
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+        run: |
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          response=$(curl -sf --max-time 30 --connect-timeout 10 \
+            "$DOKPLOY_URL/api/compose.one?composeId=$COMPOSE_ID" \
+            -H "Accept: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY")
+          echo "$response" | jq -r '.env // ""' > /tmp/original_env.txt
+          cp /tmp/original_env.txt /tmp/new_env.txt
+
+      - name: Patch IMAGE_TAG
+        env:
+          IMAGE_TAG: ${{ inputs.image-tag }}
+        run: |
+          if grep -q '^IMAGE_TAG=' /tmp/new_env.txt; then
+            awk -v tag="$IMAGE_TAG" 'BEGIN{FS=OFS="="} /^IMAGE_TAG=/{$0="IMAGE_TAG="tag}1' /tmp/new_env.txt > /tmp/new_env.tmp && mv /tmp/new_env.tmp /tmp/new_env.txt
+          else
+            # Ensure newline before appending if file is non-empty and doesn't end with one
+            if [ -s /tmp/new_env.txt ] && [ "$(tail -c 1 /tmp/new_env.txt | wc -l)" -eq 0 ]; then
+              echo "" >> /tmp/new_env.txt
+            fi
+            echo "IMAGE_TAG=$IMAGE_TAG" >> /tmp/new_env.txt
+          fi
+
+      - name: Verify only IMAGE_TAG changed
+        run: |
+          # Filter out empty lines for comparison
+          diff_output=$(diff \
+            <(grep -v '^$' /tmp/original_env.txt) \
+            <(grep -v '^$' /tmp/new_env.txt) || true)
+
+          if [ -z "$diff_output" ]; then
+            echo "IMAGE_TAG already set to desired value, skipping update"
+            echo "skip=true" >> $GITHUB_ENV
+            exit 0
+          fi
+
+          # Verify only IMAGE_TAG lines appear in the diff
+          non_image_tag_changes=$(echo "$diff_output" | grep '^[<>]' | grep -v 'IMAGE_TAG=' || true)
+          if [ -n "$non_image_tag_changes" ]; then
+            echo "ERROR: Unexpected changes detected beyond IMAGE_TAG:"
+            echo "$non_image_tag_changes"
+            exit 1
+          fi
+
+          echo "IMAGE_TAG update verified, proceeding"
+
+      - name: Push updated env
+        if: env.skip != 'true'
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+        run: |
+          new_env=$(cat /tmp/new_env.txt)
+          payload=$(jq -n --arg composeId "$COMPOSE_ID" --arg env "$new_env" \
+            '{composeId: $composeId, env: $env}')
+
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          http_code=$(curl -s --max-time 30 --connect-timeout 10 -o /tmp/update_response.txt -w "%{http_code}" -X POST \
+            "$DOKPLOY_URL/api/compose.update" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY" \
+            -d "$payload")
+
+          if [ "$http_code" -ne 200 ]; then
+            echo "Failed to update env (HTTP $http_code):"
+            cat /tmp/update_response.txt
+            exit 1
+          fi
+
+          echo "Env updated successfully"
+
+      - name: Verify env was applied
+        if: env.skip != 'true'
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          COMPOSE_ID: ${{ inputs.dokploy-compose-id }}
+          EXPECTED_TAG: ${{ inputs.image-tag }}
+        run: |
+          DOKPLOY_URL="${DOKPLOY_URL%/}"
+          response=$(curl -sf --max-time 30 --connect-timeout 10 \
+            "$DOKPLOY_URL/api/compose.one?composeId=$COMPOSE_ID" \
+            -H "Accept: application/json" \
+            -H "x-api-key: $DOKPLOY_API_KEY")
+
+          actual_tag=$(echo "$response" | jq -r '.env // ""' | grep '^IMAGE_TAG=' | cut -d= -f2-)
+
+          if [ "$actual_tag" != "$EXPECTED_TAG" ]; then
+            echo "ERROR: Verification failed — expected IMAGE_TAG=$EXPECTED_TAG, got IMAGE_TAG=$actual_tag"
+            echo "Rolling back to original env..."
+
+            original_env=$(cat /tmp/original_env.txt)
+            rollback_payload=$(jq -n --arg composeId "$COMPOSE_ID" --arg env "$original_env" \
+              '{composeId: $composeId, env: $env}')
+
+            rollback_code=$(curl -s --max-time 30 --connect-timeout 10 -o /tmp/rollback_response.txt -w "%{http_code}" -X POST \
+              "$DOKPLOY_URL/api/compose.update" \
+              -H "Accept: application/json" \
+              -H "Content-Type: application/json" \
+              -H "x-api-key: $DOKPLOY_API_KEY" \
+              -d "$rollback_payload")
+
+            if [ "$rollback_code" -ne 200 ]; then
+              echo "Rollback also failed (HTTP $rollback_code):"
+              cat /tmp/rollback_response.txt
+            else
+              echo "Rollback completed"
+            fi
+            exit 1
+          fi
+
+          echo "Verified: IMAGE_TAG=$actual_tag"
