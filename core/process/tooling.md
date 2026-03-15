@@ -1,9 +1,9 @@
 ---
-version: 2.2.0
+version: 2.3.0
 applies: Always
 target: rules
 priority: high
-tags: [tooling, yarn, check, typescript, eslint, biome, verification, git]
+tags: [tooling, yarn, check, typescript, eslint, biome, verification]
 ---
 
 # Tooling & Workflow
@@ -41,43 +41,6 @@ yarn check && react-router build  # or next build, vite build, etc.
 ### `yarn i18n:extract` — Translation Keys
 
 Run after adding new `t()` calls to extract keys to translation files.
-
-## Dev Server Logs
-
-Dev servers are managed by the user and assumed to be running.
-
-Dev server logs are captured by `tmux pipe-pane` in `dev.sh` (preserves TTY for interactive output).
-
-| Component | Log location | Port |
-|-----------|--------------|------|
-| Frontend | `frontend/.logs/dev-server.log` | 5173 |
-| Backend | `backend/.logs/dev-server.log` | 3000 |
-| Stripe listener | `/tmp/stripe.log` | — |
-
-**To debug server issues:** Read the log file with the Read tool, don't restart the server.
-
-## Git Usage
-
-**Git is read-only** — use it to look up information. Mutations require explicit user request.
-
-### Allowed (read-only)
-```bash
-git status          # See changed files
-git diff            # See unstaged changes
-git diff --staged   # See staged changes
-git log --oneline -10  # Recent commits
-git branch -a       # List branches
-git show <commit>   # Inspect a commit
-```
-
-### Commit Rules
-- Only commit when user explicitly requests
-- Only push when user explicitly requests
-- Commit messages: concise, imperative mood
-
-### These commands require explicit user confirmation:
-- `git checkout`, `git reset`, `git revert`
-- `git push --force`, `git reset --hard`, `git clean -f`
 
 ## Tool Usage Discipline
 
@@ -170,13 +133,7 @@ Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutil
 
 ## Monorepo Verification
 
-`yarn check` runs automatically per-workspace via the PostToolUse hook — it finds the nearest `package.json` with a `check` script from the edited file. No manual runs needed.
-
-For cross-workspace type sync (if shared types):
-```bash
-cd backend && yarn generate:types && yarn copytypes
-cd frontend && yarn typecheck
-```
+See `core/process/monorepo` for ports, logs, type flow, and cross-workspace verification.
 
 ## Session Start Protocol
 

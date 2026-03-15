@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: playwright | "@playwright/test"
 target: rules
 paths:
@@ -8,6 +8,10 @@ paths:
   - "**/tests/**"
   - "**/e2e/**"
   - "**/playwright*"
+  - "backend/**"
+  - "frontend/**"
+  - "**/api/**"
+  - "**/routes/**"
 tags: [testing, e2e, playwright, selectors, test]
 ---
 
@@ -178,6 +182,26 @@ test.afterEach(async ({ page }) => {
 const addButton = page.getByTestId("add-item-btn")
   .or(page.getByTestId("empty-state-add-btn"))
 await addButton.first().click()
+```
+
+## API Coverage Rule
+
+Every API endpoint must be covered by an E2E test that exercises it through a real user flow — not by calling the API directly. If a backend change adds or modifies an endpoint, add or update an E2E test that reaches that endpoint through the UI.
+
+```typescript
+// ✅ Test the API through the user flow that calls it
+test("user creates a journey", async ({ authenticatedPage: page }) => {
+  await page.getByTestId("create-journey-btn").click()
+  await page.getByTestId("journey-input-title").fill("Test Journey")
+  await page.getByTestId("journey-btn-save").click()
+  await expect(page.getByTestId("journey-item-Test Journey")).toBeVisible()
+})
+
+// ❌ Don't test APIs in isolation — that's integration testing, not E2E
+test("POST /api/journeys", async ({ request }) => {
+  const res = await request.post("/api/journeys", { data: { title: "Test" } })
+  expect(res.status()).toBe(201)
+})
 ```
 
 ## Common Pitfalls

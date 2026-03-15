@@ -1,5 +1,5 @@
 ---
-version: 2.0.1
+version: 2.1.0
 applies: Always
 target: rules
 priority: high
@@ -72,7 +72,7 @@ cd ../frontend && yarn check
 |-----------|------|----------|
 | Backend | 3000 | `backend/.logs/dev-server.log` |
 | Frontend | 5173 | `frontend/.logs/dev-server.log` |
-| Stripe | — | `/tmp/stripe.log` |
+| Stripe | — | `services/.logs/stripe.log` |
 | PostgreSQL | 5432 | — |
 | Meilisearch | 7700 | — |
 | Mailpit UI | 8025 | — |
@@ -80,7 +80,7 @@ cd ../frontend && yarn check
 | Hydra public | 4444 | — |
 | Hydra admin | 4445 | — |
 
-Never start dev servers — assume they're running. Read log files to debug.
+Never start dev servers — assume they're running. **To debug server issues:** read the log file with the Read tool, don't restart the server.
 
 ## Services Lifecycle
 
@@ -95,6 +95,10 @@ yarn status    # Verify all connections
 
 ## Verification
 
-`yarn check` runs automatically via PostToolUse hook in the workspace where the file was edited. Each package is verified separately — the hook walks up from the edited file to find the nearest `package.json` with a `check` script.
+See `core/process/tooling` for `yarn check`, `yarn build`, and verification workflow.
 
-See `core/process/tooling` for full verification workflow.
+For cross-workspace type sync after backend collection changes:
+```bash
+cd backend && yarn generate:types && yarn copytypes
+cd ../frontend && yarn check
+```

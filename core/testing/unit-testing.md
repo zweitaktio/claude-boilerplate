@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: vitest
 target: rules
 paths:
@@ -8,6 +8,7 @@ paths:
   - "**/vitest*"
   - "!**/*.test.tsx"
   - "!**/*.spec.tsx"
+  - "backend/**"
 tags: [testing, vitest, unit-test, mock, test-data]
 ---
 

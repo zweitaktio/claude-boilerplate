@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.4.0
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -60,20 +60,9 @@ Flag these during every review:
 
 When reviewing code, identify the domain and verify against its known best practices. Use Context7 and Knowledge Graph vendor docs to confirm current patterns.
 
-**Frontend (React/SSR):**
-- Derived state computed in render, not via `useEffect` + `setState`
-- Data fetching in loaders, not `useEffect`
-- Keys on list items are stable identifiers, not array indices
-- No prop drilling past 2 levels — use context or composition
-- Side effects only in `useEffect` or event handlers, never in render
-- Memoization (`useMemo`/`useCallback`) only where measured performance need exists
+**Frontend:** See `core/frontend/react-components` for React/SSR patterns (useEffect, derived state, data fetching in loaders).
 
-**Backend (API/CMS):**
-- Input validated at system boundaries, not trusted internally
-- Database operations use the ORM/CMS API, never raw SQL
-- Error responses have consistent shape
-- Sensitive data excluded from API responses
-- Bulk operations bounded (pagination, limits)
+**Backend:** See `core/process/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/testing/unit-testing` for conventions.
 
 **Shared:**
 - Errors handled or intentionally propagated, never silently swallowed
