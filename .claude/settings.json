@@ -94,18 +94,6 @@
         ]
       }
     ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/stop-gate.sh",
-            "timeout": 180,
-            "statusMessage": "Verifying all workspaces pass checks..."
-          }
-        ]
-      }
-    ],
     "TaskCompleted": [
       {
         "hooks": [
@@ -113,6 +101,16 @@
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-plan-review.sh",
             "statusMessage": "Preparing post-task review..."
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-feature-review.sh",
+            "timeout": 300,
+            "statusMessage": "Running full post-feature review..."
           }
         ]
       }
