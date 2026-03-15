@@ -2,7 +2,7 @@
 name: webstack
 description: Bootstrap web stack conventions into .claude/rules/ and Knowledge Graph vendor docs. Run on new projects or when conventions need updating.
 disable-model-invocation: true
-argument-hint: [init|update]
+argument-hint: [init|update|maintenance]
 ---
 
 # Web Stack Conventions
@@ -39,6 +39,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/frontend/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand vs Redux
 - `core/frontend/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
 - `core/frontend/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
+- `core/process/backporting` — `.memory/**`, `.claude/**`, `CLAUDE.md` — When to tag KG findings for backport
 - `core/process/scripting` — `scripts/**`, `**/*.sh` — Script requirements, shell compatibility
 - `core/process/payload-api` — `scripts/payload-*`, `backend/**` — Payload REST API helpers
 - `core/testing/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
@@ -134,11 +135,17 @@ Then invoke in any project with `/webstack init` or `/webstack update`.
 |---------|-------------|
 | `/webstack init` | New project — deploys rules, seeds KG vendor docs, and CLAUDE.md bootstrap |
 | `/webstack update` | Existing project — diffs templates, preserves project-specific observations |
+| `/webstack maintenance` | Periodic health check — audits KG, rules, relations, contradictions, stray files |
 
 **For existing projects:**
 - The skill compares each template against the deployed version (rule file or KG entity)
 - Project-specific additions (Known Issues observations, custom notes) are preserved in KG entities
 - You'll be shown what's new vs what already exists before any changes
+
+**For periodic health checks:**
+- Audits KG entity versions, relations, and quality without deploying templates
+- Detects contradictions between rules, stale pitfalls, orphaned files, and context budget drift
+- Auto-fixes safe issues (missing relations, CLAUDE.md sections) and reports the rest for user decision
 
 ## Directory Structure
 
@@ -153,6 +160,7 @@ claude-boilerplate/
 │   │   ├── code-review.md
 │   │   ├── engineering-discipline.md
 │   │   ├── monorepo.md
+│   │   ├── backporting.md         # Path-scoped: .memory/**, .claude/**, CLAUDE.md
 │   │   ├── scripting.md          # Path-scoped: scripts/**, **/*.sh
 │   │   └── payload-api.md        # Path-scoped: scripts/payload-*, backend/**
 │   ├── frontend/               # Path-scoped to *.tsx, *.ts
@@ -242,7 +250,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 ## Invocation Instructions
 
-**Check the argument:** `$ARGUMENTS` will be `init` or `update`. If not provided, ask the user which mode to use.
+**Check the argument:** `$ARGUMENTS` will be `init`, `update`, or `maintenance`. If not provided, ask the user which mode to use.
 
 ### On a new project (`/webstack init`)
 
@@ -512,22 +520,30 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 14. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
 
-    **a) KG pitfalls on vendor entities:**
-    For each deployed `vendor_doc` entity, check for project-specific observations (pitfalls, GitHub issues, doc findings added during work). These are the observations preserved in step 6/10 — if they're generalizable, they belong in the boilerplate template.
+    The `core/process/backporting` rule instructs the agent to tag generalizable findings with `"Backport: <reason>"` observations. Scan for these first — they're pre-qualified by the agent that created them.
+
+    **a) KG entities with `Backport:` tags:**
+    `search_nodes("Backport:")` — these are explicitly marked for backport by the working agent. Each has a reason explaining why it's generalizable.
+
+    **b) KG pitfalls on vendor entities (untagged):**
+    For each deployed `vendor_doc` entity, also check for project-specific observations (pitfalls, GitHub issues, doc findings) that weren't tagged. These are the observations preserved in step 6/10 — if they're generalizable, they belong in the boilerplate template.
     ```
     open_nodes(["VendorReactRouter7Routing"]) →
       "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
+      "Backport: library behavior, not project-specific"
+    → BACKPORT CANDIDATE (pre-tagged)
+
       "GitHub: https://github.com/remix-run/react-router/issues/11234 — confirmed"
-    → BACKPORT CANDIDATE — applies to all RR7 projects
+    → BACKPORT CANDIDATE (untagged, but generalizable — library issue)
     ```
 
-    **b) Bug resolutions:**
+    **c) Bug resolutions:**
     `search_nodes("bug_resolution")` — scan for entries whose root cause is in a library (not project-specific business logic). These may warrant a new pitfall on the vendor template or a new `issues/` template.
 
-    **c) Project-created KG entities without skill counterparts:**
+    **d) Project-created KG entities without skill counterparts:**
     `search_nodes("vendor_doc")` — find vendor entities that don't match any skill template (no `source:` observation pointing to the boilerplate). These may be candidates for new vendor templates.
 
-    **d) Project rules not in the skill:**
+    **e) Project rules not in the skill:**
     Check `.claude/rules/` for rule files outside `core/` (project-created rules). If any encode generalizable patterns, they may belong as new core templates.
 
     Present candidates in a table:
@@ -554,6 +570,347 @@ In addition to per-template version comparison, the skill records the boilerplat
     ```bash
     git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
     ```
+
+### Periodic health check (`/webstack maintenance`)
+
+Audits KG entities, rules, relations, and project hygiene without deploying templates. Run periodically (e.g., every few weeks, or when KG feels stale).
+
+0. **Run preflight check** — see "Requirements" section above. Stop if KG MCP is unavailable. If `.claude/webstack.sha` doesn't exist, warn that `/webstack init` may not have run yet — continue anyway (some checks still work).
+
+1. **Snapshot project state** — gather all data needed by subsequent steps in one pass. Run these in parallel:
+
+   **a)** Run `scripts/evaluate-applies.sh` against the project → applicability JSON
+
+   **b)** Read `.claude/webstack.sha`, run `git -C ~/.claude/skills/webstack rev-parse HEAD` → check if boilerplate moved since last deploy
+
+   **c)** Read `package.json` (root + 1 level deep for monorepos) → installed versions
+
+   **d)** List `.claude/rules/` recursively → deployed rule inventory
+
+   **e)** `search_nodes("vendor_doc")` → all vendor entities in KG
+
+   **f)** `search_nodes("bug_resolution")` + `search_nodes("architecture_decision")` + `search_nodes("convention")` → all project-created entities
+
+   **g)** Read `.claude/settings.json` and `.claude/settings.local.json` (if exists) → hook entries, permissions, MCP tool patterns
+
+   No user-visible output yet — this feeds steps 2–11.
+
+2. **Vendor version audit** — for each deployed `vendor_doc` KG entity, run three checks:
+
+   **a) Template→KG version drift:**
+   ```bash
+   # Template version
+   head -5 ~/.claude/skills/webstack/vendor/{name}.md | grep '^version:'
+   ```
+   ```
+   # KG version — from open_nodes
+   open_nodes(["Vendor{PascalCaseName}"]) → find "version:" observation
+   ```
+   Flag if template version is higher than KG version — means `/webstack update` was missed.
+
+   **b) Installed version match:**
+   ```
+   KG entity: applies: daisyui@5
+   package.json: daisyui@5.8.0 → PASS (major matches)
+
+   KG entity: applies: daisyui@5
+   package.json: daisyui@6.1.0 → MISMATCH — entity is for v5, project has v6
+   ```
+   Flag if the project upgraded past the entity's major version.
+
+   **c) Orphaned entities:** `vendor_doc` entities whose `source:` observation points to a template that no longer exists in the boilerplate, or whose `applies:` condition no longer matches the project stack.
+
+   Output table:
+   ```
+   | Entity | Template Ver | KG Ver | Installed | Status |
+   |--------|-------------|--------|-----------|--------|
+   | VendorDaisyui5 | 1.3.0 | 1.3.0 | 5.8.0 | PASS |
+   | VendorRR7Routing | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
+   | VendorPayloadCms3 | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (entity v3, installed v4) |
+   | VendorOldLibrary | — | 1.0.0 | (removed) | ORPHAN |
+   ```
+   Report-only. DRIFT → suggest running `/webstack update`. MISMATCH → warn that entity may contain outdated patterns. ORPHAN → propose removal in step 11.
+
+3. **Core rules file audit** — compare `.claude/rules/core/*.md` against boilerplate templates:
+
+   - **Orphaned rules** — files in `core/` with no matching template (template removed or renamed)
+   - **Missing rules** — templates where `applies` matches the stack but no file is deployed
+   - **Version drift** — deployed version vs template version (same extraction as update step 4)
+   - **Content tampering** — if versions match, diff content bodies to detect local edits that the next `/webstack update` will silently overwrite
+
+   Output table:
+   ```
+   | Rule File | Template | Deployed Ver | Template Ver | Status |
+   |-----------|----------|-------------|-------------|--------|
+   | tooling.md | core/process/tooling | 2.2.0 | 2.2.0 | PASS |
+   | react-components.md | core/frontend/... | 1.5.0 | 1.6.0 | DRIFT |
+   | old-rule.md | (none) | 1.0.0 | — | ORPHAN |
+   | — | core/testing/e2e | — | 1.1.0 | MISSING |
+   | tooling.md | core/process/tooling | 2.2.0 | 2.2.0 | MODIFIED (local edits) |
+   ```
+   Report-only. ORPHAN files proposed for removal in step 11.
+
+4. **KG relation completeness** — check relations between KG entities:
+
+   **a) Vendor intra-domain relations:** entities sharing a domain (from the domain mapping table) should have `same_domain` relations. For each domain with 2+ deployed entities, use `open_nodes` to check if sibling relations exist.
+
+   **b) Known cross-domain dependencies** (hard-coded):
+
+   | From | Relation | To |
+   |------|----------|-----|
+   | `VendorDaisyui5` | `depends_on` | `VendorTailwind4` |
+   | `VendorReactRouter7I18n` | `integrates_with` | `VendorReactRouter7Routing` |
+   | `VendorPayloadRestClient` | `depends_on` | `VendorPayloadCms3` |
+
+   Check if these relations exist when both entities are deployed. Don't create if either entity is missing.
+
+   **c) Orphan project entities:** `bug_resolution`, `architecture_decision`, `convention` entities with zero relations. Inspect observation text for library or domain keywords (e.g., "react-router", "daisyui", "payload") to propose links to the relevant vendor entity. Also check for `"Backport: ..."` observations — these were pre-tagged by the working agent as generalizable and should be related to the relevant vendor entity.
+
+   Output table:
+   ```
+   | Entity | Expected Relations | Actual | Missing | Action |
+   |--------|-------------------|--------|---------|--------|
+   | VendorRR7Routing | same_domain: 4 | 2 | DataLoading, Index | AUTO-FIX |
+   | VendorDaisyui5 | depends_on: TW4 | 0 | Tailwind4 | AUTO-FIX |
+   | HydrationBug | relates_to: RR7 | 0 | RR7Routing | PROPOSE |
+   ```
+   Auto-fix for (a) and (b) — `create_relations` in step 12. Propose-only for (c) — user confirms.
+
+5. **KG entity quality check** — inspect entities for structural issues:
+
+   - **Missing standard observations** on `vendor_doc` entities — each should have: `version:`, `applies:`, `tags:`, `domain:`, `source:`
+   - **Duplicate entities** — entities with very similar names that may overlap (e.g., `ReactRouterLoading` vs `VendorReactRouter7DataLoading`)
+   - **Empty/minimal entities** — entities with fewer than 2 observations (likely placeholders)
+   - **Type mismatches** — e.g., a `vendor_doc` without a `source:` observation (likely project-created, should be `convention` or `dependency`)
+
+   Report-only.
+
+6. **Rule contradiction detection** — analyze all rule files in `.claude/rules/` plus `CLAUDE.md` for conflicting instructions:
+
+   **a) Opposing directives** — scan for instruction pairs that commonly conflict:
+   - Component exports: `export default` vs `export const` (named)
+   - Component typing: `React.FC` vs bare arrow functions
+   - Error handling: `try/catch` in loaders vs ErrorBoundary-only
+   - Dev workflow: "never run dev server" vs "run yarn dev"
+   - Import style: barrel imports vs direct imports
+
+   Read each rule file, collect directive statements, flag contradicting pairs across files.
+
+   **b) Scope overlap** — check for rules with overlapping `paths:` frontmatter that cover the same topic with different guidance. Extract `paths:` from each rule file's frontmatter and find intersections.
+
+   **c) CLAUDE.md vs rules** — instructions in CLAUDE.md that contradict a deployed rule. Since CLAUDE.md takes precedence, flag these so the user can decide whether to update the rule or the CLAUDE.md.
+
+   **d) Stale references** — rules referencing commands (`yarn xyz`), file paths (`app/features/...`), or tool names that no longer exist in the project. Check against `package.json` scripts, file system, and available MCP tools.
+
+   Output:
+   ```
+   | File A | File B | Topic | Conflict |
+   |--------|--------|-------|----------|
+   | core/react-components.md | CLAUDE.md | Exports | "named exports only" vs "export default for pages" |
+   | core/tooling.md | .claude/rules/dev.md | Dev server | "never start" vs "yarn dev" |
+   | core/tooling.md | — | Command | References `yarn typecheck` (not in package.json scripts) |
+   ```
+   Report-only — user decides precedence.
+
+7. **Stray file detection** — find `.md` files Claude may have created during work sessions that don't belong to any managed structure:
+
+   **Scan locations:**
+   - `.claude/` — files not in `rules/`, `hooks/`, or matching `settings*.json`, `webstack.sha`, `*.config.json`
+   - `.claude/rules/` — files outside the `core/` subdirectory (unexpected directories or loose files)
+   - Project root — `.md` files that are untracked in git and aren't standard (`README.md`, `CHANGELOG.md`, `LICENSE.md`, `CLAUDE.md`, `CONTRIBUTING.md`)
+
+   **Heuristics for Claude-created files:**
+   - Untracked in git (`git ls-files --others --exclude-standard`)
+   - `.md` extension in a managed directory
+   - No YAML frontmatter (not a skill template)
+
+   Output:
+   ```
+   | Path | Size | Git Status | Likely Origin |
+   |------|------|------------|--------------|
+   | .claude/rules/temp-notes.md | 2.1KB | untracked | Work session artifact |
+   | .claude/debugging-auth.md | 4.5KB | untracked | Debugging notes |
+   | docs/api-draft.md | 1.2KB | untracked | Generated documentation |
+   ```
+   Report-only — user decides to keep, move to KG, or delete.
+
+8. **Settings & MCP audit** — check `.claude/settings.json` and `.claude/settings.local.json` for stale or misconfigured entries:
+
+   **a) MCP permission wildcarding:** Scan `permissions.allow` for MCP tool entries that aren't wildcarded. The convention (see `core/claude-config/claude-settings`) is to wildcard by server prefix — `mcp__memory__*`, not individual tools.
+
+   ```
+   | File | Entry | Suggested |
+   |------|-------|-----------|
+   | settings.json | mcp__memory__create_entities | mcp__memory__* |
+   | settings.json | mcp__memory__add_observations | (redundant — covered by wildcard) |
+   | settings.local.json | mcp__payload__find | mcp__payload__* |
+   ```
+   Auto-fixable — rewrite non-wildcarded entries as server-prefix wildcards, remove entries made redundant by the wildcard.
+
+   **b) Stale MCP references:** Check that MCP server prefixes in `permissions.allow` correspond to actually configured MCP servers. Run `claude mcp list` and cross-reference. Flag entries referencing servers that aren't installed.
+
+   ```
+   | Entry | Server | Status |
+   |-------|--------|--------|
+   | mcp__memory__* | memory | OK — installed (user scope) |
+   | mcp__payload__* | payload | OK — installed (project scope) |
+   | mcp__old_tool__* | old_tool | STALE — server not configured |
+   ```
+   User-decision — propose removal of stale entries.
+
+   **c) Hook entry hygiene:** Compare hook entries in project `.claude/settings.json` against the boilerplate's `.claude/settings.json`. Flag:
+   - **Stale hooks** — entries whose `command` path points to a hook file that doesn't exist on disk
+   - **Missing hooks** — hooks present in the boilerplate settings but absent from the project settings
+   - **Matcher drift** — same hook file referenced but with a different `matcher` pattern than the boilerplate
+
+   ```
+   | Hook | Event | Matcher | Status |
+   |------|-------|---------|--------|
+   | bash-guard | PreToolUse | Bash | PASS |
+   | old-hook | PostToolUse | Edit | STALE — .mjs file missing |
+   | code-guard | PreToolUse | Write\|Edit | PASS |
+   | new-hook | PreToolUse | ... | MISSING — in boilerplate, not in project |
+   ```
+   Stale hooks auto-fixable (remove entry). Missing hooks proposed for addition.
+
+   **d) Stale deny entries:** Check `permissions.deny` for entries referencing tools or patterns that no longer exist. Also flag overly broad deny patterns that may unintentionally block legitimate tools.
+
+   Report-only.
+
+9. **Context budget analysis** — measure the per-turn cost of always-loaded content:
+
+   **a)** Count lines and bytes for each always-loaded rule (files in `.claude/rules/core/` without `paths:` in frontmatter).
+
+   **b)** Compare total against the documented budget (~850 lines / ~20KB). Flag if exceeded.
+
+   **c)** Check path-scoped rules with overly broad patterns — `**/*.ts` + `**/*.tsx` matches nearly all source files, making the rule effectively always-loaded. Flag these for the user to consider narrowing.
+
+   **d)** Measure CLAUDE.md size — also loaded every turn. Flag if over 100 lines.
+
+   Output:
+   ```
+   | Component | Lines | ~KB | Status |
+   |-----------|-------|----|--------|
+   | Always-loaded rules (6 files) | 830 | 19.2 | PASS |
+   | Effectively-always rules (3 files) | 420 | 9.8 | INFO — broad path scope |
+   | CLAUDE.md | 85 | 2.1 | PASS |
+   | TOTAL per-turn baseline | 1335 | 31.1 | |
+   ```
+   Informational only.
+
+10. **KG contradiction detection** — find conflicting information across KG entities:
+
+   **a) Cross-entity contradictions:** For vendor entities in the same domain or related domains, compare key guidance. Look for:
+   - Contradicting version requirements (e.g., one entity says "requires React 18", another says "React 19 only")
+   - Conflicting patterns (e.g., data loading via `loader` in one entity, via `clientLoader` in another, without explaining when to use which)
+   - Pitfall observations that contradict the main content body of the same or another entity
+
+   **b) Context7 pitfall verification** (optional, user-gated): For entities with `Pitfall:` or `GitHub:` observations, verify against current library docs. Before running, ask the user: "Found N pitfalls on vendor entities. Verify against current docs via Context7? (y/n)"
+
+   If approved:
+   ```
+   For each pitfall:
+     resolve-library-id → get library ID for the entity's package
+     query-docs → search for the pitfall's topic
+     Compare: is the pitfall still valid in the current version?
+   ```
+
+   Output:
+   ```
+   ### Cross-Entity Contradictions
+   | Entity A | Entity B | Topic | Conflict |
+   |----------|----------|-------|----------|
+   | VendorRR7Routing | VendorRR7DataLoading | clientLoader | Contradicting SSR behavior description |
+
+   ### Stale Pitfalls (Context7 verified)
+   | Entity | Pitfall | Current Status |
+   |--------|---------|---------------|
+   | VendorDaisyui5 | "btn-ghost needs explicit color in v5" | FIXED in 5.7.0 |
+   | VendorRR7Routing | "clientLoader skips on SSR" | STILL VALID |
+   ```
+   Report-only. Stale pitfalls proposed for removal in step 11.
+
+11. **CLAUDE.md drift check** — run the drift checks from `references/drift-checks.md` (S1, S2, C1–C5), same checks as update step 1 but standalone:
+
+    | ID | Check | Severity |
+    |----|-------|----------|
+    | S1 | Required headings exist (`## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge`, `### Knowledge accumulation`) | MISSING |
+    | S2 | No legacy section names (`## Vendor Memory Loading`, `## MCP Tools:`) | WARN |
+    | C1 | Rules intro references `.claude/rules/core/` | WARN |
+    | C2 | Vendor Knowledge section has a domain table with `search_nodes` queries | WARN |
+    | C3 | Domain table entity names match deployed entities (cross-ref with step 2 results) | WARN |
+    | C4 | Knowledge accumulation section contains format strings (`Pitfall:`, `GitHub:`, `Docs:`) | WARN |
+    | C5 | No inlined MCP tool instructions (belongs in rules, not CLAUDE.md) | INFO |
+
+    Offer to auto-fix MISSING sections by appending from `references/bootstrap-template.md`.
+
+12. **Remediation proposals** — aggregate all findings into a unified health report:
+
+    **Auto-fixable** (after blanket user approval):
+    - Missing `same_domain` relations between vendor entities in the same domain (step 4a)
+    - Missing known cross-domain relations (step 4b)
+    - Non-wildcarded MCP permissions → rewrite as server-prefix wildcards (step 8a)
+    - Stale hook entries → remove from settings (step 8c)
+    - Missing CLAUDE.md sections from bootstrap template (step 11, MISSING items)
+
+    **User-decision required:**
+    - Remove orphaned vendor entities from KG (step 2c)
+    - Remove orphaned rule files from `.claude/rules/core/` (step 3)
+    - Resolve rule contradictions — decide which instruction takes precedence (step 6)
+    - Handle stray files — keep, move to KG, or delete (step 7)
+    - Stale MCP server references → propose removal (step 8b)
+    - Missing hook entries → propose addition (step 8c)
+    - Relate orphan project entities to vendor entities (step 4c)
+    - Remove stale pitfalls verified by Context7 (step 10b)
+
+    **Informational** (no action, awareness only):
+    - Version drift between templates and KG → recommend `/webstack update` (step 2a)
+    - Installed version mismatches (step 2b)
+    - Context budget breakdown (step 9)
+    - Cross-entity contradictions in KG (step 10a)
+    - Content tampering in rules (step 3)
+    - KG entity quality issues (step 5)
+    - Stale deny entries (step 8d)
+
+    Ask: "Apply auto-fixes? (relations, CLAUDE.md sections, MCP wildcards, stale hooks)"
+
+13. **Execute fixes and final report:**
+
+    Execute approved auto-fixes:
+    - `create_relations` for missing intra-domain and cross-domain relations
+    - `add_observations` for missing standard observations (if approved)
+    - Rewrite `permissions.allow` entries to use server-prefix wildcards, remove redundant individual entries
+    - Remove stale hook entries from `.claude/settings.json`
+    - Append missing sections to CLAUDE.md from bootstrap template
+
+    Execute user-approved individual fixes:
+    - `delete_entities` for approved orphan removals
+    - `delete_observations` for approved stale pitfall removals
+    - Remove stale MCP permission entries
+    - Add missing hook entries to `.claude/settings.json`
+    - Delete approved stray files
+
+    Log each action taken.
+
+    **Final report:**
+    ```
+    ### Health Report Summary
+
+    | Category | Issues Found | Fixed | Needs User Action | Info Only |
+    |----------|-------------|-------|--------------------|-----------|
+    | Vendor versions | 3 | 0 | 0 | 3 (run /webstack update) |
+    | Core rules | 2 | 0 | 1 orphan | 1 drift |
+    | KG relations | 8 | 6 | 2 proposed | 0 |
+    | Entity quality | 1 | 0 | 0 | 1 |
+    | Rule contradictions | 2 | 0 | 2 | 0 |
+    | Stray files | 1 | 0 | 1 | 0 |
+    | Settings & MCP | 4 | 2 wildcarded | 1 stale server | 1 deny entry |
+    | Context budget | 0 | 0 | 0 | budget OK |
+    | KG contradictions | 1 | 0 | 0 | 1 |
+    | CLAUDE.md drift | 1 | 1 | 0 | 0 |
+    ```
+
+    **No SHA update** — maintenance does not deploy templates, so the SHA stays unchanged. The SHA only updates on `/webstack init` and `/webstack update`.
 
 ### Template Versioning
 
