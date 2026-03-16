@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: react-router@7
 target: graph
 tags: [types, typescript, typegen, href, Route, typesafe]
@@ -135,3 +135,23 @@ When using `useRouteLoaderData`, use the route ID (NOT the path):
 const data = useRouteLoaderData("journey")      // ✅ CORRECT
 const data = useRouteLoaderData("journeys/:id") // ❌ WRONG
 ```
+
+## Known Issues
+
+### Serialized loader data breaks type predicates
+
+React Router serializes loader data, creating structural types with `[k: string]: unknown` index signatures. Nominal types (e.g., Payload CMS types) have `[x: string]: undefined`. TypeScript's type predicate overload requires `S extends T`, but the nominal type doesn't extend the serialized structural type.
+
+**Symptom:** `.filter(isMedia)` or similar type guards don't narrow the array type when used on loader data.
+
+**Fix:** Derive the type from the actual serialized data instead of forcing the nominal type:
+
+```typescript
+// ❌ Nominal type predicate fails on serialized data
+.filter((img): img is Media => typeof img !== 'number')
+
+// ✅ Derive from serialized type
+.filter((img): img is Exclude<typeof img, number> => typeof img !== 'number')
+```
+
+This pattern applies whenever you use type predicates on any data that came through a React Router loader.

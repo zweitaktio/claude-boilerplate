@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: payload@3
 target: graph
 priority: high
@@ -171,6 +171,40 @@ createTechnologies { data: { title: "Redis", slug: "redis" } }
 Layout fields work via MCP — including nested Lexical rich-text JSON, discriminated block type unions, and deeply nested structures (columns → text blocks). No REST API fallback needed.
 
 **Caveat:** The plugin generates its Zod validation schema from the running Payload config at server startup. If block definitions change, the backend server must be restarted for MCP to accept the new schema. A stale server will reject blocks with unrecognized fields.
+
+## Pitfalls
+
+### Migrations are not idempotent
+
+Payload auto-generated migrations use bare `DROP TABLE`, `ADD COLUMN`, `CREATE INDEX`, `DROP CONSTRAINT` — none have `IF EXISTS` / `IF NOT EXISTS` guards. If a deploy partially runs a migration and crashes, retrying fails because already-applied statements error out. **Always add `IF EXISTS` / `IF NOT EXISTS` guards** to generated migration files before committing.
+
+### Migrations auto-apply in dev mode
+
+Dev server auto-pushes schema changes on startup. Only create migration files with `migrate:create` — never run `migrate` manually in local dev, or you'll get conflicts between auto-push and explicit migrations.
+
+### plugin-mcp >=3.79.0 poisons globalThis.Response
+
+The MCP handler creates `Response` from a different module scope, breaking `instanceof Response` checks for all subsequent route handlers. **Workaround:** wrap the endpoint handler with save/restore of `globalThis.Response` and re-wrap the response using the native constructor captured at module load time. See https://github.com/payloadcms/payload/issues/15856.
+
+### plugin-mcp generates inaccurate block schemas
+
+The MCP plugin's generated Zod schema uses wrong field names for blocks (e.g., maps `description` as `subtitle`, `body` as `content`). The plugin does NOT enforce `additionalProperties: false`, so actual Payload field names pass through and work. **Always use real Payload field names, not MCP schema names.**
+
+### Array field named 'order' collides with _order column
+
+Payload auto-generates an `_order` column for array row ordering. If you add a relationship field named `order` inside an array, both try to create `{table}_order_idx`. **Rename the field** (e.g., `relatedOrder`, `linkedOrder`) to avoid the index collision.
+
+### payload.create() TS union type confusion
+
+Payload's `create()` Options type is `RequiredData | (DraftData + draft: true)`. When a required field is missing, TypeScript reports "draft is missing" instead of the actual missing field. **Workarounds:** (1) pass the missing field explicitly (defaultValue only applies at runtime, not TS), or (2) pass `draft: false` to satisfy the union. Affects any collection with required fields.
+
+### Localized blocks — never mix levels
+
+When a `blocks` / `layout` field is NOT localized at the top level but individual block fields have `localized: true`, updating via API with a `locale` param overwrites the single shared layout array — last locale update wins. **Fix:** localize the layout field itself (`localized: true` on the blocks field). Remove `localized: true` from individual block fields within. Each locale then gets its own independent block array.
+
+### Optional boolean fields from checkboxes
+
+HTML checkboxes send no value when unchecked → Conform/Zod parses as `undefined` → Payload ignores `undefined` fields in updates (field stays at its previous value). **Always default to `false`** when passing optional boolean fields to Payload: `marketingConsent: formData.marketingConsent ?? false`.
 
 ## Known Issues
 

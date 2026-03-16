@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: payload-rest-client
 target: graph
 tags: [payload, rest-client, api, fetch, typed-client]
@@ -96,3 +96,39 @@ Key rules:
 - Store the API key in environment variables — never hardcode
 - Use `ky.extend()` to configure the base client once, reuse everywhere
 - The header name `users` corresponds to the Payload auth collection name
+
+## Pitfalls
+
+### `select` doesn't include implicit fields
+
+The `select` parameter only returns explicitly listed fields. Implicit fields like `id` are NOT included automatically. If you need `id` in the response, either omit `select` or include a real collection field to get a minimal response (Payload always includes `id` when at least one field is selected via the REST API — but the TypeScript type won't reflect it).
+
+### `in` operator expects a comma-separated string
+
+The `in` and `not_in` filter operators expect a comma-separated string, not an array. TypeScript enforces this, but it's easy to pass an array by mistake:
+
+```typescript
+// ✅ Correct — comma-separated string
+where: { status: { in: 'pending,confirmed,processing' } }
+
+// ❌ Wrong — array (TypeScript will reject this)
+where: { status: { in: ['pending', 'confirmed', 'processing'] } }
+```
+
+### Where type too strict for conditional properties
+
+Payload's `Where` type uses a strict index signature that conflicts with TypeScript's inference for inline objects with conditional (optional) properties. Optional fields infer as `T | undefined`, which doesn't satisfy the index signature.
+
+**Workaround:** For generic utility functions that build where clauses dynamically, type the where parameter as `any` and narrow at the consumer level:
+
+```typescript
+// ✅ Permissive in the utility, strict at the call site
+function buildQuery(where: any) { /* ... */ }
+
+// ❌ Inline conditional where causes TS error
+const where: Where = {
+  status: { equals: 'active' },
+  ...(categoryId && { category: { equals: categoryId } }),
+  // TS error: index signature not compatible
+}
+```

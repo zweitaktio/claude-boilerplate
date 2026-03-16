@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.0
 applies: remix-i18next & react-router@7
 target: graph
 tags: [i18n, routing, locale, translations, ssr, language, remix-i18next]
@@ -1070,6 +1070,14 @@ Confirms the removed language is no longer generated.
 Parent and child keys must not collide. `t('nav')` and `t('nav.about')` in the same namespace causes i18next to return an object instead of a string.
 
 **Fix:** Use unique parent keys or flatten the structure.
+
+### i18next-parser empty strings silently break t() fallbacks
+
+`yarn i18n:extract` creates missing translation keys with empty string values (`""`) in locale JSON files. i18next's default `returnEmptyString: true` means existing keys with `""` return `""` instead of the fallback default value passed to `t()`.
+
+**Impact:** UI elements render with correct `data-testid` but invisible text — no error, no console warning. Playwright tests see elements as "hidden" (empty content).
+
+**Fix:** Always translate new keys immediately after extraction. If you can't translate yet, either delete the empty entries or set `returnEmptyString: false` in the i18next config (which makes empty strings fall through to the default value).
 
 ### Client/server language mismatch
 If client shows different language than server-rendered HTML, check:
