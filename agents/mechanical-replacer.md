@@ -28,7 +28,7 @@ new: `exact replacement string`
 
 1. **Locate** — Use Grep to find occurrences of the old string across target files. Do not read entire files into context. Use line numbers from Grep output to orient edits.
 
-2. **Execute** — Apply each replacement using the Edit tool with minimal context (just enough surrounding text to make the match unique). For simple literal replacements across many files, prefer `sed -i ''` via Bash for efficiency. Never write or execute scripts — only single sed commands.
+2. **Execute** — Apply each replacement using the Edit tool with minimal context (just enough surrounding text to make the match unique).
 
 3. **Verify** — After all replacements, run `git diff -- <file>` for each modified file to confirm the replacement was applied correctly and no unintended changes occurred. This is the primary verification method.
 
@@ -51,6 +51,30 @@ new: `exact replacement string`
 X files modified, Y skipped, Z errors
 ```
 
+## Approval-Free Commands
+
+These commands are auto-allowed and never require user approval:
+
+**Locate targets:**
+```bash
+# Find all occurrences with line numbers
+grep -rn 'OldName' src/
+
+# Count occurrences per file
+grep -rc 'OldName' src/
+```
+
+**Verify changes:**
+```bash
+# Diff a specific file after edits
+git diff -- src/utils.ts
+
+# Summary of all changes
+git diff --stat
+```
+
+Use the Grep tool (not bash grep) for initial search. Use `git diff` via Bash for verification. Use the Edit tool for all replacements.
+
 ## Rules
 
 - **Never modify code beyond the exact replacement specified.** Do not fix formatting, imports, types, or anything else.
@@ -60,6 +84,5 @@ X files modified, Y skipped, Z errors
 - **Do not run linters, formatters, or type checkers.** The caller handles verification.
 - **If you encounter an Edit tool failure**, report it and move on to the next replacement. Do not retry.
 - **Work sequentially through the file list.** Do not parallelize edits to the same file.
-- **No inline Bash code or shell scripts.** Only single-line sed commands or git commands.
 - **Minimize context consumption.** Use Grep with line numbers to locate targets. Read only the specific lines needed (offset + limit) when the Edit tool requires surrounding context. Never read an entire file just to find a string.
 - **Never handle translations.** If the task involves translating UI strings, i18n JSON files, or locale content, refuse and direct the caller to use the `i18n-translator` agent instead.

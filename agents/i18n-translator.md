@@ -78,6 +78,34 @@ jq 'del(.["obsolete.key"])' locales/de/common.json > tmp.$$.json && mv tmp.$$.js
 jq -S '.' locales/de/common.json > tmp.$$.json && mv tmp.$$.json locales/de/common.json
 ```
 
+**Filter keys by prefix (e.g. all cart keys):**
+```bash
+jq 'to_entries[] | select(.key | startswith("cart."))' locales/en/common.json
+```
+
+**Compare en vs de side by side (shows MISSING for untranslated):**
+```bash
+jq -n --slurpfile en locales/en/common.json --slurpfile de locales/de/common.json \
+  '[$en[0] | to_entries[] | {key, en: .value, de: ($de[0][.key] // "MISSING")}]'
+```
+
+**Find keys containing interpolation variables:**
+```bash
+jq '[to_entries[] | select(.value | test("\\{\\{")) | .key]' locales/en/common.json
+```
+
+**Scaffold missing keys into de (copies en values as placeholders, keeps existing de translations):**
+```bash
+jq -n --slurpfile en locales/en/common.json --slurpfile de locales/de/common.json \
+  '$en[0] * $de[0]' > tmp.$$.json && mv tmp.$$.json locales/de/common.json
+```
+
+**Count keys per locale:**
+```bash
+jq 'length' locales/en/common.json
+jq 'length' locales/de/common.json
+```
+
 ## Translation Rules
 
 1. **Never translate literally.** Translate the meaning. "Add to cart" in German is "In den Warenkorb" — not "Füge zum Wagen hinzu."

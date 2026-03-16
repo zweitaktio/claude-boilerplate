@@ -1,5 +1,5 @@
 ---
-version: 2.3.0
+version: 2.4.0
 applies: Always
 target: rules
 priority: high
@@ -97,21 +97,42 @@ Before creating any entity, run `search_nodes` first — if a near-match exists,
 
 If no `vendor_doc` entity exists for the library, create a minimal one: name `Vendor{PascalCaseName}`, type `vendor_doc`, first observation = the finding.
 
+### Relate new entities — no orphans
+
+After creating a `bug_resolution`, `architecture_decision`, or `convention` entity, immediately `create_relations` to link it to the relevant `vendor_doc`:
+
+```
+create_relations([{
+  from: "HydrationMismatchOnDateFormat",
+  to: "VendorReactRouter7Routing",
+  relationType: "depends_on"
+}])
+```
+
+| Entity type | Relation to vendor_doc | How to pick the target |
+|-------------|----------------------|----------------------|
+| `bug_resolution` | `depends_on` | The library where the bug manifests |
+| `architecture_decision` | `depends_on` | The library the decision is about |
+| `convention` | `configures` | The library the convention applies to |
+
+If the entity spans multiple libraries, add a relation to each. If no `vendor_doc` exists for the library, skip — don't create a stub just for a relation.
+
 ### Good vs bad entries
 
 ```
-# Good bug_resolution — specific, searchable, has root cause
+# Good bug_resolution — specific, searchable, has root cause + relation
 Entity: HydrationMismatchOnDateFormat (bug_resolution)
   "Symptom: hydration mismatch warning on pages with formatted dates"
   "Root cause: Date.now() differs server vs client"
   "Fix: format dates in loader, pass as string"
+Relation: HydrationMismatchOnDateFormat -> VendorReactRouter7Routing (depends_on)
 
 # Good vendor pitfall — saves hours next session
 Entity: VendorReactRouter7Routing (vendor_doc) — add_observations:
   "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
   "GitHub: https://github.com/remix-run/react-router/issues/11​234 — confirmed by maintainer"
 
-# Bad — vague, unsearchable
+# Bad — vague, unsearchable, no relation (orphan)
 Entity: DateBug (bug_resolution)
   "Fixed a date formatting issue"
 ```

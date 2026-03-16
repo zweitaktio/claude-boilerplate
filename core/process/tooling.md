@@ -1,5 +1,5 @@
 ---
-version: 2.3.0
+version: 2.4.0
 applies: Always
 target: rules
 priority: high
@@ -48,7 +48,7 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 ### Bash Tool — Simple Commands Only
 
-Allowed uses: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`. Chaining with `&&` is fine.
+Allowed uses: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`. Chaining with `&&` is fine.
 
 ```bash
 # Good — obvious, reviewable
@@ -71,7 +71,7 @@ for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 | `cat`, `head`, `tail` | Read tool |
 | `grep`, `rg` | Grep tool |
 | `find`, `ls` | Glob tool |
-| `sed`, `awk` | Edit tool |
+| `awk` | Edit tool |
 | `echo >`, heredoc | Write tool |
 
 ### context-mode — Large Output Handling

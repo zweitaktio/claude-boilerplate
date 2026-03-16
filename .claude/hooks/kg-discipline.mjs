@@ -3,10 +3,10 @@ import { inject, pass } from './core/output.mjs'
 import { read, write, clear, append, hasLine } from './core/state.mjs'
 
 const { tool_name, tool_input } = JSON.parse(await readStdin())
-if (!tool_input && tool_name !== 'mcp__memory__create_entities' && tool_name !== 'mcp__memory__add_observations') pass()
+if (!tool_input && tool_name !== 'mcp__memory__create_entities' && tool_name !== 'mcp__memory__add_observations' && tool_name !== 'mcp__memory__create_relations') pass()
 
 // KG write tools: reset counter
-if (tool_name === 'mcp__memory__create_entities' || tool_name === 'mcp__memory__add_observations') {
+if (tool_name === 'mcp__memory__create_entities' || tool_name === 'mcp__memory__add_observations' || tool_name === 'mcp__memory__create_relations') {
   clear('kg-edits')
   clear('kg-files')
   pass()
@@ -32,8 +32,9 @@ if (count >= 4) {
 - Resolved a non-trivial bug? -> create_entities type bug_resolution
 - Found a pitfall? -> add_observations "Pitfall: {what} - {why}"
 - Chose one approach over another? -> create_entities type architecture_decision
+- Created an entity? -> create_relations to link it to the relevant VendorXxx entity
 Record now, not later - within 2 tool calls of discovery.
-(core/process/mcp-tools.md § KG write triggers - Timing rule)`)
+(core/process/mcp-tools.md § KG write triggers)`)
 }
 
 pass()
