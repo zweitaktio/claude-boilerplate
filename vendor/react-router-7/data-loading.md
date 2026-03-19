@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: react-router@7
 target: graph
 domain: routing
@@ -174,4 +174,31 @@ export default function Product({ loaderData }: Route.ComponentProps) {
     </div>
   )
 }
+
+## Pitfalls
+
+### Blocking all data in loaders
+
+By default, loaders block navigation until all data resolves. For pages with slow secondary data (reviews, recommendations, activity logs), stream non-critical data instead of blocking:
+
+```typescript
+// ❌ User waits for slowest query
+export async function loader({ params }: Route.LoaderArgs) {
+  const product = await db.getProduct(params.id)
+  const reviews = await db.getReviews(params.id)     // 800ms
+  const related = await db.getRelated(params.id)      // 500ms
+  return { product, reviews, related }
+}
+
+// ✅ Product renders immediately, reviews/related stream in
+export async function loader({ params }: Route.LoaderArgs) {
+  return {
+    product: await db.getProduct(params.id),   // block on critical data
+    reviews: db.getReviews(params.id),          // stream
+    related: db.getRelated(params.id),          // stream
+  }
+}
+```
+
+**Rule of thumb:** `await` data the page can't render without (title, main content). Don't `await` data that renders below the fold or in secondary panels — wrap those in `<Suspense>` + `<Await>`.
 ```

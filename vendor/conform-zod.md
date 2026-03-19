@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: "@conform-to/react" | "@conform-to/zod"
 target: graph
 domain: forms
@@ -706,6 +706,27 @@ z.string({ message: 'Required' })
 // ✅ Zod v4 error syntax
 z.string({ error: 'Required' })
 ```
+
+## Pitfalls
+
+### Duplicating Zod schemas across files
+
+Don't create separate schemas for the same data shape in action vs component. Define schemas once in a shared location and import them:
+
+```typescript
+// ✅ Shared schema — single source of truth
+// app/schemas/login.ts
+export const createLoginSchema = (t: TranslationFn) =>
+  z.object({
+    email: z.string({ error: t('v.required', 'Required') }).email(),
+    password: z.string({ error: t('v.required', 'Required') }).min(8),
+  })
+
+// Used in BOTH action and component
+import { createLoginSchema } from '~/schemas/login'
+```
+
+**Why:** Duplicate schemas diverge silently — a field added to the action schema but missing from the client schema causes silent validation gaps. The `createXSchema(t)` factory pattern supports i18n while keeping a single source of truth.
 
 ## See Also
 

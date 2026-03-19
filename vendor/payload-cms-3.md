@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: payload@3
 target: graph
 domain: backend
@@ -349,3 +349,28 @@ export const auditLog = (req: PayloadRequest, event: {
 ```
 
 Log security-relevant events: `login_success`, `login_failure`, `token_refresh`, `password_change`, `access_denied`.
+
+### Default depth over-fetches
+
+Payload's `find()` and `findByID()` default to deep relationship population. This causes N+1 queries and returns massive payloads for collections with many relationships.
+
+```typescript
+// ❌ Default depth — fetches entire relationship tree
+const products = await payload.find({ collection: 'products' })
+
+// ✅ Minimal depth — only populate what you need
+const products = await payload.find({
+  collection: 'products',
+  depth: 1,                    // Only direct relationships
+  select: {                    // Only needed fields
+    title: true,
+    price: true,
+    category: true,
+  },
+})
+```
+
+**Rules:**
+- Always specify `depth: 0` or `depth: 1` unless you need nested relationships
+- Use `select` to limit returned fields for list views
+- For admin UI custom components, the full document is already available — don't re-fetch

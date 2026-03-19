@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: "@ory/hydra-client" | "@ory/client"
 target: graph
 domain: auth
@@ -156,3 +156,22 @@ In development with separate ports (frontend:5173, Hydra:4444), cookies may not 
 
 ### Consent screen skip
 For first-party apps, set `skip_consent: true` in the client config to avoid showing unnecessary consent screens to your own users.
+
+## Pitfalls
+
+### Cookie security defaults
+
+Always set security flags on cookies that hold tokens or session data:
+
+```typescript
+import { createCookie } from 'react-router'
+
+export const sessionCookie = createCookie('session', {
+  httpOnly: true,     // Not accessible via JavaScript
+  sameSite: 'lax',    // Prevents CSRF on cross-origin POSTs
+  secure: process.env.NODE_ENV === 'production',  // HTTPS only in prod
+  maxAge: 60 * 60 * 24 * 7,  // 7 days
+})
+```
+
+**Never:** omit `httpOnly` on auth cookies, use `sameSite: 'none'` without a strong reason, or set `secure: false` in production.

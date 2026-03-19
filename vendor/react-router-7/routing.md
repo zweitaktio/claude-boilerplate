@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: react-router@7
 target: graph
 domain: routing
@@ -315,3 +315,31 @@ export default function ExpenseCreate({ loaderData }: Route.ComponentProps) {
 - List page stays mounted underneath (no re-render on open/close)
 - Each modal has its own loader/action for data isolation
 - Works with `useFetcher` for non-navigating submissions
+
+## Pitfalls
+
+### Missing shouldRevalidate causes unnecessary refetches
+
+By default, React Router revalidates ALL loaders on every navigation and mutation. Without `shouldRevalidate`, every route's loader re-runs even when its data hasn't changed — causing unnecessary API calls and UI flicker.
+
+```typescript
+// ✅ Only revalidate when this route's params or data change
+export function shouldRevalidate({
+  currentParams,
+  nextParams,
+  defaultShouldRevalidate,
+}: Route.ShouldRevalidateArgs) {
+  // Skip revalidation if params haven't changed
+  if (currentParams.teamId === nextParams.teamId) {
+    return false
+  }
+  return defaultShouldRevalidate
+}
+```
+
+**When to add `shouldRevalidate`:**
+- List pages that shouldn't refetch when a child modal submits
+- Layout routes with data that rarely changes (user info, nav items)
+- Routes with expensive loaders (aggregations, search)
+
+**When NOT to override:** If the route's data depends on other routes' mutations (e.g., a count that changes when items are added), let default revalidation handle it.

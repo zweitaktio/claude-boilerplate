@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.3.0
 applies: react-router | next | remix
 target: rules
 paths:
@@ -101,10 +101,29 @@ class RateLimiter {
 }
 ```
 
+## Environment Variables
+
+`process.env` is only available server-side. Access env vars only in loaders, actions, and `.server` modules — never in components or shared utilities that run in the browser.
+
+```typescript
+// ✅ Safe — loader runs server-side only
+export async function loader() {
+  const apiKey = process.env.API_SECRET
+}
+
+// ❌ Leaks to client bundle — breaks at runtime
+export const MyComponent = () => {
+  const key = process.env.API_SECRET  // undefined in browser
+}
+```
+
+Only variables prefixed with `VITE_` (Vite) or `PUBLIC_` are available client-side. Never put secrets in prefixed variables.
+
 ## Rules
 - Never use `setInterval`/`setTimeout` at module scope or in SSR render paths
 - Use event-driven patterns (check-on-access) instead of polling
 - Use `useEffect` cleanup for any client-side timers
+- Never access `process.env` in components or shared modules — use loaders/actions or `.server` files
 
 Before choosing a rendering strategy, run `open_nodes(["VendorReactRouter7RenderingStrategies"])`.
 

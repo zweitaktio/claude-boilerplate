@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: react
 target: rules
 priority: high
@@ -274,6 +274,42 @@ function createTypeGuards<T>(typeName: string) {
 export const { singular: isUser, parse: parseUser } = createTypeGuards<User>("user")
 export const { singular: isProduct, parse: parseProduct } = createTypeGuards<Product>("product")
 ```
+
+## Progressive Enhancement
+
+Forms must work without JavaScript. Use `<Form>` + server action, not `onClick` + `fetch()`:
+
+```tsx
+// ✅ Works without JS — progressive enhancement
+<Form method="post" action="/api/subscribe">
+  <input name="email" type="email" required />
+  <button type="submit">Subscribe</button>
+</Form>
+
+// ❌ Breaks without JS
+<button onClick={() => fetch('/api/subscribe', { method: 'POST', body })}>
+```
+
+Use `useFetcher` for in-page mutations that shouldn't trigger navigation.
+
+## Error Responses
+
+Always `throw new Response()` with proper status codes from loaders and actions — never return error objects:
+
+```typescript
+// ✅ Caught by ErrorBoundary, proper HTTP semantics
+throw new Response("Not found", { status: 404 })
+throw new Response("Unauthorized", { status: 401 })
+
+// ❌ Renders normally with error prop — no ErrorBoundary, no status code
+return { error: "Not found" }
+```
+
+## Accessibility
+
+- **Focus management after navigation:** When client-side navigation completes, focus should move to the main content area or a heading — don't leave focus on the clicked link
+- **Skip link:** Include a "Skip to content" link as the first focusable element in the layout, targeting `#main-content`
+- **Reduced motion:** Wrap animations in `prefers-reduced-motion` media query. Use `motion-safe:` Tailwind modifier
 
 Before writing DaisyUI component markup, run `open_nodes(["VendorDaisyui5"])`.
 Before writing dialogs, popovers, menus, selects, or tooltips, run `open_nodes(["VendorBaseUiReact"])`.

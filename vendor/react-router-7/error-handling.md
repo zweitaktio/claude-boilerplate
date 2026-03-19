@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: react-router@7
 target: graph
 domain: routing
@@ -156,3 +156,33 @@ export function handleError(
   // errorReportingService.report(error);
 }
 ```
+
+## Pitfalls
+
+### Returning error objects instead of throwing Responses
+
+Never return `{ error: "..." }` from loaders/actions. This renders the component normally with an error prop instead of triggering the ErrorBoundary:
+
+```typescript
+// ❌ Component renders normally — no ErrorBoundary, no HTTP status
+export async function loader({ params }: Route.LoaderArgs) {
+  const item = await db.getItem(params.id)
+  if (!item) return { error: "Not found" }
+  return { item }
+}
+
+// ✅ ErrorBoundary catches this, HTTP 404 status
+export async function loader({ params }: Route.LoaderArgs) {
+  const item = await db.getItem(params.id)
+  if (!item) throw new Response("Not found", { status: 404 })
+  return { item }
+}
+```
+
+**When to throw vs return errors:**
+- **Throw `new Response()`:** Page-level errors (404, 401, 403, 500) — user sees ErrorBoundary
+- **Return validation errors:** Field-level form errors from actions — component renders inline error messages
+
+### ErrorBoundary not defined on the right route
+
+ErrorBoundary catches errors from the route it's defined on AND all child routes. If a child route throws and no ErrorBoundary exists between it and root, the root ErrorBoundary replaces the entire page. Place ErrorBoundaries on layout routes to contain errors to their section.
