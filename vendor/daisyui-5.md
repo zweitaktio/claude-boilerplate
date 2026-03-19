@@ -2,6 +2,7 @@
 version: 1.3.0
 applies: daisyui@5
 target: graph
+domain: styling
 tags: [daisyui, ui, components, tailwind, styling, themes]
 ---
 

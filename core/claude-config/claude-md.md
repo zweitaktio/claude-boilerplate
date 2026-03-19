@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 paths:
@@ -74,19 +74,25 @@ Personal prefs: @~/.claude/my-project-prefs.md
 
 ## Modular Rules (`.claude/rules/`)
 
-Organize large projects into focused rule files:
+Organize rules by ownership — skill-managed vs project-specific:
 
 ```
 .claude/
 ├── CLAUDE.md              # Main instructions
 └── rules/
-    ├── code-style.md      # Formatting, naming
-    ├── testing.md         # Test conventions
-    ├── security.md        # Security requirements
-    └── frontend/
-        ├── react.md       # React patterns
-        └── styles.md      # CSS/styling
+    ├── core/              # Managed by webstack skill — DO NOT EDIT
+    │   ├── tooling.md
+    │   ├── mcp-tools.md
+    │   └── ...
+    └── project/           # Project-specific rules (your code)
+        ├── code-style.md
+        ├── testing.md
+        └── frontend/
+            └── react.md
 ```
+
+**`core/`** is deployed and updated by the webstack skill. Edits will be overwritten on `/webstack update`.
+**`project/`** is yours — add project-specific conventions, overrides, and doc indexes here.
 
 ### Path-Scoped Rules
 

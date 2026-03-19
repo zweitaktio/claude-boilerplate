@@ -2,6 +2,7 @@
 version: 1.2.0
 applies: react-router@7
 target: graph
+domain: routing
 tags: [types, typescript, typegen, href, Route, typesafe]
 ---
 

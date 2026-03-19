@@ -1,7 +1,8 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: remix-i18next & react-router@7
 target: graph
+domain: i18n
 tags: [i18n, routing, locale, translations, ssr, language, remix-i18next]
 ---
 
@@ -1063,6 +1064,66 @@ Confirms the removed language is no longer generated.
 | `content/{lang}/` | Delete directory (if content is localized) |
 
 ---
+
+## Pitfalls
+
+### Never pass an array to useTranslation()
+
+The i18next-parser extractor cannot resolve namespace arrays:
+
+```typescript
+// ❌ Extractor can't resolve this
+const { t } = useTranslation(['admin', 'common'])
+
+// ✅ Single namespace per call
+const { t } = useTranslation('admin')
+```
+
+Declare multiple namespaces in route `handle.i18n` (arrays are fine there — needed for loading).
+
+### Don't use Trans for plain text
+
+`<Trans>` is for JSX inside translations (links, formatting). For plain strings, `t()` is simpler:
+
+```typescript
+// ❌ Overkill for plain text
+<Trans i18nKey="nav.about">About</Trans>
+
+// ✅ Use t()
+{t('nav.about', 'About')}
+```
+
+### Never use native Date methods in i18n apps
+
+`date.toLocaleDateString()` and `new Intl.DateTimeFormat()` ignore the app's i18n locale context. Use `date-fns` with the locale from i18n:
+
+```typescript
+import { format } from 'date-fns'
+import { de, enUS, fr } from 'date-fns/locale'
+
+const locales = { de, en: enUS, fr }
+
+// ✅ Always pass locale from i18n context
+format(date, 'dd.MM.yyyy', { locale: locales[currentLanguage] })
+
+// ❌ Never — ignores app locale
+date.toLocaleDateString()
+new Intl.DateTimeFormat().format(date)
+```
+
+### JSON locale files — never Edit/Write directly
+
+Use `jq` via Bash to set translation values. The Edit/Write tools corrupt JSON key ordering and escaping. A hook (`i18n-extract-reminder`) blocks these operations automatically.
+
+```bash
+# ✅ Set a translation value
+jq '.nav.newItem = "Neuer Eintrag"' \
+  app/locales/de.json > /tmp/de.json && mv /tmp/de.json app/locales/de.json
+
+# ✅ Set multiple values at once
+jq '.nav += {"newItem": "Neuer Eintrag", "settings": "Einstellungen"}' \
+  app/locales/de.json > /tmp/de.json && mv /tmp/de.json app/locales/de.json
+```
 
 ## Known Issues
 

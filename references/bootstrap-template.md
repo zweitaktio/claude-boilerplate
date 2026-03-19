@@ -29,10 +29,8 @@ See `.claude/rules/core/tooling.md` for full workflow rules.
 
 ## Rules
 
-Core conventions are in `.claude/rules/core/` (auto-loaded by Claude Code). Add **project-specific overrides** below:
-
-### Project-Specific
-<!-- User adds project-specific rules here -->
+Core conventions are in `.claude/rules/core/` (auto-loaded, managed by the webstack skill — **do not edit**).
+Add project-specific rules in `.claude/rules/project/` to keep them separate from skill-managed rules.
 
 ## Vendor Knowledge
 

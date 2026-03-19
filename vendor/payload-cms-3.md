@@ -2,6 +2,7 @@
 version: 1.4.0
 applies: payload@3
 target: graph
+domain: backend
 priority: high
 tags: [payload, cms, collections, api, backend, database]
 ---

@@ -2,6 +2,7 @@
 version: 1.2.0
 applies: react-router@7
 target: graph
+domain: routing
 type: integration
 tags: [conform, zod, oauth2, feature-modules, auth, validation, known-issues]
 ---

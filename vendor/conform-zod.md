@@ -2,6 +2,7 @@
 version: 1.0.0
 applies: "@conform-to/react" | "@conform-to/zod"
 target: graph
+domain: forms
 tags: [forms, validation, zod, conform, react-router]
 ---
 

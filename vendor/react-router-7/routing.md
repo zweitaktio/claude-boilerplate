@@ -2,6 +2,7 @@
 version: 1.1.0
 applies: react-router@7
 target: graph
+domain: routing
 tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
 ---
 

@@ -2,6 +2,7 @@
 version: 1.1.0
 applies: remark-lint-frontmatter-schema
 target: graph
+domain: tooling
 tags: [markdown, frontmatter, schema, validation, remark]
 ---
 

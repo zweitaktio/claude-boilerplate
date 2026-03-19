@@ -1,0 +1,60 @@
+{
+  "groups": [
+    {
+      "name": "hooks",
+      "src": ".claude/hooks",
+      "dest": ".claude/hooks",
+      "include": ["*.mjs"],
+      "versioning": "comment",
+      "chmod": true
+    },
+    {
+      "name": "hook-infra",
+      "src": ".claude/hooks",
+      "dest": ".claude/hooks",
+      "include": ["run.sh", "core/*.mjs"],
+      "versioning": "checksum",
+      "chmod": true
+    },
+    {
+      "name": "rules",
+      "src": "core",
+      "dest": ".claude/rules/core",
+      "include": ["**/*.md"],
+      "versioning": "frontmatter",
+      "flatten": true,
+      "conditional": true
+    },
+    {
+      "name": "vendor",
+      "src": "vendor",
+      "dest": null,
+      "include": ["**/*.md"],
+      "versioning": "frontmatter",
+      "conditional": true,
+      "deployMethod": "kg"
+    },
+    {
+      "name": "settings",
+      "src": ".claude/settings.json",
+      "dest": ".claude/settings.json",
+      "versioning": "merge",
+      "mergeKeys": ["hooks"]
+    },
+    {
+      "name": "configs",
+      "files": {
+        "core/playwright-mcp.config.json": ".claude/playwright-mcp.config.json"
+      },
+      "versioning": "overwrite"
+    },
+    {
+      "name": "scaffold",
+      "src": "scaffold",
+      "dest": ".",
+      "include": ["**/*"],
+      "versioning": "no-clobber",
+      "optional": true
+    }
+  ]
+}

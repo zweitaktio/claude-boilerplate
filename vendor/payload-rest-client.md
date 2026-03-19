@@ -2,6 +2,7 @@
 version: 1.3.0
 applies: payload-rest-client
 target: graph
+domain: backend
 tags: [payload, rest-client, api, fetch, typed-client]
 ---
 

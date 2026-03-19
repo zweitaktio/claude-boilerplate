@@ -2,6 +2,7 @@
 version: 1.2.0
 applies: tailwindcss@4
 target: graph
+domain: styling
 priority: high
 tags: [tailwind, css, styling, utilities, responsive, themes]
 ---

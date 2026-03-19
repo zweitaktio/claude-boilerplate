@@ -2,6 +2,7 @@
 version: 1.1.0
 applies: "@ory/hydra-client" | "@ory/client"
 target: graph
+domain: auth
 tags: [oauth2, hydra, auth, tokens, login, ory, identity]
 ---
 

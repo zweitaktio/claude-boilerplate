@@ -2,6 +2,7 @@
 version: 1.0.0
 applies: react-router@7.9.0+
 target: graph
+domain: routing
 tags: [middleware, context, auth, request, response, headers]
 ---
 

@@ -2,6 +2,7 @@
 version: 2.0.0
 applies: dokploy | .github/workflows/*dokploy* | .github/workflows/*deploy*
 target: graph
+domain: cicd
 tags: [dokploy, cicd, deployment, github-actions, docker, monorepo]
 ---
 

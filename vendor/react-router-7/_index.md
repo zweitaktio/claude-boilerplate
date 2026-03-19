@@ -2,6 +2,7 @@
 version: 1.0.0
 applies: react-router@7
 target: graph
+domain: routing
 priority: high
 tags: [react-router, routing, framework, overview]
 ---

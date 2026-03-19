@@ -2,6 +2,7 @@
 version: 1.0.0
 applies: Always
 target: graph
+domain: tooling
 tags: [scaffolding, monorepo, docker, dev-scripts, lifecycle, migration, sync, oauth]
 ---
 

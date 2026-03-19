@@ -1,3 +1,4 @@
+// version: 1.0.0
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 

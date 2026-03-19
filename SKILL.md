@@ -152,6 +152,7 @@ Then invoke in any project with `/webstack init` or `/webstack update`.
 ```
 claude-boilerplate/
 ├── SKILL.md                    # This file — orchestration only
+├── manifest.json               # Asset group declarations for sync.sh
 ├── core/                       # → deployed to .claude/rules/core/ (subdir stripped)
 │   ├── process/                # Always-loaded (except path-scoped ones)
 │   │   ├── tooling.md
@@ -203,6 +204,18 @@ claude-boilerplate/
 │   ├── dokploy-monorepo-cicd.md
 │   ├── conform-zod.md             # → entity: VendorConformZod
 │   └── project-scaffolding.md    # → entity: VendorProjectScaffolding
+├── scripts/                    # Deployment and maintenance automation
+│   ├── sync.sh                 # Deterministic asset sync (compare/apply)
+│   ├── evaluate-applies.sh     # Template applicability evaluation
+│   ├── preflight.sh            # CLI dependency check
+│   ├── setup-user-env.sh       # User-scoped MCP/plugin setup
+│   ├── generate-vendor-table.sh # CLAUDE.md vendor table generation
+│   ├── check-relations.sh      # KG relation completeness check
+│   ├── drift-check.sh          # CLAUDE.md drift checks (S1-C5)
+│   ├── bootstrap-claude-md.sh  # CLAUDE.md creation/section patching
+│   ├── find-strays.sh          # Stray file detection
+│   ├── audit-settings.sh       # Settings/MCP permission audit
+│   └── context-budget.sh       # Context window budget analysis
 ├── scaffold/                    # → copied to project root on /webstack init
 │   ├── dev.sh                   # Tmux dev launcher (optional: stripe listener pane)
 │   ├── install.sh               # Bootstrap script
@@ -257,49 +270,56 @@ In addition to per-template version comparison, the skill records the boilerplat
 0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
 
 1. **Bootstrap CLAUDE.md:**
-   - Check if `CLAUDE.md` exists in project root
-   - If missing: create it using the bootstrap template (see "CLAUDE.md Bootstrap" section)
-   - If exists but missing required sections: append them
-   - Show user what was created/added
-   - Note: subsequent `/webstack update` runs will check for drift in managed CLAUDE.md sections
+   ```bash
+   ~/.claude/skills/webstack/scripts/bootstrap-claude-md.sh /path/to/project
+   ```
+   Outputs JSON: `{action: "CREATE"|"APPEND"|"NONE", sections_added: [...], sections_existing: [...]}`.
+   Show the user what was created/added. Use `--dry-run` to preview without modifying.
 
 2. **Detect stack:**
    - Read `package.json` (dependencies + devDependencies)
    - Check file structure (`app/features/`, etc.)
    - Note frameworks and exact versions
 
-3. **Evaluate template applicability:**
+3. **Run deployment comparison:**
    ```bash
-   ~/.claude/skills/webstack/scripts/evaluate-applies.sh /path/to/project
+   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project
    ```
-   Parse the JSON output to build the action table. Each entry has `template`, `target`, `applies`, `matches` (boolean), and `reason`. If the script is unavailable or fails, fall back to manual evaluation (see `references/versioning.md` for applies condition spec).
+   Outputs a JSON action table covering all asset groups (hooks, hook-infra, rules, vendor, settings, configs). Each entry has `group`, `file`, `action`, and optional `version`, `entity`, `from`, `to`, `reason` fields. The script runs `evaluate-applies.sh` internally and handles SHA diff detection. Vendor docs show `CHECK_KG` action (require MCP deployment in a later step).
 
-4. **Propose a plan to the user:**
+4. **Propose a plan to the user** — present the sync.sh output as a formatted table:
    ```
-   | Template | Target | Action | Reason |
-   |----------|--------|--------|--------|
-   | core/process/tooling | rules | CREATE | Always applies |
-   | vendor/daisyui-5 | graph | CREATE | daisyui@5.5.14 detected |
-   | vendor/payload-cms-3 | graph | SKIP | payload not in dependencies |
-   | core/testing/e2e-testing | rules | SKIP | playwright not installed |
+   | Group | File | Action | Version |
+   |-------|------|--------|---------|
+   | rules | core/process/tooling.md | CREATE | 1.5.0 |
+   | hooks | bash-guard.mjs | CREATE | 1.0.0 |
+   | vendor | vendor/daisyui-5.md | CHECK_KG | 1.3.0 |
+   | settings | settings.json | MERGE | +14 entries |
+   | configs | playwright-mcp.config.json | CREATE | — |
    ```
 
 5. **Wait for user approval**
 
-6. **Deploy templates based on `target` field:**
-
-   For `target: rules`:
+6. **Deploy file-based assets:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project
    ```
-   Read: ~/.claude/skills/webstack/core/process/tooling.md
-   Write: .claude/rules/core/tooling.md  (subdir stripped from target)
-   ```
+   Handles all file-based deployment idempotently: rules (copy to `.claude/rules/core/`, subdir stripped), hooks (copy to `.claude/hooks/`), hook infrastructure (core utilities, run.sh), configs (playwright MCP config), and settings.json merge (adds hook entries, preserves project-specific hooks/settings). Records `.claude/webstack.sha` automatically.
 
-   For `target: graph` (vendor docs → Knowledge Graph entities):
+   **MCP scope note:** Playwright MCP is project-scoped (installed here). Other MCP servers (memory, context7) and plugins are user-scoped — see "User Environment Setup" above.
+
+   **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
+   ```bash
+   claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
+   ```
+   This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
+
+7. **Deploy vendor entities** — for each `CHECK_KG` item from the comparison output:
+
    ```
    Read: ~/.claude/skills/webstack/vendor/daisyui-5.md
    Parse frontmatter: version, applies, tags
-   Determine entity name: VendorDaisyui5 (see naming convention below)
-   Determine domain: styling (see domain mapping below)
+   Entity name and domain from sync.sh output: VendorDaisyui5, domain: styling
 
    create_entities([{
      name: "VendorDaisyui5",
@@ -319,55 +339,46 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Ensure `.memory/` directory exists before creating entities. Run `mkdir -p .memory` if needed.
 
-7. **Deploy config files and hooks** to project:
-   ```
-   Copy: ~/.claude/skills/webstack/core/playwright-mcp.config.json → .claude/playwright-mcp.config.json
-   Copy: ~/.claude/skills/webstack/.claude/hooks/ → .claude/hooks/ (all .sh files, chmod +x)
-   Merge: ~/.claude/skills/webstack/.claude/settings.json → .claude/settings.json (merge hooks key)
-   ```
-   If `.claude/settings.json` already exists, merge the `hooks` key — don't overwrite other settings.
-
-   **MCP scope note:** Playwright MCP is project-scoped (installed here). Other MCP servers (memory, context7) and plugins are user-scoped — see "User Environment Setup" above.
-
-   **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
-   ```bash
-   claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
-   ```
-   This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
-
    **Hooks inventory:**
+
+   All hooks are `.mjs` files dispatched through `run.sh` (bun/node). Each has a `// version:` comment on line 1. Version comparison is handled by `sync.sh`.
 
    | Hook | File | Event / Matcher | Purpose |
    |------|------|----------------|---------|
    | Bash guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks env vars, inline scripts, loops, pipes, linter isolation, dev servers, git safety, shell compat, Payload CLI |
    | Research gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|Task` | Injects KG + Context7 + WebSearch research checklist; subagent context reminder |
    | Code guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content inspection: React.FC, default exports, .test.tsx, @testing-library, i18n, shell compat |
-   | Auto-check | `auto-check.sh` | PostToolUse / `Edit\|Write` | Runs `yarn check` after code edits, finds nearest workspace |
-   | i18n extract | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds to run `yarn i18n:extract` after new t() calls |
-   | KG discipline | `kg-discipline.mjs` | PostToolUse / `Edit\|Write` + KG write tools | Tracks code file edits, reminds about KG writes after 4+ files |
+   | Migration guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | Guards against unsafe migration patterns |
    | Context7 guard | `context7-guard.mjs` | PreToolUse / `query-docs` + PostToolUse / `resolve-library-id` | Enforces resolve-library-id before query-docs |
    | Screenshot guard | `screenshot-guard.mjs` | PreToolUse / `browser_take_screenshot` | Enforces JPEG format for screenshots |
    | Payload guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks for data wrapper, empty objects, null enum fields |
-   | Stop gate | `stop-gate.sh` | Stop | Verifies `yarn check` passes in all affected workspaces before stopping |
-   | Post-task review | `post-plan-review.sh` | TaskCompleted | Triggers code quality review on changed files |
-
-   Each hook has a `# version:` comment on line 2. On update, compare hook versions with the same logic as rules: UPDATE if version increased, SKIP if equal, REVIEW if content changed but version matches.
+   | Auto-check | `auto-check.mjs` | PostToolUse / `Edit\|Write` | Runs `yarn check` after code edits, finds nearest workspace |
+   | i18n extract | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds to run `yarn i18n:extract` after new t() calls |
+   | KG discipline | `kg-discipline.mjs` | PostToolUse / `Edit\|Write` + KG write tools | Tracks code file edits, reminds about KG writes after 4+ files |
+   | Test companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Test-related companion reminders |
+   | Dep change | `dep-change-reminder.mjs` | PostToolUse / `Bash` | Reminds to install after dependency changes |
+   | Session context | `session-context.mjs` | SessionStart | Injects branch, commits, uncommitted changes |
+   | Post-task review | `post-plan-review.mjs` | TaskCompleted | Quick code review on 1-2 changed files |
+   | Post-feature review | `post-feature-review.mjs` | TaskCompleted | Full review + tests on 3+ changed files |
 
 8. **Generate the Vendor Knowledge table** in CLAUDE.md:
-   - Group deployed vendor entities by domain (routing, styling, backend, auth, i18n, cicd)
-   - Replace the placeholder table in the `## Vendor Knowledge` section
-   - Only include vendor entities that were actually deployed in step 6
+   ```bash
+   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project --group vendor | \
+     ~/.claude/skills/webstack/scripts/generate-vendor-table.sh --patch /path/to/project
+   ```
+   Or pipe the saved sync.sh output from step 3. The script groups deployed vendor entities by domain and patches the `## Vendor Knowledge` section in CLAUDE.md.
 
-9. **Record boilerplate SHA:**
-    ```bash
-    git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
-    ```
-
-10. **Scaffold project infrastructure** (optional):
+9. **Scaffold project infrastructure** (optional):
     - Ask user: "Deploy scaffold files (dev scripts, Docker, sync tools, CI/CD)?"
-    - List available scaffold files from `~/.claude/skills/webstack/scaffold/`
-    - If yes, copy selected files to project root
-    - **Skip files that already exist** — warn user instead of overwriting
+    - Preview available files:
+      ```bash
+      ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project --group scaffold
+      ```
+    - If approved, deploy:
+      ```bash
+      ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project --group scaffold
+      ```
+    - Existing files are never overwritten (no-clobber)
     - Ask user for their project name, then replace `myproject` placeholders in `dev.sh` (session name) and any other scaffold files
     - Remind user to copy `.env.example` to `.env` and fill in credentials
     - **Stripe CLI** is optional — `dev.sh` includes a commented-out tmux pane for `stripe listen`. Only uncomment if the project uses Stripe webhooks.
@@ -376,89 +387,70 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
 
-1. **Assess CLAUDE.md drift** (see "CLAUDE.md Drift Checks"):
-   - Read `CLAUDE.md` in project root
-   - If missing: warn and suggest `/webstack init`, skip to step 2
-   - Check if bootstrapped: search for `## Vendor Knowledge` or known aliases (`## Knowledge Graph`, `## KG Entities`, `## Vendor Docs`)
-     - If not bootstrapped: show "not bootstrapped" message, skip detailed checks, continue to step 2
-     - If bootstrapped: run drift checks S1, S2, C1, C2, C4, C5
-   - Collect findings (C3 is deferred to after step 8)
-   - For MISSING sections: offer to append from the bootstrap template
-   - For WARN legacy sections (`## Vendor Memory Loading`, `## MCP Tools:`): offer to rename/remove
-   - Show drift findings to user, then continue — drift report is informational, not blocking
-
-2. **Detect stack and evaluate applicability** — same as init step 2-3: run `scripts/evaluate-applies.sh` against the project. The JSON output feeds into the action table in step 5.
-
-3. **Check boilerplate changes since last deployment:**
-   - Read `.claude/webstack.sha` if it exists
-   - Run `git -C ~/.claude/skills/webstack log --oneline <stored-sha>..HEAD -- core/ vendor/` to list changed templates
-   - This list supplements the version comparison in step 6 — templates with content changes but matching versions are flagged as `REVIEW`
-   - If `.claude/webstack.sha` doesn't exist, skip this step (rely on version comparison only)
-
-4. **Compare versions — don't read full files yet.**
-
-   The version number is all that matters for the comparison. Reading every template into context wastes tokens. Use targeted extraction instead:
-
-   For `target: rules`:
+1. **Assess CLAUDE.md drift:**
    ```bash
-   # Extract just the version from template frontmatter (3 lines, not 200)
-   head -5 ~/.claude/skills/webstack/core/{subdir}/{name}.md | grep '^version:'
-   # Extract version from deployed file
-   head -5 .claude/rules/core/{name}.md | grep '^version:'
+   ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project
    ```
+   Outputs JSON array of check results (S1, S2, C1-C5). Each has `{id, status, severity, detail}`.
+   - If `S0` FAIL: CLAUDE.md missing — warn and suggest `/webstack init`, skip to step 2
+   - If S1 MISSING: offer to auto-fix with `bootstrap-claude-md.sh`
+   - If S2 WARN: offer to rename/remove legacy sections
+   - C3 is deferred to after step 8 (needs deployed entity list)
+   - Show findings to user, then continue — informational, not blocking
 
-   For `target: graph`:
+2. **Run deployment comparison:**
    ```bash
-   # Template version
-   head -5 ~/.claude/skills/webstack/vendor/{name}.md | grep '^version:'
+   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project
    ```
-   ```
-   # Deployed version — single KG query, not full entity read
-   open_nodes(["Vendor{PascalCaseName}"]) → find "version:" observation
-   ```
+   Handles stack detection (`evaluate-applies.sh` internally), SHA diff, and version comparison in one pass. Outputs a JSON action table with all asset groups. Action semantics:
 
-   Only read the full template content in step 11 when actually deploying an UPDATE or CREATE.
+   | Condition | Action |
+   |-----------|--------|
+   | Source version > deployed version | **UPDATE** — shows `from → to` |
+   | Versions match, no SHA changes | **SKIP** |
+   | Versions match, SHA shows content changed | **REVIEW** — version not bumped |
+   | Not deployed yet | **CREATE** |
+   | Deployed file has no version | **REPLACE** — legacy |
+   | Vendor doc (requires MCP) | **CHECK_KG** |
 
-5. **Build the action table** by cross-referencing versions with the SHA diff (step 3):
-
-   | Template version | Deployed version | In SHA diff? | Action |
-   |------------------|------------------|-------------|--------|
-   | 1.1.0 | 1.0.0 | — | **UPDATE** — show "1.0.0 → 1.1.0" |
-   | 1.0.0 | 1.0.0 | No | **SKIP** — versions match, no changes |
-   | 1.0.0 | 1.0.0 | Yes | **REVIEW** — content changed but version not bumped |
-   | 1.0.0 | (entity missing) | — | **CREATE** — new |
-   | (any) | (no version observation) | — | **REPLACE** — legacy entity |
-
-6. **Detect project-specific observations** in existing KG entities:
+3. **Detect project-specific observations** in existing KG entities:
    - Observations that are NOT part of the standard set (version, applies, tags, domain, source, content)
    - These are project-specific additions (gotchas, known issues) — preserve them
 
-7. **Propose changes to the user** in a table:
+4. **Propose changes to the user** — present the sync.sh comparison output as a formatted table. For vendor entities, include project-specific observation counts from step 3:
    ```
-   | Template | Target | Action | Version | Notes |
-   |----------|--------|--------|---------|-------|
-   | core/process/tooling | rules | UPDATE | 1.3.0 → 1.4.0 | |
-   | vendor/daisyui-5 | graph | UPDATE | 1.0.0 → 1.1.0 | 2 extra observations preserved |
-   | vendor/tailwind-4 | graph | SKIP | 1.1.0 = 1.1.0 | |
-   | core/process/monorepo | rules | REVIEW | 1.1.0 = 1.1.0 | content changed (SHA diff), version not bumped |
-   | core/testing/e2e-testing | rules | SKIP | — | playwright not installed |
+   | Group | File | Action | Version | Notes |
+   |-------|------|--------|---------|-------|
+   | rules | core/process/tooling.md | UPDATE | 1.3.0 → 1.4.0 | |
+   | vendor | vendor/daisyui-5.md | CHECK_KG | 1.1.0 | 2 extra observations preserved |
+   | hooks | bash-guard.mjs | UPDATE | 1.0.0 → 1.1.0 | |
+   | settings | settings.json | MERGE | +2 added, 12 updated | |
+   | rules | core/testing/e2e-testing.md | SKIP | — | playwright not installed |
    ```
 
-8. **Complete drift report** (C3 check):
-   - Compare entity names in the CLAUDE.md domain table against the entities proposed for CREATE/UPDATE/SKIP in step 7
-   - Flag entities listed in the table that no longer exist (deleted templates) or were skipped (no longer applies)
-   - Flag deployed entities missing from the table
-   - Present the unified drift report (findings from step 1 + C3)
+5. **Complete drift report** (C3 check):
+   ```bash
+   ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project \
+     --entities <sync-output.json>
+   ```
+   Pass the sync.sh output from step 2 as `--entities` (the script auto-extracts CHECK_KG entity names).
+   Compare the C3 result against the earlier drift-check output. Present unified findings.
 
-9. **Wait for user approval**
+6. **Wait for user approval**
 
-10. **Deploy updates based on `target` field:**
+7. **Deploy file-based updates:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project
+   ```
+   Deploys all file-based assets (rules, hooks, configs, settings merge) and records `.claude/webstack.sha` automatically.
+
+8. **Deploy vendor entity updates** — for each `CHECK_KG` item from the comparison:
 
     Read full template content **now** — only for templates marked UPDATE or CREATE.
 
-    For `target: rules` — same mechanics as init step 6.
+    For new entities → `create_entities` (same as init step 7).
 
-    For `target: graph` — update KG entities in place:
+    For existing entities → update in place:
    ```
    1. open_nodes(["VendorDaisyui5"]) — get current observations
    2. Identify standard observations: version:, applies:, tags:, domain:, source:, and content body
@@ -470,7 +462,13 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **CRITICAL:** Copy template content verbatim. Do NOT retype, summarize, or reinterpret.
 
-11. **KG health check** — verify deployed entities are sound:
+9. **Update Vendor Knowledge table:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project --group vendor | \
+     ~/.claude/skills/webstack/scripts/generate-vendor-table.sh --patch /path/to/project
+   ```
+
+10. **KG health check** — verify deployed entities are sound:
 
     **a) Version match** — each vendor entity's `applies:` condition must match the project's actual installed version:
     ```
@@ -501,24 +499,12 @@ In addition to per-template version comparison, the skill records the boilerplat
     | VendorPayloadCms3 | MISMATCH (v4 installed) | 1 linked | Entity is for v3, project has v4 |
     ```
 
-12. **Update config files and hooks** if changed:
-    - Compare `~/.claude/skills/webstack/core/playwright-mcp.config.json` with `.claude/playwright-mcp.config.json`
-    - If skill version is newer, update project config
-    - Compare hook versions:
-      ```bash
-      head -2 ~/.claude/skills/webstack/.claude/hooks/{name}.sh | grep '# version:'
-      head -2 .claude/hooks/{name}.sh | grep '# version:'
-      ```
-    - Same logic as rules: **UPDATE** if version increased, **SKIP** if equal, **REVIEW** if content changed but version matches
-    - New hooks (in skill but not project): **CREATE** (`chmod +x`)
-    - Merge `~/.claude/skills/webstack/.claude/settings.json` hooks key into `.claude/settings.json` — add missing hook entries, don't remove project-specific hooks or overwrite other settings
-
-13. **Cleanup legacy artifacts:**
+11. **Cleanup legacy artifacts:**
     - Check for stale KG entities: `vendor_doc` entities whose `source:` template no longer exists in the boilerplate
     - Check for orphaned rule files: `.claude/rules/core/*.md` files that don't match any current template
     - Propose cleanup table to user, wait for approval, then execute
 
-14. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
+12. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
 
     The `core/process/backporting` rule instructs the agent to tag generalizable findings with `"Backport: <reason>"` observations. Scan for these first — they're pre-qualified by the agent that created them.
 
@@ -566,11 +552,6 @@ In addition to per-template version comparison, the skill records the boilerplat
 
     This step is informational — skip silently if no candidates are found.
 
-15. **Record boilerplate SHA:**
-    ```bash
-    git -C ~/.claude/skills/webstack rev-parse HEAD > .claude/webstack.sha
-    ```
-
 ### Periodic health check (`/webstack maintenance`)
 
 Audits KG entities, rules, relations, and project hygiene without deploying templates. Run periodically (e.g., every few weeks, or when KG feels stale).
@@ -579,19 +560,17 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
 
 1. **Snapshot project state** — gather all data needed by subsequent steps in one pass. Run these in parallel:
 
-   **a)** Run `scripts/evaluate-applies.sh` against the project → applicability JSON
+   **a)** Run `scripts/sync.sh compare /path/to/project` → full deployment diff (rules, hooks, configs, vendor)
 
-   **b)** Read `.claude/webstack.sha`, run `git -C ~/.claude/skills/webstack rev-parse HEAD` → check if boilerplate moved since last deploy
+   **b)** Read `package.json` (root + 1 level deep for monorepos) → installed versions
 
-   **c)** Read `package.json` (root + 1 level deep for monorepos) → installed versions
+   **c)** List `.claude/rules/` recursively → deployed rule inventory
 
-   **d)** List `.claude/rules/` recursively → deployed rule inventory
+   **d)** `search_nodes("vendor_doc")` → all vendor entities in KG
 
-   **e)** `search_nodes("vendor_doc")` → all vendor entities in KG
+   **e)** `search_nodes("bug_resolution")` + `search_nodes("architecture_decision")` + `search_nodes("convention")` → all project-created entities
 
-   **f)** `search_nodes("bug_resolution")` + `search_nodes("architecture_decision")` + `search_nodes("convention")` → all project-created entities
-
-   **g)** Read `.claude/settings.json` and `.claude/settings.local.json` (if exists) → hook entries, permissions, MCP tool patterns
+   **f)** Read `.claude/settings.json` and `.claude/settings.local.json` (if exists) → permissions, MCP tool patterns
 
    No user-visible output yet — this feeds steps 2–11.
 
@@ -652,29 +631,14 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
 
 4. **KG relation completeness** — check relations between KG entities:
 
-   **a) Vendor intra-domain relations:** entities sharing a domain (from the domain mapping table) should have `same_domain` relations. For each domain with 2+ deployed entities, use `open_nodes` to check if sibling relations exist.
-
-   **b) Known cross-domain dependencies** (hard-coded):
-
-   | From | Relation | To |
-   |------|----------|-----|
-   | `VendorDaisyui5` | `depends_on` | `VendorTailwind4` |
-   | `VendorReactRouter7I18n` | `integrates_with` | `VendorReactRouter7Routing` |
-   | `VendorPayloadRestClient` | `depends_on` | `VendorPayloadCms3` |
-
-   Check if these relations exist when both entities are deployed. Don't create if either entity is missing.
+   **a+b) Expected relations:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project --group vendor | \
+     ~/.claude/skills/webstack/scripts/check-relations.sh
+   ```
+   Outputs JSON with `same_domain` pairs and `cross_domain` dependencies. Use `open_nodes` to check which relations already exist, then `create_relations` for missing ones.
 
    **c) Orphan project entities:** `bug_resolution`, `architecture_decision`, `convention` entities with zero relations. Inspect observation text for library or domain keywords (e.g., "react-router", "daisyui", "payload") to propose links to the relevant vendor entity. Also check for `"Backport: ..."` observations — these were pre-tagged by the working agent as generalizable and should be related to the relevant vendor entity.
-
-   Output table:
-   ```
-   | Entity | Expected Relations | Actual | Missing | Action |
-   |--------|-------------------|--------|---------|--------|
-   | VendorRR7Routing | same_domain: 4 | 2 | DataLoading, Index | AUTO-FIX |
-   | VendorDaisyui5 | depends_on: TW4 | 0 | Tailwind4 | AUTO-FIX |
-   | HydrationBug | relates_to: RR7 | 0 | RR7Routing | PROPOSE |
-   ```
-   Auto-fix for (a) and (b) — `create_relations` in step 12. Propose-only for (c) — user confirms.
 
 5. **KG entity quality check** — inspect entities for structural issues:
 
@@ -712,90 +676,26 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
    ```
    Report-only — user decides precedence.
 
-7. **Stray file detection** — find `.md` files Claude may have created during work sessions that don't belong to any managed structure:
-
-   **Scan locations:**
-   - `.claude/` — files not in `rules/`, `hooks/`, or matching `settings*.json`, `webstack.sha`, `*.config.json`
-   - `.claude/rules/` — files outside the `core/` subdirectory (unexpected directories or loose files)
-   - Project root — `.md` files that are untracked in git and aren't standard (`README.md`, `CHANGELOG.md`, `LICENSE.md`, `CLAUDE.md`, `CONTRIBUTING.md`)
-
-   **Heuristics for Claude-created files:**
-   - Untracked in git (`git ls-files --others --exclude-standard`)
-   - `.md` extension in a managed directory
-   - No YAML frontmatter (not a skill template)
-
-   Output:
+7. **Stray file detection:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/find-strays.sh /path/to/project
    ```
-   | Path | Size | Git Status | Likely Origin |
-   |------|------|------------|--------------|
-   | .claude/rules/temp-notes.md | 2.1KB | untracked | Work session artifact |
-   | .claude/debugging-auth.md | 4.5KB | untracked | Debugging notes |
-   | docs/api-draft.md | 1.2KB | untracked | Generated documentation |
-   ```
+   Outputs JSON array of stray `.md` files with path, size, git status, and frontmatter detection.
    Report-only — user decides to keep, move to KG, or delete.
 
-8. **Settings & MCP audit** — check `.claude/settings.json` and `.claude/settings.local.json` for stale or misconfigured entries:
-
-   **a) MCP permission wildcarding:** Scan `permissions.allow` for MCP tool entries that aren't wildcarded. The convention (see `core/claude-config/claude-settings`) is to wildcard by server prefix — `mcp__memory__*`, not individual tools.
-
+8. **Settings & MCP audit:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/audit-settings.sh /path/to/project
    ```
-   | File | Entry | Suggested |
-   |------|-------|-----------|
-   | settings.json | mcp__memory__create_entities | mcp__memory__* |
-   | settings.json | mcp__memory__add_observations | (redundant — covered by wildcard) |
-   | settings.local.json | mcp__payload__find | mcp__payload__* |
+   Outputs JSON with `permission_wildcards` (non-wildcarded MCP entries), `stale_hooks` (missing hook files), and `deny_entries` (informational).
+
+   Auto-fixable: rewrite non-wildcarded entries as server-prefix wildcards. Stale hooks resolved by `sync.sh apply --group hooks,hook-infra,settings`.
+
+9. **Context budget analysis:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/context-budget.sh /path/to/project
    ```
-   Auto-fixable — rewrite non-wildcarded entries as server-prefix wildcards, remove entries made redundant by the wildcard.
-
-   **b) Stale MCP references:** Check that MCP server prefixes in `permissions.allow` correspond to actually configured MCP servers. Run `claude mcp list` and cross-reference. Flag entries referencing servers that aren't installed.
-
-   ```
-   | Entry | Server | Status |
-   |-------|--------|--------|
-   | mcp__memory__* | memory | OK — installed (user scope) |
-   | mcp__payload__* | payload | OK — installed (project scope) |
-   | mcp__old_tool__* | old_tool | STALE — server not configured |
-   ```
-   User-decision — propose removal of stale entries.
-
-   **c) Hook entry hygiene:** Compare hook entries in project `.claude/settings.json` against the boilerplate's `.claude/settings.json`. Flag:
-   - **Stale hooks** — entries whose `command` path points to a hook file that doesn't exist on disk
-   - **Missing hooks** — hooks present in the boilerplate settings but absent from the project settings
-   - **Matcher drift** — same hook file referenced but with a different `matcher` pattern than the boilerplate
-
-   ```
-   | Hook | Event | Matcher | Status |
-   |------|-------|---------|--------|
-   | bash-guard | PreToolUse | Bash | PASS |
-   | old-hook | PostToolUse | Edit | STALE — .mjs file missing |
-   | code-guard | PreToolUse | Write\|Edit | PASS |
-   | new-hook | PreToolUse | ... | MISSING — in boilerplate, not in project |
-   ```
-   Stale hooks auto-fixable (remove entry). Missing hooks proposed for addition.
-
-   **d) Stale deny entries:** Check `permissions.deny` for entries referencing tools or patterns that no longer exist. Also flag overly broad deny patterns that may unintentionally block legitimate tools.
-
-   Report-only.
-
-9. **Context budget analysis** — measure the per-turn cost of always-loaded content:
-
-   **a)** Count lines and bytes for each always-loaded rule (files in `.claude/rules/core/` without `paths:` in frontmatter).
-
-   **b)** Compare total against the documented budget (~850 lines / ~20KB). Flag if exceeded.
-
-   **c)** Check path-scoped rules with overly broad patterns — `**/*.ts` + `**/*.tsx` matches nearly all source files, making the rule effectively always-loaded. Flag these for the user to consider narrowing.
-
-   **d)** Measure CLAUDE.md size — also loaded every turn. Flag if over 100 lines.
-
-   Output:
-   ```
-   | Component | Lines | ~KB | Status |
-   |-----------|-------|----|--------|
-   | Always-loaded rules (6 files) | 830 | 19.2 | PASS |
-   | Effectively-always rules (3 files) | 420 | 9.8 | INFO — broad path scope |
-   | CLAUDE.md | 85 | 2.1 | PASS |
-   | TOTAL per-turn baseline | 1335 | 31.1 | |
-   ```
+   Outputs JSON with `always_loaded` rules, `path_scoped` rules (flagging broad patterns), `claude_md` size, and `totals` (vs 850-line / 20KB budget).
    Informational only.
 
 10. **KG contradiction detection** — find conflicting information across KG entities:
@@ -830,19 +730,12 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
    ```
    Report-only. Stale pitfalls proposed for removal in step 11.
 
-11. **CLAUDE.md drift check** — run the drift checks from `references/drift-checks.md` (S1, S2, C1–C5), same checks as update step 1 but standalone:
-
-    | ID | Check | Severity |
-    |----|-------|----------|
-    | S1 | Required headings exist (`## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge`, `### Knowledge accumulation`) | MISSING |
-    | S2 | No legacy section names (`## Vendor Memory Loading`, `## MCP Tools:`) | WARN |
-    | C1 | Rules intro references `.claude/rules/core/` | WARN |
-    | C2 | Vendor Knowledge section has a domain table with `search_nodes` queries | WARN |
-    | C3 | Domain table entity names match deployed entities (cross-ref with step 2 results) | WARN |
-    | C4 | Knowledge accumulation section contains format strings (`Pitfall:`, `GitHub:`, `Docs:`) | WARN |
-    | C5 | No inlined MCP tool instructions (belongs in rules, not CLAUDE.md) | INFO |
-
-    Offer to auto-fix MISSING sections by appending from `references/bootstrap-template.md`.
+11. **CLAUDE.md drift check:**
+    ```bash
+    ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project \
+      --entities <sync-output-from-step-1a.json>
+    ```
+    Same checks as update step 1 but standalone. Offer to auto-fix MISSING sections with `bootstrap-claude-md.sh`.
 
 12. **Remediation proposals** — aggregate all findings into a unified health report:
 
@@ -949,6 +842,8 @@ KG entities use `Vendor` prefix with PascalCase template name:
 
 For subdirectory files, the directory name + filename are joined in PascalCase.
 
+> **Note:** Entity names and domains are computed automatically by `sync.sh` (from filename conversion and `domain:` frontmatter). This table is for reference only.
+
 ### Domain mapping
 
 Group vendor entities by domain for the CLAUDE.md loading table:
@@ -963,6 +858,8 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
 | forms | `VendorConformZod` | `search_nodes("domain: forms")` |
 | tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
+
+> **Note:** Domain grouping is generated by `generate-vendor-table.sh` from `domain:` frontmatter in each vendor template. This table is for reference only.
 
 ## Automatic Updates During Work
 
