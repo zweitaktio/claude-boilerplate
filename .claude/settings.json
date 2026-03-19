@@ -11,7 +11,16 @@
         ]
       },
       {
-        "matcher": "EnterPlanMode|Task",
+        "matcher": "EnterPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh requirements-gate"
+          }
+        ]
+      },
+      {
+        "matcher": "EnterPlanMode|ExitPlanMode|Task",
         "hooks": [
           {
             "type": "command",
@@ -71,7 +80,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/auto-check.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh auto-check",
             "timeout": 120
           },
           {
@@ -121,30 +130,59 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-context.sh",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh session-context",
             "timeout": 10,
             "statusMessage": "Loading session context..."
           }
         ]
       }
     ],
-    "TaskCompleted": [
+    "UserPromptSubmit": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-plan-review.sh",
-            "statusMessage": "Preparing post-task review..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh prompt-context"
           }
         ]
-      },
+      }
+    ],
+    "PostToolUseFailure": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-feature-review.sh",
-            "timeout": 300,
-            "statusMessage": "Running full post-feature review..."
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh failure-protocol"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh subagent-review"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh completion-gate"
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh compact-preservation"
           }
         ]
       }
