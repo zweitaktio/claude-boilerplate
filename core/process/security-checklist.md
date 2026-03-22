@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.2.0
 applies: Always
 target: rules
 tags: [security, auth, validation, XSS, CSRF, injection]
@@ -24,6 +24,9 @@ tags: [security, auth, validation, XSS, CSRF, injection]
 - Use parameterized queries (never string interpolation for SQL)
 
 ## Frontend
+
+Before implementing protected routes, run `open_nodes(["VendorReactRouter7Routing"])`.
+
 - Escape user content in templates
 - Use `rel="noopener noreferrer"` on external links with `target="_blank"`
 - Don't store secrets in client-accessible code
@@ -49,8 +52,6 @@ Apply at the proxy level (Caddy, nginx) or application level:
 | Login / auth | 10/min |
 | Password reset | 5/min |
 | File uploads | 20/min |
-
-Before implementing protected routes, run `open_nodes(["VendorReactRouter7Routing"])`.
 
 ## See Also
 

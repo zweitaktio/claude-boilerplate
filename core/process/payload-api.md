@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: payload
 target: rules
 paths:
@@ -134,3 +134,27 @@ createTechnologies { title: "...", slug: "...", category: "...", _status: "publi
 | Create a new entry | 2 | MCP create* |
 | Update/write content to an entry | 2 | MCP update* |
 | Delete an entry | 2 | MCP delete* |
+
+## Migrations
+
+### Idempotency Review (required before commit)
+
+Every migration must be idempotent — safe to re-run if it partially fails during deployment. Before committing a migration file, review every statement and apply these guards:
+
+| Statement | Guard |
+|-----------|-------|
+| `ALTER TYPE ... ADD VALUE` | `ADD VALUE IF NOT EXISTS` |
+| `CREATE TABLE` | `CREATE TABLE IF NOT EXISTS` |
+| `DROP TABLE` | `DROP TABLE IF EXISTS ... CASCADE` |
+| `ALTER TABLE ... ADD COLUMN` | `ADD COLUMN IF NOT EXISTS` |
+| `ALTER TABLE ... DROP COLUMN` | `DROP COLUMN IF EXISTS` |
+| `ALTER TABLE ... ADD CONSTRAINT` | `DROP CONSTRAINT IF EXISTS` before `ADD CONSTRAINT` |
+| `ALTER TABLE ... DROP CONSTRAINT` | `DROP CONSTRAINT IF EXISTS` |
+| `CREATE INDEX` / `CREATE UNIQUE INDEX` | `CREATE INDEX IF NOT EXISTS` |
+| `DROP INDEX` | `DROP INDEX IF EXISTS` |
+| `DROP TYPE` | `DROP TYPE IF EXISTS` |
+| `DISABLE ROW LEVEL SECURITY` before `DROP TABLE` | Remove — `DROP TABLE IF EXISTS CASCADE` handles it |
+
+Split large migrations into sequential `db.execute` steps grouped by concern for clearer failure isolation.
+
+The `down()` migration does not need idempotency guards (it's a destructive rollback, not re-runnable).

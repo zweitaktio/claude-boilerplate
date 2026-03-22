@@ -1,7 +1,7 @@
-// version: 2.0.0
+// version: 2.1.0
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
-import { read, write, hasLine, append } from './core/state.mjs'
+import { read, write, readLines, hasLine, append } from './core/state.mjs'
 import { execSync } from 'child_process'
 
 const input = JSON.parse(await readStdin())
@@ -49,10 +49,11 @@ for (const pattern of incompletePatterns) {
 // The TaskCompleted hooks (post-plan-review, post-feature-review) are removed
 // to avoid duplication — this Stop hook covers all cases regardless of task usage.
 if (!forcedReasons.has('review')) {
+  const sessionFiles = new Set(readLines('session-edited-files'))
   const changed = run('git diff --name-only HEAD')
   if (changed) {
     const codeExts = /\.(ts|tsx|js|jsx|py|go|rs)$/
-    const codeFiles = changed.split('\n').filter(f => codeExts.test(f))
+    const codeFiles = changed.split('\n').filter(f => codeExts.test(f) && sessionFiles.has(f))
 
     if (codeFiles.length >= 2) {
       const fileList = codeFiles.slice(0, 30).join('\n')

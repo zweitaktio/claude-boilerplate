@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -58,15 +58,13 @@ Flag these during every review:
 
 ## Domain Best Practices
 
-When reviewing code, identify the domain and verify against its known best practices. Use Context7 and Knowledge Graph vendor docs to confirm current patterns.
-
 **Frontend:** See `core/frontend/react-components` for React/SSR patterns (useEffect, derived state, data fetching in loaders).
 
 **Backend:** See `core/process/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/testing/unit-testing` for conventions.
 
 **Shared:**
 - Errors handled or intentionally propagated, never silently swallowed
-- Async operations have timeout or cancellation strategy
+- Async fetch calls use AbortController for cancellation. Timers use cleanup functions. See `VendorReactHooks` for patterns
 - External service calls have error handling (not just happy path)
 - Environment-specific values come from config, not hardcoded
 

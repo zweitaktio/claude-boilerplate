@@ -1,5 +1,5 @@
 ---
-version: 2.4.0
+version: 2.6.0
 applies: Always
 target: rules
 priority: high
@@ -127,8 +127,7 @@ Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutil
 ### Always Do
 - **Use task lists** for any work with 2+ steps — create tasks, track progress, keep the user informed
 - Use platform tools that don't require manual approval (see `core/claude-config/claude-settings`)
-- Use absolute paths when possible
-- Verify `pwd` before file operations in monorepos
+- In monorepos, ensure every command runs in the correct workspace directory (see `core/process/monorepo`)
 - Follow `core/process/engineering-discipline` for task assessment, verification, and implementation process
 
 ## Monorepo Verification
@@ -137,7 +136,7 @@ See `core/process/monorepo` for ports, logs, type flow, and cross-workspace veri
 
 ## Session Start Protocol
 
-Core conventions are auto-loaded from `.claude/rules/core/` — no manual loading needed.
+Core conventions are auto-loaded from `.claude/rules/core/` — no manual loading needed. `core/` references in other rules point to these auto-loaded rule files — do not manually read them.
 
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides

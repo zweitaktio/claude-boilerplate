@@ -1,11 +1,46 @@
-// version: 1.0.0
+// version: 2.0.0
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import { readLines } from './core/state.mjs'
+import { execSync } from 'child_process'
 
 const { prompt } = JSON.parse(await readStdin())
 if (!prompt) pass()
 
 const lower = prompt.toLowerCase().trim()
+
+// --- "review" keyword: full code review on session-changed files ---
+if (/^review\.?$/i.test(lower)) {
+  const run = (cmd) => {
+    try { return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim() } catch { return '' }
+  }
+
+  const sessionFiles = new Set(readLines('session-edited-files'))
+  const changed = run('git diff --name-only HEAD')
+  const codeExts = /\.(ts|tsx|js|jsx|mjs|py|go|rs|scala)$/
+  const codeFiles = changed
+    ? changed.split('\n').filter(f => codeExts.test(f) && sessionFiles.has(f))
+    : []
+
+  if (codeFiles.length === 0) {
+    inject('UserPromptSubmit', 'No code files changed in this session to review.')
+  }
+
+  const fileList = codeFiles.slice(0, 30).join('\n')
+  inject('UserPromptSubmit',
+    `CODE REVIEW — ${codeFiles.length} files changed this session:\n${fileList}\n\n` +
+    `Run a full review on these files. For each file, check:\n` +
+    `1. Security — injection vectors, exposed secrets, auth bypasses, input validation at boundaries\n` +
+    `2. Correctness — logic errors, edge cases, off-by-ones, null/undefined paths, error handling\n` +
+    `3. Type safety — \`as\` casts suppressing real errors, \`any\` leaking, missing null checks\n` +
+    `4. SSR/hydration — if React components: server/client mismatches, client-only code in render\n` +
+    `5. Architecture — pattern consistency with existing code, reuse opportunities, unnecessary abstractions\n` +
+    `6. Breaking changes — changed exports, modified function signatures, removed/renamed public APIs\n` +
+    `7. Convention adherence — check against active rules (component patterns, i18n, testing, error responses)\n\n` +
+    `Report findings by severity (CRITICAL > HIGH > MEDIUM). Skip LOW.\n` +
+    `State whether the changes are safe to commit.`)
+}
+
 const hints = []
 
 // Vague / underspecified requests

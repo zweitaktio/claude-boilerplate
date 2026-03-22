@@ -10,14 +10,11 @@ const warnings = []
 function block(msg) { deny('PreToolUse', msg) }
 function warn(msg) { warnings.push(msg) }
 
-const ENV_GUIDANCE = 'Either construct a command with literal values (permanently approvable) or create a wrapper script that reads from .env internally.'
-
-// --- Env variable checks ---
-if (/^[A-Za-z_][A-Za-z0-9_]*=\S+\s+\S/.test(trimmed)) block(`Inline env var assignment before command. ${ENV_GUIDANCE}`)
-if (/^env\s+[A-Za-z_]/.test(trimmed)) block(`'env' with variable assignment before command. ${ENV_GUIDANCE}`)
-if (/^export\s+[A-Za-z_]/.test(trimmed)) block(`'export' mutates the shell environment. ${ENV_GUIDANCE}`)
+// --- Secret / credential leak checks ---
+const SECRET_PATTERN = /\$(PASSWORD|SECRET|TOKEN|API_KEY|PRIVATE_KEY|DATABASE_URL|DB_URL|AUTH|CREDENTIAL)/i
+const SECRET_GUIDANCE = 'Do not pass secrets via variable expansion — create a wrapper script that reads from .env internally.'
 const cleaned = command.replace(/\\\$/g, '')
-if (/\$\{?[A-Za-z_]/.test(cleaned)) block(`Variable expansion makes this command non-reproducible and impossible to permanently approve. ${ENV_GUIDANCE}`)
+if (SECRET_PATTERN.test(cleaned)) block(`Command expands a secret/credential variable. ${SECRET_GUIDANCE}`)
 
 // --- Verification commands ---
 if (/^(yarn|npx|pnpm)\s+(tsc|eslint|prettier)\b/.test(trimmed)) block('Never run tsc/eslint/prettier individually — use yarn check. (tooling.md § Verification Commands)')

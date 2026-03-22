@@ -186,6 +186,16 @@
           }
         ]
       }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"TaskCompleted\",\"additionalContext\":\"Task completed. Before moving on: re-read the original requirements for this task and verify all of them have been fulfilled. If anything is missing, address it now.\"}}'"
+          }
+        ]
+      }
     ]
   },
   "enabledPlugins": {

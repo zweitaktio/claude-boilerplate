@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: Always
 target: rules
 paths:
@@ -16,6 +16,7 @@ tags: [configuration, settings, permissions, hooks]
 {
   "permissions": {
     "allow": [
+      "Bash(cd:*)",
       "Bash(ls:*)",
       "Bash(cat:*)",
       "Bash(head:*)",
@@ -29,6 +30,8 @@ tags: [configuration, settings, permissions, hooks]
       "Bash(mv:*)",
       "Bash(rm:*)",
       "Bash(touch:*)",
+      "Bash(ln:*)",
+      "Bash(chmod:*)",
       "Bash(pwd)",
       "Bash(which:*)",
       "Bash(echo:*)",
@@ -41,9 +44,14 @@ tags: [configuration, settings, permissions, hooks]
       "Bash(npm:*)",
       "Bash(npx:*)",
       "Bash(node:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
       "Bash(jq:*)",
       "Bash(curl:*)",
       "Bash(gh:*)",
+      "Bash(docker:*)",
+      "Bash(docker compose:*)",
+      "Bash(sbt:*)",
       "WebSearch"
     ],
     "deny": []

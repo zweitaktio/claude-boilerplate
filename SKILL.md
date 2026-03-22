@@ -36,13 +36,14 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 
 **Path-scoped** (loaded only when touching matching files):
 - `core/frontend/react-components` — `**/*.tsx`, `**/*.ts` — Component patterns, useEffect
-- `core/frontend/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand vs Redux
+- `core/frontend/state-management` — `**/*.tsx`, `**/*.ts` — Context vs Zustand
 - `core/frontend/i18n` — `**/*.tsx`, `**/*.ts`, `**/locales/**` — Translation patterns
 - `core/frontend/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
 - `core/process/backporting` — `.memory/**`, `.claude/**`, `CLAUDE.md` — When to tag KG findings for backport
 - `core/process/scripting` — `scripts/**`, `**/*.sh` — Script requirements, shell compatibility
 - `core/process/payload-api` — `scripts/payload-*`, `backend/**` — Payload REST API helpers
 - `core/testing/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
+- `core/testing/e2e-validation` — `**/*.spec.*`, `**/e2e/**`, `**/routes/**` — Three-layer E2E test validation (results → network → logs)
 - `core/testing/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
 - `core/claude-config/claude-md` — `CLAUDE.md`, `.claude/**` — CLAUDE.md conventions
 - `core/claude-config/claude-settings` — `.claude/**`, `CLAUDE.md` — Permission patterns
@@ -171,6 +172,7 @@ claude-boilerplate/
 │   │   └── ssr-hydration.md
 │   ├── testing/                # Path-scoped to test files
 │   │   ├── e2e-testing.md
+│   │   ├── e2e-validation.md
 │   │   └── unit-testing.md
 │   ├── claude-config/          # Path-scoped to .claude/**, CLAUDE.md
 │   │   ├── claude-md.md
@@ -334,7 +336,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    |------|------|----------------|---------|
    | Bash guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks env vars, inline scripts, loops, pipes, linter isolation, dev servers, git safety, shell compat, Payload CLI |
    | Research gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|Task` | Injects KG + Context7 + WebSearch research checklist; subagent context reminder |
-   | Code guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content inspection: React.FC, default exports, .test.tsx, @testing-library, i18n, shell compat |
+   | Code guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content inspection: React.FC, default exports, .test.tsx, @testing-library, i18n, shell compat. Tracks session-edited files for completion-gate scoping |
    | Migration guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | Guards against unsafe migration patterns |
    | Context7 guard | `context7-guard.mjs` | PreToolUse / `query-docs` + PostToolUse / `resolve-library-id` | Enforces resolve-library-id before query-docs |
    | Screenshot guard | `screenshot-guard.mjs` | PreToolUse / `browser_take_screenshot` | Enforces JPEG format for screenshots |
@@ -345,8 +347,14 @@ In addition to per-template version comparison, the skill records the boilerplat
    | Test companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Test-related companion reminders |
    | Dep change | `dep-change-reminder.mjs` | PostToolUse / `Bash` | Reminds to install after dependency changes |
    | Session context | `session-context.mjs` | SessionStart | Injects branch, commits, uncommitted changes |
-   | Post-task review | `post-plan-review.mjs` | TaskCompleted | Quick code review on 1-2 changed files |
-   | Post-feature review | `post-feature-review.mjs` | TaskCompleted | Full review + tests on 3+ changed files |
+   | Completion gate | `completion-gate.mjs` | Stop | Checks for TODO/FIXME markers, incomplete work signals, triggers code review on session-edited files (scoped via code-guard tracking) |
+   | Compact preservation | `compact-preservation.mjs` | PreCompact | Preserves critical context across context compactions |
+   | Prompt context | `prompt-context.mjs` | UserPromptSubmit | Injects additional context per user prompt |
+   | Failure protocol | `failure-protocol.mjs` | PostToolUseFailure | Handles tool failures with structured recovery |
+   | Subagent review | `subagent-review.mjs` | SubagentStop | Reviews subagent output on completion |
+   | Post-task review | `post-plan-review.sh` | TaskCompleted | Triggers code review on files changed during the task |
+   | Stop gate (alt) | `stop-gate.sh` | Stop (optional) | Multi-workspace verification with infinite-loop prevention — alternative to completion-gate |
+   | Auto-check (shell) | `auto-check.sh` | PostToolUse / `Edit\|Write` | Shell variant of auto-check with backend (sbt compile) support |
 
 7. **Generate the Vendor Knowledge table** in CLAUDE.md:
    ```bash
@@ -773,6 +781,8 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/base-ui-react.md` | `VendorBaseUiReact` | styling |
 | `vendor/conform-zod.md` | `VendorConformZod` | forms |
 | `vendor/project-scaffolding.md` | `VendorProjectScaffolding` | tooling |
+| `vendor/react-hooks.md` | `VendorReactHooks` | frontend |
+| `vendor/state-management-libs.md` | `VendorStateManagementLibs` | frontend |
 
 For subdirectory files, the directory name + filename are joined in PascalCase.
 
@@ -792,6 +802,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
 | forms | `VendorConformZod` | `search_nodes("domain: forms")` |
 | tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
+| frontend | `VendorReactHooks`, `VendorStateManagementLibs` | `search_nodes("domain: frontend")` |
 
 > **Note:** Domain grouping is generated by `generate-vendor-table.sh` from `domain:` frontmatter in each vendor template. This table is for reference only.
 

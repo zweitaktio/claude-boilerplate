@@ -1,8 +1,18 @@
 ---
-version: 2.1.0
+version: 2.3.0
 applies: Always
 target: rules
 priority: high
+paths:
+  - "packages/**"
+  - "apps/**"
+  - "services/**"
+  - "backend/**"
+  - "frontend/**"
+  - "scripts/**"
+  - "docker-compose*"
+  - "dev.sh"
+  - "install.sh"
 tags: [monorepo, directory, scripts, lifecycle]
 ---
 
@@ -24,15 +34,11 @@ project/
 
 Each directory is autonomous — own `package.json`, own `node_modules`, no yarn workspaces. There is no shared workspace — treat each as an independent project.
 
-## First Action: cd Into the Right Directory
+## Know Your Working Directory
 
-When starting a task, identify which part of the monorepo it belongs to and `cd` there before doing anything else.
+Each workspace has its own `package.json` and `node_modules`. Commands like `yarn check` or `yarn dev` only work when run from the correct workspace root.
 
-```bash
-cd frontend  # Frontend task
-cd backend   # Backend task
-cd services  # Docker, sync, E2E
-```
+Before running any command, confirm you're in the right directory — via `pwd`, `cd`, absolute paths, or the `cwd` option on the Bash tool. The mechanism doesn't matter; what matters is that the command executes in the correct workspace.
 
 ## Standard Script Names
 

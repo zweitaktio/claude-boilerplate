@@ -1,6 +1,7 @@
-// version: 1.0.0
+// version: 1.1.0
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
+import { append, hasLine } from './core/state.mjs'
 
 const { tool_name, tool_input } = JSON.parse(await readStdin())
 
@@ -84,6 +85,11 @@ else if (/\.sh$/.test(file)) {
 }
 
 // === Markdown — pass ===
+
+// Track files edited in this session for completion-gate scoping
+if (file && !hasLine('session-edited-files', file)) {
+  append('session-edited-files', file)
+}
 
 // Inject accumulated warnings
 if (warnings.length) {

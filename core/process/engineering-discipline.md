@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.4.0
 applies: Always
 target: rules
 priority: high
@@ -7,8 +7,6 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 ---
 
 # Engineering Discipline
-
-Every change should leave the codebase in a verified working state with no regressions, a clear audit trail, and no unrelated modifications.
 
 ## Task Assessment
 
@@ -40,31 +38,17 @@ Incorporate findings into the plan — flag risks, reference specific pitfalls, 
 
 ## Verification Discipline
 
-**Never trust assumptions about library APIs.**
+**Never trust assumptions about library APIs.** Follow the library doc lookup in `core/process/mcp-tools` before writing library code — KG first, then web search + Context7 for the specific installed version.
 
-1. Read `package.json` for the **actual installed version** before writing library code
-2. Use Context7 (`resolve-library-id` → `query-docs`) to look up API signatures for that version
-3. If the API has changed between major versions (React Router, Tailwind, DaisyUI, Payload, etc.), verify before using any pattern from memory
-4. Read error messages literally — don't pattern-match to what you expect
+Read error messages literally — don't pattern-match to what you expect.
 
 ```
 # Wrong: assume DaisyUI 5 still has form-control
 <div className="form-control">  // removed in DaisyUI 5
 
-# Right: check package.json first, see daisyui@5.x, query docs
+# Right: check package.json first, see daisyui@5.x, look up docs
 <fieldset className="fieldset">  // DaisyUI 5 replacement
 ```
-
-**When to verify:**
-- Any library API call where the exact signature matters
-- After a dependency upgrade
-- When reusing patterns from elsewhere that may target a different version
-- When something "should work" but doesn't
-
-**When verification is overkill:**
-- Language syntax, core Node.js APIs (`fs`, `path`, `crypto`)
-- General algorithms and data structures
-- Code you just read from the same project
 
 ## Change Classification
 

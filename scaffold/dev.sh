@@ -92,7 +92,7 @@ fi
 tmux set-option -g default-terminal "tmux-256color"
 
 # Create tmux session with backend in first pane
-tmux new-session -d -s "$SESSION" -c "$ROOT/backend" "yarn dev"
+tmux new-session -d -s "$SESSION" -c "$ROOT/backend" "yarn dev; read -p 'Press Enter to close...'"
 tmux set-option -t "$SESSION" mouse on
 tmux set-option -t "$SESSION" set-clipboard on
 if [ -n "$CLIP_CMD" ]; then
@@ -103,7 +103,7 @@ fi
 # Split: frontend (waits for backend via port check)
 # Uses bash -c with /dev/tcp as a portable port check (no lsof/ss dependency)
 tmux split-window -t "$SESSION" -v -c "$ROOT/frontend" \
-    'echo "Waiting for backend on :3000..."; while ! bash -c ">/dev/tcp/localhost/3000" 2>/dev/null; do sleep 1; done; echo "Backend ready"; yarn dev'
+    'echo "Waiting for backend on :3000..."; while ! bash -c ">/dev/tcp/localhost/3000" 2>/dev/null; do sleep 1; done; echo "Backend ready"; yarn dev; read -p "Press Enter to close..."'
 
 # OPTIONAL: Split: stripe listener
 # tmux split-window -t "$SESSION" -v -c "$ROOT/backend" "yarn stripe:listen"

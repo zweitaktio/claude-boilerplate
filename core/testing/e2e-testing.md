@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.0
 applies: playwright | "@playwright/test"
 target: rules
 paths:
@@ -71,6 +71,18 @@ Pattern: `{context}-{element}-{descriptor}` in kebab-case:
 | context | Page/feature area | `checkout`, `cart`, `login`, `product` |
 | element | Element type | `input`, `button`, `form`, `list`, `item`, `dialog` |
 | descriptor | Specific identifier | `email`, `submit`, `total`, `{sku}` |
+
+### Test IDs Must Be Unique
+
+Every `data-testid` value must be unique within the page. Duplicate test IDs cause strict mode violations and flaky tests. For list items, include a dynamic identifier:
+
+```tsx
+// ✅ Unique — SKU makes each item distinct
+{items.map(item => <div data-testid={`cart-item-${item.sku}`} />)}
+
+// ❌ Duplicate — every item has the same test ID
+{items.map(item => <div data-testid="cart-item" />)}
+```
 
 ### When to Add Test IDs
 - Interactive elements being tested (buttons, links, inputs)
