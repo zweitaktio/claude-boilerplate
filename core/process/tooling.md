@@ -1,5 +1,5 @@
 ---
-version: 2.6.0
+version: 2.7.0
 applies: Always
 target: rules
 priority: high
@@ -84,6 +84,8 @@ Prefer context-mode's sandbox execution when output may be large or you only nee
 | Read (large file) | context-mode `execute_file` | File >50 lines and you only need specific data (logs, CSV, JSON) |
 | WebFetch | context-mode `fetch_and_index` | Fetching URL for reference — indexes for later `search` |
 | Multiple Bash + Read calls | context-mode `batch_execute` | Running 2+ commands and searching across all results in one call |
+| Storing docs/content for later | context-mode `index` | Indexing API refs, skill prompts, migration guides, Context7 output |
+| Finding specific info in indexed content | context-mode `search` | After any indexing step — pass all queries in one call |
 
 **After indexing** (via `fetch_and_index`, `index`, or `batch_execute`), use `search` to query the indexed content on demand — no need to re-fetch or re-read.
 
