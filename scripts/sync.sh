@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.1.0
+# version: 1.2.0
 # Deterministic sync of webstack assets to target projects.
 # Reads manifest.json to enumerate deployable asset groups, compares versions,
 # and deploys files idempotently.
@@ -572,16 +572,20 @@ done
 
 # ── Prune stale files on apply ──
 # After deploying, remove target files that are not in the manifest.
-# Only prunes groups with a dest directory (rules, hooks, hook-infra, configs).
-# Scaffold and settings are excluded. Vendor docs are KG-only.
+# Groups sharing the same dest are merged before pruning so files from
+# one group aren't mistakenly deleted by another (e.g. hooks + hook-infra).
+# Scaffold, settings, and vendor (KG-only) are excluded.
 if [ "$COMMAND" = "apply" ]; then
+  # Collect all dest dirs that need pruning, merging groups with same dest
+  PRUNE_DESTS=""
   PRUNE_GROUPS="hooks hook-infra rules"
+
+  # Build combined expected file list per unique dest dir
   for pg in $PRUNE_GROUPS; do
     if [ -n "$GROUP_FILTER" ] && ! echo ",$GROUP_FILTER," | grep -q ",$pg," 2>/dev/null; then
       continue
     fi
 
-    # Get group config
     PG_JSON=$(jq -c --arg n "$pg" '.groups[] | select(.name == $n)' "$MANIFEST")
     [ -z "$PG_JSON" ] && continue
 
@@ -596,9 +600,14 @@ if [ "$COMMAND" = "apply" ]; then
 
     [ -d "$PG_TGT_DIR" ] || continue
 
-    # Build list of expected target filenames
-    EXPECTED_TMP=$(mktemp)
-    trap 'rm -f "$ENTRIES_FILE" "$APPLIES_TMP" "$FILES_TMP" "$EXPECTED_TMP"' EXIT
+    # Use a stable expected-files list per dest dir
+    EXPECTED_FILE="/tmp/webstack-prune-$(echo "$PG_DEST" | tr '/' '-')"
+
+    # Track unique dest dirs for the prune pass
+    if ! echo "$PRUNE_DESTS" | grep -qF "$PG_DEST" 2>/dev/null; then
+      PRUNE_DESTS="$PRUNE_DESTS $PG_DEST"
+      : > "$EXPECTED_FILE"
+    fi
 
     enumerate_files "$SKILL_DIR/$PG_SRC" "$PG_JSON" | while IFS= read -r ef; do
       [ -z "$ef" ] && continue
@@ -607,27 +616,35 @@ if [ "$COMMAND" = "apply" ]; then
       else
         echo "${ef#$SKILL_DIR/$PG_SRC/}"
       fi
-    done > "$EXPECTED_TMP"
+    done >> "$EXPECTED_FILE"
+  done
 
-    # Find actual files in target and prune stale ones
-    find "$PG_TGT_DIR" -type f 2>/dev/null | while IFS= read -r actual; do
-      if [ "$PG_FLATTEN" = "true" ]; then
-        actual_rel=$(basename "$actual")
-      else
-        actual_rel="${actual#$PG_TGT_DIR/}"
-      fi
+  # Prune pass: for each dest dir, remove files not in the combined expected list
+  for pd in $PRUNE_DESTS; do
+    PD_TGT_DIR="$TARGET_PATH/$pd"
+    EXPECTED_FILE="/tmp/webstack-prune-$(echo "$pd" | tr '/' '-')"
 
-      if ! grep -qxF "$actual_rel" "$EXPECTED_TMP" 2>/dev/null; then
-        rm "$actual"
-        emit \
-          --arg group "$pg" \
-          --arg file "$actual_rel" \
-          --arg action "PRUNE" \
-          '{group: $group, file: $file, action: $action}'
+    [ -f "$EXPECTED_FILE" ] || continue
+
+    sort -u "$EXPECTED_FILE" -o "$EXPECTED_FILE"
+
+    find "$PD_TGT_DIR" -type f 2>/dev/null | while IFS= read -r actual; do
+      actual_rel="${actual#$PD_TGT_DIR/}"
+
+      if ! grep -qxF "$actual_rel" "$EXPECTED_FILE" 2>/dev/null; then
+        # Also check basename for flattened groups
+        if ! grep -qxF "$(basename "$actual")" "$EXPECTED_FILE" 2>/dev/null; then
+          rm "$actual"
+          emit \
+            --arg group "prune" \
+            --arg file "$actual_rel" \
+            --arg action "PRUNE" \
+            '{group: $group, file: $file, action: $action}'
+        fi
       fi
     done
 
-    rm -f "$EXPECTED_TMP"
+    rm -f "$EXPECTED_FILE"
   done
 
   mkdir -p "$TARGET_PATH/.claude"
