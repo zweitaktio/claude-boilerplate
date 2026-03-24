@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.0.0
+# version: 1.1.0
 # Deterministic sync of webstack assets to target projects.
 # Reads manifest.json to enumerate deployable asset groups, compares versions,
 # and deploys files idempotently.
@@ -38,6 +38,7 @@ Actions:
   REPLACE  — target has no version (legacy)
   MERGE    — settings.json hook key merge
   CHECK_KG — vendor doc, requires MCP deployment
+  PRUNE    — file in target has no matching source (removed)
 
 Requires: jq, node or bun
 EOF
@@ -569,8 +570,66 @@ while [ "$g" -lt "$NUM_GROUPS" ]; do
   done
 done
 
-# ── Update SHA on apply ──
+# ── Prune stale files on apply ──
+# After deploying, remove target files that are not in the manifest.
+# Only prunes groups with a dest directory (rules, hooks, hook-infra, configs).
+# Scaffold and settings are excluded. Vendor docs are KG-only.
 if [ "$COMMAND" = "apply" ]; then
+  PRUNE_GROUPS="hooks hook-infra rules"
+  for pg in $PRUNE_GROUPS; do
+    if [ -n "$GROUP_FILTER" ] && ! echo ",$GROUP_FILTER," | grep -q ",$pg," 2>/dev/null; then
+      continue
+    fi
+
+    # Get group config
+    PG_JSON=$(jq -c --arg n "$pg" '.groups[] | select(.name == $n)' "$MANIFEST")
+    [ -z "$PG_JSON" ] && continue
+
+    PG_DEST=$(echo "$PG_JSON" | jq -r '.dest // empty')
+    [ -z "$PG_DEST" ] && continue
+
+    PG_SRC=$(echo "$PG_JSON" | jq -r '.src // empty')
+    [ -z "$PG_SRC" ] && continue
+
+    PG_FLATTEN=$(echo "$PG_JSON" | jq -r '.flatten // "false"')
+    PG_TGT_DIR="$TARGET_PATH/$PG_DEST"
+
+    [ -d "$PG_TGT_DIR" ] || continue
+
+    # Build list of expected target filenames
+    EXPECTED_TMP=$(mktemp)
+    trap 'rm -f "$ENTRIES_FILE" "$APPLIES_TMP" "$FILES_TMP" "$EXPECTED_TMP"' EXIT
+
+    enumerate_files "$SKILL_DIR/$PG_SRC" "$PG_JSON" | while IFS= read -r ef; do
+      [ -z "$ef" ] && continue
+      if [ "$PG_FLATTEN" = "true" ]; then
+        basename "$ef"
+      else
+        echo "${ef#$SKILL_DIR/$PG_SRC/}"
+      fi
+    done > "$EXPECTED_TMP"
+
+    # Find actual files in target and prune stale ones
+    find "$PG_TGT_DIR" -type f 2>/dev/null | while IFS= read -r actual; do
+      if [ "$PG_FLATTEN" = "true" ]; then
+        actual_rel=$(basename "$actual")
+      else
+        actual_rel="${actual#$PG_TGT_DIR/}"
+      fi
+
+      if ! grep -qxF "$actual_rel" "$EXPECTED_TMP" 2>/dev/null; then
+        rm "$actual"
+        emit \
+          --arg group "$pg" \
+          --arg file "$actual_rel" \
+          --arg action "PRUNE" \
+          '{group: $group, file: $file, action: $action}'
+      fi
+    done
+
+    rm -f "$EXPECTED_TMP"
+  done
+
   mkdir -p "$TARGET_PATH/.claude"
   git -C "$SKILL_DIR" rev-parse HEAD > "$TARGET_PATH/.claude/webstack.sha"
 fi

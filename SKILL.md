@@ -442,9 +442,8 @@ In addition to per-template version comparison, the skill records the boilerplat
     Compare output against actual relations from `open_nodes`. Create missing ones via `create_relations`.
 
 10. **Cleanup legacy artifacts:**
-    - Stale KG entities whose `source:` template no longer exists
-    - Orphaned rule files in `.claude/rules/core/` not matching any template
-    - Propose cleanup to user, wait for approval
+    - **Rules and hooks** are automatically pruned by `sync.sh apply` — files in the target that have no matching source in the manifest are deleted (action: `PRUNE` in the output). No manual cleanup needed.
+    - **Stale KG entities** whose `source:` template no longer exists must be cleaned up manually — `search_nodes` for entities matching removed templates, propose `delete_entities` to user, wait for approval.
 
 11. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
 
