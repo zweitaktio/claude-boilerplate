@@ -410,7 +410,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```bash
    ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project
    ```
-   This single command deploys all rules, hooks, configs, merges settings, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles.
+   This single command deploys all rules, hooks, configs, merges settings, prunes stale files, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles. Report any `PRUNE` actions to the user — these are files removed because they no longer exist in the skill.
 
 7. **Deploy vendor entity updates** — for each `CHECK_KG` item from the sync comparison:
 
