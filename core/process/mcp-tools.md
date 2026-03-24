@@ -1,5 +1,5 @@
 ---
-version: 3.0.0
+version: 3.2.0
 applies: Always
 target: rules
 priority: high
@@ -8,38 +8,40 @@ tags: [mcp, context7, knowledge-graph, tools, workflow]
 
 # MCP Tools & Plugins
 
-## Library Doc Lookup — do this before writing code
+## Library Doc Lookup — every time, not optional
 
-For every library you are about to use, look up its docs **before** writing code. Read `package.json` first to get the exact installed version — the version matters.
+Before writing or modifying code that uses a library, run **all three** lookups. This is not conditional — do all three every time, regardless of task complexity.
 
-### Step 1: Check the Knowledge Graph
+### 1. Read `package.json` for the exact installed version
+
+The version determines which API is correct. Never assume you know the version.
+
+### 2. Check the Knowledge Graph for project-specific docs and pitfalls
 
 ```
 search_nodes("domain: <domain>")   → open_nodes on results
 search_nodes("<library name>")     → open_nodes on results
 ```
 
-The KG contains curated vendor docs, project-specific pitfalls, and bug resolutions seeded by the skill. If you find what you need, use it — KG is authoritative for this project.
+KG contains curated vendor docs, project pitfalls, and bug resolutions — authoritative for this project. Always follow up with step 3 for API details.
 
-### Step 2: If KG has no docs for the library, search the web AND Context7
+### 3. Look up the API docs — Context7 + web search, in parallel
 
-Run both in parallel — they complement each other:
+Always run both, even if KG returned results. KG has project context; these have API details.
 
 ```
-# Context7 — version-specific API docs and code examples
+# Context7 — version-specific API signatures and code examples
 resolve-library-id("<package-name>")  → query-docs(id, topic: "<what you need>")
 
-# Web search — official docs, changelogs, migration guides for the specific version
+# Web search — official docs, changelogs, migration guides
 WebSearch("<library> <version> <topic> docs")
 ```
 
-Context7 is good for API signatures and usage patterns. Web search catches changelogs, breaking changes, and migration guides that Context7 may miss. Use the **specific version** in both queries — `"daisyui 5 form patterns"` not `"daisyui form patterns"`.
+Use the **specific version** in both queries — `"daisyui 5 form patterns"` not `"daisyui form patterns"`.
 
-### When to repeat the lookup
+### Repeat before writing code that uses a different library
 
-- Switching to a different library mid-task
-- Hitting an error that doesn't make sense — check KG for pitfalls first: `search_nodes("Pitfall")` + `search_nodes("<library>")`
-- Using an API you haven't verified this session
+Run the three steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check KG for pitfalls first: `search_nodes("Pitfall")` + `search_nodes("<library>")`.
 
 ---
 

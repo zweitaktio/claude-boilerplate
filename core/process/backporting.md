@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 tags: [backport, knowledge-graph, vendor, maintenance]
@@ -35,10 +35,12 @@ add_observations to VendorPayloadCms3:
   (no Backport tag — this is specific to our API wrapper)
 ```
 
-## What is generalizable
+## Decision rule: backport or not?
 
-| Generalizable (mark for backport) | Project-specific (no tag) |
-|-----------------------------------|---------------------------|
+If the finding applies to **any project using this library version or framework combination**, mark it for backport. If it depends on this project's domain model, config, or business logic, do not tag.
+
+| Backport (library/version scope) | No tag (project scope) |
+|----------------------------------|------------------------|
 | Library bug or undocumented behavior | Business logic bug |
 | Version upgrade gotcha (API changed, config format) | Project-specific config values |
 | Pattern that works across projects (form handling, auth flow) | Pattern tied to project's domain model |

@@ -1,5 +1,5 @@
 ---
-version: 2.8.0
+version: 2.9.0
 applies: Always
 target: rules
 priority: high
@@ -46,9 +46,9 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 **Principle:** Prefer auditable, dedicated tools over inline shell logic. Every Bash invocation should be a short, obvious command a human can approve at a glance.
 
-### Bash Tool — Simple Commands Only
+### Bash Tool — Allowlisted Commands Only
 
-Allowed uses: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`. Chaining with `&&` is fine.
+Allowed: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`. Chaining with `&&` is fine. Everything else uses dedicated tools.
 
 ```bash
 # Good — obvious, reviewable
@@ -62,7 +62,9 @@ node -e "const fs = require('fs'); fs.readdirSync('.').forEach(f => { ... })"
 for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
 ```
 
-### Never Run Inline (enforced by hook)
+### No Inline Scripts, Loops, or Pipe Chains (enforced by hook)
+
+`python -c`, `node -e`, `ruby -e`, `for`/`while` loops, `xargs`, and 3+ pipe chains are blocked. Create a script file in `scripts/` instead.
 
 ### Use Dedicated Tools Instead
 

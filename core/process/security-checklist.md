@@ -1,11 +1,13 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: Always
 target: rules
 tags: [security, auth, validation, XSS, CSRF, injection]
 ---
 
 # Security Review Checklist
+
+Check every section during code review and before committing code that handles user input, auth, or external data.
 
 ## Input Validation
 - Validate all user input at system boundaries (routes, API endpoints)

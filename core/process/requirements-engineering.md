@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 priority: high
@@ -12,7 +12,13 @@ Before designing a solution, gather enough information to avoid building the wro
 
 ## When to Apply
 
-Apply this checklist for all work entering plan mode. Only skip for single-line typo fixes or changes where every requirement is already explicit in the user's request. Even seemingly simple requests ("add a logout button") have hidden requirements — surface them.
+Run this checklist when any of these are true:
+- The task enters plan mode
+- The user's request lacks acceptance criteria
+- The change touches more than 1 file
+- The request involves user-facing behavior
+
+Only skip for single-line typo fixes where the change is self-evident. Even seemingly simple requests ("add a logout button") have hidden requirements — surface them.
 
 ## Functional Requirements
 
@@ -78,10 +84,10 @@ Ask the user: "How will we verify this works?" Then define:
 
 ## Risk Identification
 
-Flag before designing:
+Before designing, identify and present all risks to the user:
 - **Unknowns** — "I don't know if the API supports X" — verify before committing to an approach
 - **Assumptions** — state them explicitly: "I'm assuming the user table has an email column"
 - **Technical risks** — areas where the implementation might be harder than expected
 - **Reversibility** — can this be rolled back? If not, flag it as high-risk
 
-Present risks to the user with mitigation options. Do not silently accept risk.
+Present every identified risk with mitigation options. Do not proceed to design with unacknowledged risks.

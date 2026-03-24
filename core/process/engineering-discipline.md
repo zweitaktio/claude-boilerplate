@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.6.0
 applies: Always
 target: rules
 priority: high
@@ -8,15 +8,21 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 # Engineering Discipline
 
+## Library Doc Lookup — unconditional
+
+If the task touches library code, run all three lookup steps in `core/process/mcp-tools` (package.json → KG → Context7 + web) **before writing any code**. This applies to every task — trivial, simple, or complex. No exceptions.
+
 ## Task Assessment
 
 Before touching code, understand what you're dealing with.
 
-| Type | Approach |
-|------|----------|
-| **Trivial** (typo, obvious fix) | Fix directly, run checks |
-| **Simple** (clear scope, single file) | Read context, implement, verify |
-| **Complex** (multiple files, unclear cause) | Full assessment below |
+| Type | Criteria | Approach |
+|------|----------|----------|
+| **Trivial** | Typo, obvious fix, no library code | Fix directly, run checks |
+| **Simple** | Clear scope, single file | Read context, implement, verify |
+| **Complex** | >3 files, changes exports, unknown root cause, or crosses workspace boundaries | Full assessment below |
+
+A task is **complex** when any of these are true: it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex.
 
 **For complex tasks:**
 1. Identify all affected files and modules
@@ -38,7 +44,7 @@ Incorporate findings into the plan — flag risks, reference specific pitfalls, 
 
 ## Verification Discipline
 
-**Never trust assumptions about library APIs.** Follow the library doc lookup in `core/process/mcp-tools` before writing library code — KG first, then web search + Context7 for the specific installed version.
+Read error messages literally — don't pattern-match to what you expect.
 
 Read error messages literally — don't pattern-match to what you expect.
 

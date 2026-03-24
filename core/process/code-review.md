@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.0
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -15,13 +15,15 @@ tags: [code-review, review, security, quality, validation, smells, best-practice
 
 ## Review Checklist
 
-1. **Security** — OWASP top 10, input validation, auth
-2. **Correctness** — logic, edge cases, error paths
-3. **Performance** — N+1 queries, unbounded collections, memory leaks
-4. **Architecture** — separation of concerns, dependency direction
-5. **Smells & cruft** — see below
-6. **Domain best practices** — see below
-7. **Convention adherence** — see below
+Run every item. Load the Convention Adherence table before starting.
+
+1. **Security** — validate inputs at boundaries, check auth, review `core/process/security-checklist`
+2. **Correctness** — trace logic through edge cases and error paths
+3. **Performance** — check for N+1 queries, unbounded collections, memory leaks
+4. **Architecture** — verify separation of concerns and dependency direction
+5. **Smells & cruft** — check dead weight, complexity, type, abstraction, and stale patterns below
+6. **Domain best practices** — apply frontend/backend/shared rules below
+7. **Convention adherence** — match code against the domain reference table below
 
 ## Code Smells & Cruft
 
