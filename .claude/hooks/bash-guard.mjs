@@ -42,13 +42,12 @@ if (/^git\s+push\s+.*--force\b/.test(trimmed)) block('git push --force is destru
 if (/^git\s+push\s+-f\b/.test(trimmed)) block('git push -f is destructive — confirm with user first. (tooling.md § Never Do Without Explicit Request)')
 if (/^git\s+reset\s+--hard\b/.test(trimmed)) block('git reset --hard is destructive — confirm with user first. (tooling.md § Never Do Without Explicit Request)')
 if (/^git\s+clean\s+-f/.test(trimmed)) block('git clean -f is destructive — confirm with user first. (tooling.md § Never Do Without Explicit Request)')
+if (/^git\s+stash\b/.test(trimmed)) block('git stash affects shared branch state — other agents may be working on this branch. (tooling.md § Shared Branch Safety)')
+if (/^git\s+revert\b/.test(trimmed)) block('git revert rewrites branch history — other agents may be working on this branch. Confirm with user first. (tooling.md § Shared Branch Safety)')
 
 // --- Git safety: warn ---
 if (/^git\s+checkout\b/.test(trimmed) && !/^git\s+checkout\s+-b\b/.test(trimmed)) {
   warn('git checkout can discard changes. Confirm with user before proceeding. (tooling.md § Never Do Without Explicit Request)')
-}
-if (/^git\s+revert\b/.test(trimmed)) {
-  warn('git revert creates a new commit. Confirm with user before proceeding. (tooling.md § Never Do Without Explicit Request)')
 }
 
 // --- Commit rules ---

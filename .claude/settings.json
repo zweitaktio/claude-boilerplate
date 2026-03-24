@@ -199,7 +199,6 @@
     ]
   },
   "enabledPlugins": {
-    "context-mode@claude-context-mode": true,
-    "typescript-lsp@claude-plugins-official": true
+    "context-mode@claude-context-mode": true
   }
 }

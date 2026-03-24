@@ -1,5 +1,5 @@
 ---
-version: 2.7.0
+version: 2.8.0
 applies: Always
 target: rules
 priority: high
@@ -123,6 +123,17 @@ On session start, check `.editorconfig` at the project root. If `indent_style = 
 ### Shell Scripts — Cross-Platform Compatibility
 
 Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths. For detailed requirements, see `core/process/scripting`.
+
+## Shared Branch Safety
+
+Multiple agents (or the user) may be working on the same branch concurrently. Never mutate branch state in ways that would break other agents' work:
+
+- **`git stash`** — moves uncommitted changes out from under other agents. Commit or use a worktree instead.
+- **`git revert`** — creates a revert commit that changes the branch for everyone. Confirm with the user first.
+- **`git reset`** — rewrites history. Blocked by hook unless user explicitly requests it.
+- **`git checkout <file>`** — silently discards uncommitted changes. Confirm first.
+
+If you need isolation, use a worktree (`git worktree add`) or a new branch.
 
 ## Agent Behavior
 
