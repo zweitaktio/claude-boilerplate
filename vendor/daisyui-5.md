@@ -1,8 +1,9 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: daisyui@5
-target: graph
+target: rules
 domain: styling
+paths: ["**/*.tsx", "**/*.css"]
 tags: [daisyui, ui, components, tailwind, styling, themes]
 ---
 

@@ -1,8 +1,12 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: payload-rest-client
-target: graph
+target: rules
 domain: backend
+paths:
+  - "**/collections/**"
+  - "**/*.server.ts"
+  - "**/payload*"
 tags: [payload, rest-client, api, fetch, typed-client]
 ---
 

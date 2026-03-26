@@ -1,8 +1,9 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: react-router@7
-target: graph
+target: rules
 domain: routing
+paths: ["**/routes/**", "**/routes.ts"]
 type: integration
 tags: [conform, zod, oauth2, feature-modules, auth, validation, known-issues]
 ---

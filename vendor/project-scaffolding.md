@@ -1,7 +1,7 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: Always
-target: graph
+target: rules
 domain: tooling
 tags: [scaffolding, monorepo, docker, dev-scripts, lifecycle, migration, sync, oauth]
 ---

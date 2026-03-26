@@ -1,5 +1,5 @@
 ---
-version: 3.3.0
+version: 4.0.0
 applies: Always
 target: rules
 priority: high
@@ -16,23 +16,23 @@ Before writing or modifying code that uses a library, run **all three** lookups.
 
 The version determines which API is correct. Never assume you know the version.
 
-### 2. Check the Knowledge Graph for project-specific docs and pitfalls
+### 2. Vendor docs + KG pitfalls
 
-Run ALL of these — do not skip any:
+**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you edit files matching their path patterns.
+
+**Project-specific pitfalls and decisions** are in the Knowledge Graph. Check these before writing code:
 
 ```
-search_nodes("domain: <domain>")   → open_nodes on EVERY result
-search_nodes("<library name>")     → open_nodes on EVERY result
-search_nodes("Pitfall")            → open_nodes on EVERY result
+search_nodes("bug_resolution")         → open_nodes on results
+search_nodes("Pitfall")                → open_nodes on results
+search_nodes("architecture_decision")  → open_nodes on results
 ```
 
-`search_nodes` returns entity names only — you MUST call `open_nodes` to read the actual content. Skipping `open_nodes` means you never loaded the docs.
-
-KG contains curated vendor docs, project pitfalls, and bug resolutions — authoritative for this project. A PreToolUse hook blocks code edits until KG reads are detected. Always follow up with step 3 for API details.
+To discover which vendor docs exist for a domain: `search_nodes("domain: <domain>")` — these are lightweight references pointing to the auto-loaded rule files.
 
 ### 3. Look up the API docs — Context7 + web search, in parallel
 
-Always run both, even if KG returned results. KG has project context; these have API details.
+Always run both. Vendor rules have project context; these have API details.
 
 ```
 # Context7 — version-specific API signatures and code examples
@@ -46,13 +46,13 @@ Use the **specific version** in both queries — `"daisyui 5 form patterns"` not
 
 ### Repeat before writing code that uses a different library
 
-Run the three steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check KG for pitfalls first: `search_nodes("Pitfall")` + `search_nodes("<library>")`.
+Run the steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check KG for pitfalls first: `search_nodes("Pitfall")`.
 
 ---
 
 ## Knowledge Graph
 
-The KG stores vendor docs, project decisions, and bug resolutions as named entities with typed relations. Data lives in `.memory/graph.jsonl`.
+The KG stores project decisions, bug resolutions, and lightweight vendor references as named entities with typed relations. Data lives in `.memory/graph.jsonl`.
 
 **Read:** `search_nodes` (search names, types, observations) → `open_nodes` (retrieve by name) → `read_graph` (dump all — use sparingly)
 
@@ -66,14 +66,14 @@ The KG stores vendor docs, project decisions, and bug resolutions as named entit
 
 | Type | Purpose | Example |
 |------|---------|---------|
-| `vendor_doc` | Library/framework reference (seeded by skill) | `VendorDaisyui5`, `VendorReactRouter7Routing` |
+| `vendor_doc` | Lightweight reference to auto-loaded vendor rule | `VendorDaisyui5` → `rule: .claude/rules/vendor/daisyui-5.md` |
 | `architecture_decision` | Why approach X was chosen over Y | `AuthStrategy` |
 | `bug_resolution` | Symptom → root cause → fix | `HydrationMismatchOnDateFormat` |
 | `convention` | Project patterns and rules | `FormValidationPattern` |
 
 **Relations:** `depends_on`, `replaced_by`, `requires`, `configures`, `integrates_with`
 
-Vendor docs are KG-only — they are not files in the project. Never read vendor docs from the filesystem.
+Vendor doc content lives in `.claude/rules/vendor/` (auto-loaded by path). KG `vendor_doc` entities are lightweight references with domain tags for discoverability.
 
 ### KG write triggers — record immediately, not later
 
@@ -83,13 +83,13 @@ The kg-discipline hook reminds you after 4+ code file edits without a KG write. 
 |-------|--------|--------|
 | Bug that misled you or spanned >3 files | `create_entities` type `bug_resolution` | Symptom, Root cause, Fix, Area |
 | Chose approach X over Y for a reason | `create_entities` type `architecture_decision` | Decision, Why, Rejected alternatives |
-| Something failed non-obviously | `add_observations` to relevant `vendor_doc` | `"Pitfall: {what} — {why}"` |
-| Found a GitHub issue explaining behavior | `add_observations` to relevant `vendor_doc` | `"GitHub: {url} — {summary}"` |
+| Something failed non-obviously | `create_entities` type `bug_resolution` | Link to vendor via `depends_on` relation |
+| Found a GitHub issue explaining behavior | `create_entities` type `bug_resolution` | `"GitHub: {url} — {summary}"` |
 | Established a repeating pattern | `create_entities` type `convention` | Pattern, When to use, Example |
 
 Before creating an entity, `search_nodes` first — if a near-match exists, `add_observations` instead of duplicating.
 
-After creating any entity, `create_relations` to link it to the relevant `vendor_doc` (`depends_on` for bugs/decisions, `configures` for conventions). No orphan entities.
+After creating any entity, `create_relations` to link it to the relevant `vendor_doc` reference (`depends_on` for bugs/decisions, `configures` for conventions). No orphan entities.
 
 ---
 

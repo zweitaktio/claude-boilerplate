@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 tags: [backport, knowledge-graph, vendor, maintenance]
@@ -19,9 +19,11 @@ Add a `"Backport: <reason>"` observation alongside the finding itself. This is t
 
 ```
 # Generalizable — library quirk, affects any project using this library
-add_observations to VendorReactRouter7Routing:
+create_entities:
+  name: ClientLoaderSSRBug, type: bug_resolution
   "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
   "Backport: library behavior, not project-specific"
+create_relations: ClientLoaderSSRBug -> depends_on -> VendorReactRouter7Routing
 
 # Generalizable — reusable pattern
 create_entities:
@@ -30,7 +32,8 @@ create_entities:
   "Backport: applies to any Conform + RR7 project"
 
 # Project-specific — do NOT mark for backport
-add_observations to VendorPayloadCms3:
+create_entities:
+  name: SyncEndpointHeader, type: bug_resolution
   "Pitfall: our custom /api/sync endpoint requires X-Org-Id header"
   (no Backport tag — this is specific to our API wrapper)
 ```

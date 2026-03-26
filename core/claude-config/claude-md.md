@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: Always
 target: rules
 paths:
@@ -53,7 +53,7 @@ Files higher in hierarchy take precedence. Local files are auto-added to `.gitig
 - **Obvious rules** — Don't state what any competent developer knows
 - **Duplicate docs** — Reference external docs with `@docs/file.md` instead of copying
 - **Domain knowledge** — Use skills (`.claude/skills/`) for specialized knowledge that doesn't apply to every task
-- **Too many instructions** — LLMs can follow ~150-200 instructions consistently; beyond that, adherence drops
+- **Attention dilution** — More instructions means each one gets less weight. The limit isn't capacity (1M context fits thousands of rules) — it's attention. Rules that matter most should be near the top, use emphasis, or be enforced by hooks
 
 ## Import Syntax
 
@@ -84,6 +84,10 @@ Organize rules by ownership — skill-managed vs project-specific:
     │   ├── tooling.md
     │   ├── mcp-tools.md
     │   └── ...
+    ├── vendor/            # Vendor docs (path-scoped, auto-loaded) — DO NOT EDIT
+    │   ├── daisyui-5.md
+    │   ├── react-router-7/
+    │   └── ...
     └── project/           # Project-specific rules (your code)
         ├── code-style.md
         ├── testing.md
@@ -91,7 +95,7 @@ Organize rules by ownership — skill-managed vs project-specific:
             └── react.md
 ```
 
-**`core/`** is deployed and updated by the webstack skill. Edits will be overwritten on `/webstack update`.
+**`core/`** and **`vendor/`** are deployed and updated by the webstack skill. Edits will be overwritten on `/webstack update`.
 **`project/`** is yours — add project-specific conventions, overrides, and doc indexes here.
 
 ### Path-Scoped Rules
@@ -143,7 +147,7 @@ For architecture docs, ADRs, and reference material too detailed for rules, use 
 - Create an **index rule** in `.claude/rules/project/` that lists available docs and when to read them
 - The index rule auto-loads every turn, making docs discoverable without loading their full content
 - Use for: architecture decisions, system flows, migration plans, complex patterns, issue tracking
-- Don't use for: conventions (use rules), vendor docs (use KG entities), transient state
+- Don't use for: conventions (use rules), vendor docs (auto-loaded from `.claude/rules/vendor/`), transient state
 
 **Example index rule:**
 ```markdown
@@ -222,7 +226,7 @@ Review CLAUDE.md when:
 **Signs your CLAUDE.md needs attention:**
 - Claude frequently ignores instructions → Rules too vague or buried
 - Claude asks obvious questions → Missing essential context
-- CLAUDE.md is >500 lines → Too bloated, move domain knowledge to skills
+- CLAUDE.md is >500 lines → Move domain knowledge to path-scoped rules or `.claude/docs/`
 - Rules contradict each other → Audit and consolidate
 
 ## Commands

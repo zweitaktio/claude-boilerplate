@@ -1,8 +1,9 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: tailwindcss@4
-target: graph
+target: rules
 domain: styling
+paths: ["**/*.tsx", "**/*.css"]
 priority: high
 tags: [tailwind, css, styling, utilities, responsive, themes]
 ---

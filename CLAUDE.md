@@ -16,15 +16,15 @@ ln -s /path/to/claude-boilerplate ~/.claude/skills/webstack
 
 ## Architecture
 
-Templates deploy to two targets based on their `target` frontmatter field:
+Templates deploy as rule files based on their `target` frontmatter field:
 
 | Directory | Target | Deploys to | Discovery |
 |-----------|--------|------------|-----------|
-| `core/{subdir}/` | `rules` | `.claude/rules/core/{name}.md` in target project (subdir stripped) | Auto-loaded by Claude Code every turn |
-| `vendor/` | `graph` | Knowledge Graph entities (`vendor_doc` type) | Queried via `search_nodes` + `open_nodes` |
+| `core/{subdir}/` | `rules` | `.claude/rules/core/{name}.md` in target project (subdir stripped) | Auto-loaded by Claude Code (always or path-scoped) |
+| `vendor/` | `rules` | `.claude/rules/vendor/{path}.md` in target project (path preserved) | Path-scoped, auto-loaded when editing matching files |
 | `issues/` | `graph` | Knowledge Graph entities (`bug_resolution` type) | Templates only — not deployed directly |
 
-Core rules are auto-loaded each turn (some are path-scoped to reduce context). Vendor docs are large, domain-specific reference material loaded on demand.
+Core rules are auto-loaded each turn (some are path-scoped to reduce context). Vendor docs are path-scoped reference material that auto-load when editing files in their domain. Lightweight KG references (`vendor_doc` type) point to the rule files for discoverability via `search_nodes("domain: ...")`.
 
 ### Frontmatter Schema
 
@@ -34,9 +34,9 @@ Every `.md` template (except SKILL.md and README.md) has this frontmatter:
 ---
 version: 1.0.0          # semver — bump on every content change
 applies: daisyui@5      # condition for when this template applies
-target: graph            # deployment target: rules | graph
+target: rules            # deployment target: rules | graph (graph only for issues/)
 priority: high           # optional — high = load/process first
-paths:                   # optional — path-scoped rules only (core/ templates)
+paths:                   # optional — path-scoped rules (core/ and vendor/ templates)
   - "**/*.tsx"
 tags: [daisyui, ui]      # searchable keywords
 ---
@@ -49,15 +49,14 @@ The `applies` field uses these patterns:
 - `react-router@7.9.0+` — version >= 7.9.0
 - `playwright | "@playwright/test"` — either package present
 
-### Vendor Entity Naming
+### Vendor KG References
 
-Vendor templates become Knowledge Graph entities with `Vendor` prefix + PascalCase filename:
+Vendor docs deploy as path-scoped rule files. Lightweight KG entities (`vendor_doc` type) reference the deployed rule files for discoverability:
 
-- `vendor/daisyui-5.md` → `VendorDaisyui5`
-- `vendor/react-router-7/routing.md` → `VendorReactRouter7Routing`
-- `vendor/payload-rest-client.md` → `VendorPayloadRestClient`
+- `vendor/daisyui-5.md` → rule: `.claude/rules/vendor/daisyui-5.md`, KG: `VendorDaisyui5`
+- `vendor/react-router-7/routing.md` → rule: `.claude/rules/vendor/react-router-7/routing.md`, KG: `VendorReactRouter7Routing`
 
-Entities are grouped by domain (`routing`, `styling`, `backend`, `auth`, `i18n`, `cicd`, `tooling`). Full mapping is in SKILL.md under "Domain mapping".
+KG entities store only: `domain`, `rule` (path to deployed file), and `source` (path in boilerplate). Full content is in the rule file.
 
 ## Editing Templates
 

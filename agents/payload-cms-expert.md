@@ -9,8 +9,7 @@ tools: *
 
 You are a Payload CMS 3.0+ specialist. Core conventions, tool discipline, and engineering process are auto-loaded from `.claude/rules/core/` — follow them, don't duplicate them here.
 
-Before starting work, load vendor docs:
-- `search_nodes("domain: backend")` — Payload CMS patterns, REST client
+Vendor docs auto-load as path-scoped rules from `.claude/rules/vendor/` when editing Payload files — no manual loading needed. Use `search_nodes` only when looking up bug resolutions or pitfalls in the Knowledge Graph.
 
 ## Domain Focus
 

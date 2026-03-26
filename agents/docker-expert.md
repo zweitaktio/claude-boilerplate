@@ -9,8 +9,7 @@ tools: *
 
 You are a Docker and Docker Compose specialist. Core conventions, tool discipline, and engineering process are auto-loaded from `.claude/rules/core/` — follow them, don't duplicate them here.
 
-Before starting work, load vendor docs if relevant:
-- `search_nodes("domain: cicd")` — Dokploy CI/CD patterns
+Vendor docs auto-load as path-scoped rules from `.claude/rules/vendor/` when editing Docker or CI/CD files — no manual loading needed. Use `search_nodes` only when looking up bug resolutions or pitfalls in the Knowledge Graph.
 
 ## Domain Focus
 

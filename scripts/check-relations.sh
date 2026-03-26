@@ -71,7 +71,9 @@ echo "$ENTITIES" | jq '
 ([.[].entity]) as $deployed |
 [
   {from: "VendorDaisyui5",          to: "VendorTailwind4",          type: "depends_on"},
-  {from: "VendorReactRouter7I18n",  to: "VendorReactRouter7Routing", type: "integrates_with"},
+  {from: "VendorReactRouter7I18nSetup",  to: "VendorReactRouter7Routing", type: "integrates_with"},
+  {from: "VendorReactRouter7I18nUsage",  to: "VendorReactRouter7Routing", type: "integrates_with"},
+  {from: "VendorReactRouter7I18nOperations",  to: "VendorReactRouter7Routing", type: "integrates_with"},
   {from: "VendorPayloadRestClient", to: "VendorPayloadCms3",        type: "depends_on"}
 ] | map(select(
   (.from as $f | $deployed | index($f)) and

@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: react-router | next | remix
 target: rules
 paths:
@@ -125,7 +125,7 @@ Only variables prefixed with `VITE_` (Vite) or `PUBLIC_` are available client-si
 - Use `useEffect` cleanup for any client-side timers
 - Never access `process.env` in components or shared modules — use loaders/actions or `.server` files
 
-Before choosing a rendering strategy, run `open_nodes(["VendorReactRouter7RenderingStrategies"])`.
+See `vendor/react-router-7/rendering-strategies` (auto-loaded for route files) for rendering strategy patterns.
 
 ## See Also
 

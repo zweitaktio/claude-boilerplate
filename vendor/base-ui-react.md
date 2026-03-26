@@ -1,8 +1,9 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: "@base-ui/react@1"
-target: graph
+target: rules
 domain: styling
+paths: ["**/*.tsx", "**/*.css"]
 priority: high
 tags: [base-ui, headless, components, a11y, dialog, popover, menu, select, combobox, tabs]
 ---

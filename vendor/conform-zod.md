@@ -1,8 +1,10 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: "@conform-to/react" | "@conform-to/zod"
-target: graph
+target: rules
 domain: forms
+paths:
+  - "**/*.tsx"
 tags: [forms, validation, zod, conform, react-router]
 ---
 

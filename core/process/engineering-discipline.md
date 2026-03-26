@@ -1,5 +1,5 @@
 ---
-version: 1.7.0
+version: 2.0.0
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 ## Library Doc Lookup — unconditional
 
-If the task touches library code, run all three lookup steps in `core/process/mcp-tools` (package.json → KG → Context7 + web) **before writing any code**. This applies to every task — trivial, simple, or complex. No exceptions.
+If the task touches library code, run the lookup steps in `core/process/mcp-tools` (package.json → KG pitfalls → Context7 + web) **before writing any code**. Vendor docs auto-load via path-scoped rules — no manual lookup needed. This applies to every task — trivial, simple, or complex. No exceptions.
 
 ## Task Assessment
 
@@ -35,9 +35,9 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 **Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
 
-Before finalizing a plan, check for known pitfalls:
-1. `search_nodes("domain: <relevant domain>")` — load vendor docs for libraries the task touches
-2. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
+Before finalizing a plan, check KG for known pitfalls (vendor docs auto-load separately):
+1. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
+2. `search_nodes("architecture_decision")` — past decisions that constrain the approach
 3. Read any returned observations for gotchas, version-specific quirks, or past failures that apply
 
 Incorporate findings into the plan — flag risks, reference specific pitfalls, and choose approaches that avoid known issues. A plan that repeats a documented mistake is worse than no plan.

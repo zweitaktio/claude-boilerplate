@@ -1,5 +1,5 @@
 ---
-version: 1.8.0
+version: 1.8.1
 applies: react
 target: rules
 priority: high
@@ -22,7 +22,7 @@ Use Base UI + DaisyUI/Tailwind for: dialogs, popovers, menus, selects, comboboxe
 
 Never use DaisyUI's CSS-only interactive components (`<dialog class="modal">`, `<div class="dropdown">`, `<details class="collapse">`) in production — they lack focus management, keyboard navigation, and ARIA state.
 
-All component wrappers must use CVA + twMerge for variants — see `VendorTailwind4` for the pattern.
+All component wrappers must use CVA + twMerge for variants — see `vendor/tailwind-4` (auto-loaded) for the pattern.
 
 ## Component Declaration
 - Components use `export const` arrow functions with inline props typing: `export const Foo = ({ ... }: FooProps) => { }`
@@ -78,7 +78,7 @@ export function meta({ data }: Route.MetaArgs) {
 
 ## useEffect
 
-Before writing useEffect, run `open_nodes(["VendorReactHooks"])` for race condition prevention, cleanup patterns, stale closures, and infinite loop avoidance.
+See `vendor/react-hooks` (auto-loaded) for race condition prevention, cleanup patterns, stale closures, and infinite loop avoidance.
 
 **When NOT to use useEffect:** derived state (calculate during render), expensive calculations (`useMemo`), data fetching (use loaders or TanStack Query), event handlers (use handler functions).
 
@@ -99,7 +99,7 @@ if (isUser(data)) {
 const user = parseUser(data) // returns User | null
 ```
 
-Use a `createTypeGuards<T>` factory for consistent guards across all API types — see `VendorReactHooks` for the full pattern.
+Use a `createTypeGuards<T>` factory for consistent guards across all API types — see `vendor/react-hooks` (auto-loaded) for the full pattern.
 
 ## Progressive Enhancement
 
@@ -137,9 +137,9 @@ return { error: "Not found" }
 - **Skip link:** Include a "Skip to content" link as the first focusable element in the layout, targeting `#main-content`
 - **Reduced motion:** Wrap animations in `prefers-reduced-motion` media query. Use `motion-safe:` Tailwind modifier
 
-Before writing DaisyUI component markup, run `open_nodes(["VendorDaisyui5"])`.
-Before writing dialogs, popovers, menus, selects, or tooltips, run `open_nodes(["VendorBaseUiReact"])`.
-Before writing route components, run `search_nodes("domain: routing")` → `open_nodes` on results.
+See `vendor/daisyui-5` (auto-loaded) for DaisyUI 5 component markup patterns.
+See `vendor/base-ui-react` (auto-loaded) for headless component patterns (dialogs, popovers, menus, selects, tooltips).
+See `vendor/react-router-7/` rules (auto-loaded for route files) for route component patterns.
 
 ## See Also
 

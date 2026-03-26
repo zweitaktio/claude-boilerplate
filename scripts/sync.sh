@@ -578,7 +578,7 @@ done
 if [ "$COMMAND" = "apply" ]; then
   # Collect all dest dirs that need pruning, merging groups with same dest
   PRUNE_DESTS=""
-  PRUNE_GROUPS="hooks hook-infra rules"
+  PRUNE_GROUPS="hooks hook-infra rules vendor"
 
   # Build combined expected file list per unique dest dir
   for pg in $PRUNE_GROUPS; do

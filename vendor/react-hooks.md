@@ -1,7 +1,11 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: react
-target: graph
+target: rules
+domain: frontend
+paths:
+  - "**/*.tsx"
+  - "**/*.ts"
 tags: [react, hooks, useEffect, cleanup, race-conditions, stale-closures, type-guards]
 ---
 

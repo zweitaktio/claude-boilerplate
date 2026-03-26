@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: react
 target: rules
 paths:
@@ -82,11 +82,11 @@ const Header = () => {
 }
 ```
 
-For library examples (Zustand, Context optimization), run `open_nodes(["VendorStateManagementLibs"])`.
+See `vendor/state-management-libs` (auto-loaded) for library examples (Zustand, Context optimization).
 
 ## Server State ≠ Client State
 
-Before deciding what belongs in a loader vs client state, run `open_nodes(["VendorReactRouter7DataLoading"])`.
+See `vendor/react-router-7/data-loading` (auto-loaded for route files) for loader vs client state patterns.
 
 **Never use Zustand for server data.** Use TanStack Query instead.
 

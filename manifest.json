@@ -28,11 +28,10 @@
     {
       "name": "vendor",
       "src": "vendor",
-      "dest": null,
+      "dest": ".claude/rules/vendor",
       "include": ["**/*.md"],
       "versioning": "frontmatter",
-      "conditional": true,
-      "deployMethod": "kg"
+      "conditional": true
     },
     {
       "name": "settings",

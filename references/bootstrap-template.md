@@ -34,18 +34,17 @@ Add project-specific rules in `.claude/rules/project/` to keep them separate fro
 
 ## Vendor Knowledge
 
-Vendor docs are stored as Knowledge Graph entities (type: `vendor_doc`).
-Load them by domain before starting work using `search_nodes`.
+Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` and auto-load when you edit files in their scope — no manual loading required.
+
+The Knowledge Graph holds lightweight references for discoverability. Use `search_nodes` when looking up bug resolutions or pitfalls, not to load vendor docs.
 
 <!-- GENERATED: The skill populates this table based on which vendor entities were deployed. -->
-| Task domain | Search query | Entities |
-|-------------|-------------|----------|
+| Task domain | Vendor rules (auto-loaded) | KG entities |
+|-------------|---------------------------|-------------|
 <!-- Add rows here for each deployed domain. Example:
-| Routing | `search_nodes("domain: routing")` | VendorReactRouter7* |
-| Styling | `search_nodes("domain: styling")` | VendorDaisyui5, VendorTailwind4 |
+| Routing | auto-loads on route files | VendorReactRouter7* |
+| Styling | auto-loads on *.tsx / *.css | VendorDaisyui5, VendorTailwind4 |
 -->
-
-**Before domain work:** check the table above — load entities for the domain you're about to touch.
 
 ### Knowledge accumulation
 

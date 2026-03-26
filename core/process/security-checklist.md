@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: Always
 target: rules
 tags: [security, auth, validation, XSS, CSRF, injection]
@@ -27,7 +27,7 @@ Check every section during code review and before committing code that handles u
 
 ## Frontend
 
-Before implementing protected routes, run `open_nodes(["VendorReactRouter7Routing"])`.
+See `vendor/react-router-7/routing` (auto-loaded for route files) for protected route patterns.
 
 - Escape user content in templates
 - Use `rel="noopener noreferrer"` on external links with `target="_blank"`

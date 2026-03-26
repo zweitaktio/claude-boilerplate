@@ -1,8 +1,11 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: remark-lint-frontmatter-schema
-target: graph
+target: rules
 domain: tooling
+paths:
+  - "**/*.md"
+  - ".remarkrc*"
 tags: [markdown, frontmatter, schema, validation, remark]
 ---
 

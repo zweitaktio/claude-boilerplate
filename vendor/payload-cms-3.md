@@ -1,8 +1,12 @@
 ---
-version: 1.5.0
+version: 1.5.1
 applies: payload@3
-target: graph
+target: rules
 domain: backend
+paths:
+  - "**/collections/**"
+  - "**/*.server.ts"
+  - "**/payload*"
 priority: high
 tags: [payload, cms, collections, api, backend, database]
 ---

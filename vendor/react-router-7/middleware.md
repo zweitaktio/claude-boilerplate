@@ -1,8 +1,9 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: react-router@7.9.0+
-target: graph
+target: rules
 domain: routing
+paths: ["**/routes/**", "**/routes.ts"]
 tags: [middleware, context, auth, request, response, headers]
 ---
 

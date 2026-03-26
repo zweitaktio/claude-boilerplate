@@ -10,7 +10,7 @@ argument-hint: [init|update|maintenance]
 This skill deploys conventions to two targets based on each template's `target` frontmatter field:
 
 - **`target: rules`** (core templates) → `.claude/rules/core/` — auto-loaded by Claude Code every turn, survives context compression
-- **`target: graph`** (vendor templates) → Knowledge Graph entities — queryable, relational, portable
+- **`target: rules`** (vendor templates) → `.claude/rules/vendor/` — path-scoped, auto-loaded when editing matching files
 
 ## Local Conventions Always Take Precedence
 
@@ -61,7 +61,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 | security-checklist | ~60 | Security review checklist |
 | monorepo | ~30 | Directory discipline |
 
-Vendor docs are stored in the Knowledge Graph — use `search_nodes` + `open_nodes` when working in a specific domain.
+Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` — they auto-load when editing files in their domain.
 
 ## Requirements
 
@@ -86,7 +86,7 @@ Verify each by attempting a lightweight call. If any fails, show the missing ser
 
 | Server | Verify with | Purpose | Install |
 |--------|------------|---------|---------|
-| Knowledge Graph | `search_nodes("preflight")` | Vendor doc storage, bug resolutions, decisions | `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory` |
+| Knowledge Graph | `search_nodes("preflight")` | Bug resolutions, decisions, vendor references | `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory` |
 | Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp` |
 | Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp` |
 
@@ -134,13 +134,13 @@ Then invoke in any project with `/webstack init` or `/webstack update`.
 
 | Command | When to use |
 |---------|-------------|
-| `/webstack init` | New project — deploys rules, seeds KG vendor docs, and CLAUDE.md bootstrap |
+| `/webstack init` | New project — deploys rules + vendor docs, seeds KG references, and CLAUDE.md bootstrap |
 | `/webstack update` | Existing project — diffs templates, preserves project-specific observations |
 | `/webstack maintenance` | Periodic health check — audits KG, rules, relations, contradictions, stray files |
 
 **For existing projects:**
-- The skill compares each template against the deployed version (rule file or KG entity)
-- Project-specific additions (Known Issues observations, custom notes) are preserved in KG entities
+- The skill compares each template against the deployed version (rule file)
+- Project-specific KG observations (bug resolutions, decisions) are preserved
 - You'll be shown what's new vs what already exists before any changes
 
 **For periodic health checks:**
@@ -180,7 +180,7 @@ claude-boilerplate/
 │   │   ├── mcp-servers.md
 │   │   └── writing-rules.md
 │   └── playwright-mcp.config.json  # Copy to .claude/ in project
-├── vendor/                     # → deployed as Knowledge Graph entities
+├── vendor/                     # → deployed as path-scoped rules in .claude/rules/vendor/
 │   ├── daisyui-5.md            # → entity: VendorDaisyui5
 │   ├── tailwind-4.md           # → entity: VendorTailwind4
 │   ├── react-router-7/         # → entities: VendorReactRouter7{Topic}
@@ -198,7 +198,10 @@ claude-boilerplate/
 │   │   ├── sessions.md
 │   │   └── middleware.md
 │   ├── react-router-7-integration.md
-│   ├── react-router-7-i18n.md
+│   ├── react-router-7-i18n/
+│   │   ├── setup.md
+│   │   ├── usage.md
+│   │   └── operations.md
 │   ├── payload-cms-3.md
 │   ├── payload-rest-client.md
 │   ├── ory-hydra.md
@@ -233,18 +236,19 @@ claude-boilerplate/
 | Category | Target | Location | Purpose | Lifecycle |
 |----------|--------|----------|---------|-----------|
 | **Core** | `.claude/rules/core/` | Auto-loaded every turn | Conventions, code style, review standards | Scaffolded from boilerplate, rarely edited |
-| **Vendor** | Knowledge Graph (`vendor_doc`) | Queried via `search_nodes` | Library/framework reference, version-pinned | Seeded by skill, appended with gotchas during work |
+| **Vendor** | Rule files (`.claude/rules/vendor/`) | Path-scoped, auto-loaded | Library/framework reference, version-pinned | Deployed by `sync.sh`, auto-loaded when editing matching files |
 | **Issues** | Knowledge Graph (`bug_resolution`) | Queried via `search_nodes` | Bugs, decisions, relationships | Created during development, queryable |
 | **Decisions** | Knowledge Graph (`architecture_decision`) | Queried via `search_nodes` | Why X was chosen over Y | Created during development |
 
 ### Why this split?
 
 - **Rules** survive context compression — they're re-injected every turn at full fidelity. Core conventions need this because they must be followed consistently, even in long sessions.
-- **Knowledge Graph** handles everything else: vendor docs (large, domain-specific, loaded on demand via `search_nodes`), bug resolutions, architecture decisions. Entities are queryable by type, content, and tags. The graph is portable (single `.memory/graph.jsonl` file) and supports relational linking between entities.
+- **Vendor docs** are also deployed as path-scoped rules in `.claude/rules/vendor/`. They auto-load when editing files matching their domain paths — no manual querying needed.
+- **Knowledge Graph** handles bug resolutions, architecture decisions, and lightweight vendor references (pointing to the deployed rule files). Entities are queryable by type, content, and tags. The graph is portable (single `.memory/graph.jsonl` file) and supports relational linking between entities.
 
-### If Knowledge Graph MCP is unavailable
+### Vendor doc loading
 
-If `search_nodes` fails or the KG MCP server is not configured, fall back to reading vendor templates directly from the skill source directory (`~/.claude/skills/webstack/vendor/`). This provides the same content without relational querying or persistent observations.
+Vendor docs auto-load via path-scoped rules in `.claude/rules/vendor/` — no manual KG queries needed for vendor reference content. The Knowledge Graph contains lightweight reference entities (`vendor_doc` type) that point to the deployed rule files and track domain/source metadata for relational queries.
 
 ### SHA Tracking
 
@@ -303,28 +307,21 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
 
-6. **Deploy vendor entities** — for each `CHECK_KG` item from the comparison output:
+6. **Create lightweight vendor reference entities** — for each `CHECK_KG` item from the comparison output:
+
+   These are lightweight references pointing to the deployed rule files — no content body needed.
 
    ```
-   Read: ~/.claude/skills/webstack/vendor/daisyui-5.md
-   Parse frontmatter: version, applies, tags
-   Entity name and domain from sync.sh output: VendorDaisyui5, domain: styling
-
    create_entities([{
      name: "VendorDaisyui5",
      entityType: "vendor_doc",
      observations: [
-       "version: 1.1.0",
-       "applies: daisyui@5",
-       "tags: daisyui, ui, components, tailwind, styling, themes",
        "domain: styling",
-       "source: vendor/daisyui-5.md",
-       <full markdown content body, without frontmatter>
+       "rule: .claude/rules/vendor/daisyui-5.md",
+       "source: vendor/daisyui-5.md"
      ]
    }])
    ```
-
-   **CRITICAL:** Copy the markdown content body verbatim (everything after the closing `---` of frontmatter). Do NOT retype, summarize, or reinterpret. The templates are pre-written and verified.
 
    **CRITICAL:** Ensure `.memory/` directory exists before creating entities. Run `mkdir -p .memory` if needed.
 
@@ -335,7 +332,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    | Hook | File | Event / Matcher | Purpose |
    |------|------|----------------|---------|
    | Bash guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks env vars, inline scripts, loops, pipes, linter isolation, dev servers, git safety, shell compat, Payload CLI |
-   | Research gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|Task` | Injects KG + Context7 + WebSearch research checklist; subagent context reminder |
+   | Research gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|Task` | Injects research checklist (KG pitfalls + Context7 + WebSearch); vendor docs auto-load |
    | Code guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content inspection: React.FC, default exports, .test.tsx, @testing-library, i18n, shell compat. Tracks session-edited files for completion-gate scoping |
    | Migration guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | Guards against unsafe migration patterns |
    | Context7 guard | `context7-guard.mjs` | PreToolUse / `query-docs` + PostToolUse / `resolve-library-id` | Enforces resolve-library-id before query-docs |
@@ -343,7 +340,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    | Payload guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks for data wrapper, empty objects, null enum fields |
    | Auto-check | `auto-check.mjs` | PostToolUse / `Edit\|Write` | Runs `yarn check` after code edits, finds nearest workspace |
    | i18n extract | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds to run `yarn i18n:extract` after new t() calls |
-   | KG discipline | `kg-discipline.mjs` | PostToolUse / `Edit\|Write` + KG write tools | Tracks code file edits, reminds about KG writes after 4+ files |
+   | KG discipline | `kg-discipline.mjs` | PostToolUse / `Edit\|Write` + KG write tools | Tracks code file edits, reminds about KG writes (bug_resolution, architecture_decision) after 4+ files |
    | Test companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Test-related companion reminders |
    | Dep change | `dep-change-reminder.mjs` | PostToolUse / `Bash` | Reminds to install after dependency changes |
    | Session context | `session-context.mjs` | SessionStart | Injects branch, commits, uncommitted changes |
@@ -395,7 +392,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    Outputs JSON action table. Present it to the user as a formatted table.
 
-3. **Detect project-specific observations** in existing KG entities (observations that are NOT `version:`, `applies:`, `tags:`, `domain:`, `source:`, or content body). These are preserved during updates.
+3. **Detect project-specific observations** in existing KG entities (observations that are NOT `domain:`, `rule:`, or `source:`). These are preserved during updates.
 
 4. **Complete drift report** (C3 entity match check):
    ```bash
@@ -412,17 +409,14 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    This single command deploys all rules, hooks, configs, merges settings, prunes stale files, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles. Report any `PRUNE` actions to the user — these are files removed because they no longer exist in the skill.
 
-7. **Deploy vendor entity updates** — for each `CHECK_KG` item from the sync comparison:
+7. **Update vendor reference entities** — for each `CHECK_KG` item from the sync comparison:
 
-    Read the template content for items marked UPDATE or CREATE. **Copy verbatim — do NOT retype or summarize.**
+    Vendor doc content is deployed as rule files by `sync.sh apply` (step 6). KG entities are lightweight references only.
 
-    For new entities → `create_entities` (same as init step 6).
-    For existing entities → update in place:
-    1. `open_nodes(["VendorEntityName"])` — get current observations
-    2. `delete_observations` — remove only standard observations (version:, applies:, tags:, domain:, source:, content body)
-    3. `add_observations` — add new standard observations from template
-
-    Project-specific observations are automatically preserved.
+    For new vendors → `create_entities` with lightweight reference (same as init step 6).
+    For existing vendors → `sync.sh apply` handles the rule file. Update KG entity reference if domain/rule/source changed:
+    1. `open_nodes(["VendorEntityName"])` — check current observations
+    2. If domain, rule, or source changed: `delete_observations` for the stale values, then `add_observations` with updated values
 
 8. **Update Vendor Knowledge table:**
    ```bash
@@ -432,7 +426,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 9. **KG health check:**
 
-    **a) Version match** — `open_nodes` each vendor entity, compare `applies:` against `package.json`. Flag mismatches.
+    **a) Reference integrity** — `open_nodes` each vendor entity, verify `rule:` observation points to an existing file in `.claude/rules/vendor/`. Flag missing rule files.
 
     **b) Entity relations** — compute expected relations:
     ```bash
@@ -443,7 +437,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 10. **Cleanup legacy artifacts:**
     - **Rules and hooks** are automatically pruned by `sync.sh apply` — files in the target that have no matching source in the manifest are deleted (action: `PRUNE` in the output). No manual cleanup needed.
-    - **Stale KG entities** whose `source:` template no longer exists must be cleaned up manually — `search_nodes` for entities matching removed templates, propose `delete_entities` to user, wait for approval.
+    - **Stale KG reference entities** whose `source:` template no longer exists must be cleaned up manually — `search_nodes` for `vendor_doc` entities matching removed templates, propose `delete_entities` to user, wait for approval.
 
 11. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:
 
@@ -452,16 +446,12 @@ In addition to per-template version comparison, the skill records the boilerplat
     **a) KG entities with `Backport:` tags:**
     `search_nodes("Backport:")` — these are explicitly marked for backport by the working agent. Each has a reason explaining why it's generalizable.
 
-    **b) KG pitfalls on vendor entities (untagged):**
-    For each deployed `vendor_doc` entity, also check for project-specific observations (pitfalls, GitHub issues, doc findings) that weren't tagged. These are the observations preserved in update step 7 — if they're generalizable, they belong in the boilerplate template.
+    **b) KG pitfalls linked to vendor docs:**
+    Scan for standalone `bug_resolution` entities related to vendor docs via relations (not observations on vendor entities). These are project-discovered pitfalls that may be generalizable.
     ```
-    open_nodes(["VendorReactRouter7Routing"]) →
-      "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
-      "Backport: library behavior, not project-specific"
-    → BACKPORT CANDIDATE (pre-tagged)
-
-      "GitHub: https://github.com/remix-run/react-router/issues/11234 — confirmed"
-    → BACKPORT CANDIDATE (untagged, but generalizable — library issue)
+    search_nodes("bug_resolution") →
+      open_nodes to check relations to vendor_doc entities →
+      If related to a vendor entity AND root cause is in the library → BACKPORT CANDIDATE
     ```
 
     **c) Bug resolutions:**
@@ -515,39 +505,31 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
 
    No user-visible output yet — this feeds steps 2–11.
 
-2. **Vendor version audit** — for each deployed `vendor_doc` KG entity, run three checks:
+2. **Vendor version audit** — for each deployed vendor rule file and KG reference entity, run three checks:
 
-   **a) Template→KG version drift:**
-   ```bash
-   # Template version
-   head -5 ~/.claude/skills/webstack/vendor/{name}.md | grep '^version:'
-   ```
-   ```
-   # KG version — from open_nodes
-   open_nodes(["Vendor{PascalCaseName}"]) → find "version:" observation
-   ```
-   Flag if template version is higher than KG version — means `/webstack update` was missed.
+   **a) Rule file drift:**
+   Compare deployed `.claude/rules/vendor/*.md` against skill source `vendor/*.md` using `sync.sh compare --group vendor`. Flag files where the deployed version is older than the template.
 
    **b) Installed version match:**
    ```
-   KG entity: applies: daisyui@5
+   Rule file applies: daisyui@5
    package.json: daisyui@5.8.0 → PASS (major matches)
 
-   KG entity: applies: daisyui@5
-   package.json: daisyui@6.1.0 → MISMATCH — entity is for v5, project has v6
+   Rule file applies: daisyui@5
+   package.json: daisyui@6.1.0 → MISMATCH — rule is for v5, project has v6
    ```
-   Flag if the project upgraded past the entity's major version.
+   Flag if the project upgraded past the rule's major version.
 
-   **c) Orphaned entities:** `vendor_doc` entities whose `source:` observation points to a template that no longer exists in the boilerplate, or whose `applies:` condition no longer matches the project stack.
+   **c) Orphaned entities/files:** `vendor_doc` KG entities whose `rule:` observation points to a file that no longer exists, or vendor rule files with no matching source template in the boilerplate.
 
    Output table:
    ```
-   | Entity | Template Ver | KG Ver | Installed | Status |
-   |--------|-------------|--------|-----------|--------|
-   | VendorDaisyui5 | 1.3.0 | 1.3.0 | 5.8.0 | PASS |
-   | VendorRR7Routing | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
-   | VendorPayloadCms3 | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (entity v3, installed v4) |
-   | VendorOldLibrary | — | 1.0.0 | (removed) | ORPHAN |
+   | Rule File | Template Ver | Deployed Ver | Installed | Status |
+   |-----------|-------------|-------------|-----------|--------|
+   | daisyui-5.md | 1.3.0 | 1.3.0 | 5.8.0 | PASS |
+   | react-router-7/routing.md | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
+   | payload-cms-3.md | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (rule v3, installed v4) |
+   | old-library.md | — | 1.0.0 | (removed) | ORPHAN |
    ```
    Report-only. DRIFT → suggest running `/webstack update`. MISMATCH → warn that entity may contain outdated patterns. ORPHAN → propose removal in step 11.
 
@@ -583,7 +565,7 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
 
 5. **KG entity quality check** — inspect entities for structural issues:
 
-   - **Missing standard observations** on `vendor_doc` entities — each should have: `version:`, `applies:`, `tags:`, `domain:`, `source:`
+   - **Missing standard observations** on `vendor_doc` entities — each should have: `domain:`, `rule:`, `source:`
    - **Duplicate entities** — entities with very similar names that may overlap (e.g., `ReactRouterLoading` vs `VendorReactRouter7DataLoading`)
    - **Empty/minimal entities** — entities with fewer than 2 observations (likely placeholders)
    - **Type mismatches** — e.g., a `vendor_doc` without a `source:` observation (likely project-created, should be `convention` or `dependency`)
@@ -698,7 +680,7 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
     - Remove stale pitfalls verified by Context7 (step 10b)
 
     **Informational** (no action, awareness only):
-    - Version drift between templates and KG → recommend `/webstack update` (step 2a)
+    - Version drift between templates and deployed rules → recommend `/webstack update` (step 2a)
     - Installed version mismatches (step 2b)
     - Context budget breakdown (step 9)
     - Cross-entity contradictions in KG (step 10a)
@@ -761,7 +743,7 @@ Each template has YAML frontmatter with `version`, `applies`, `target`, `priorit
 
 ### Vendor entity naming convention
 
-KG entities use `Vendor` prefix with PascalCase template name:
+KG lightweight reference entities use `Vendor` prefix with PascalCase template name. These are reference-only entities (domain, rule path, source) — full vendor content is in `.claude/rules/vendor/` rule files:
 
 | Source template | KG entity name | Domain |
 |----------------|---------------|--------|
@@ -771,7 +753,9 @@ KG entities use `Vendor` prefix with PascalCase template name:
 | `vendor/react-router-7/data-loading.md` | `VendorReactRouter7DataLoading` | routing |
 | `vendor/react-router-7/_index.md` | `VendorReactRouter7Index` | routing |
 | `vendor/react-router-7-integration.md` | `VendorReactRouter7Integration` | routing |
-| `vendor/react-router-7-i18n.md` | `VendorReactRouter7I18n` | i18n |
+| `vendor/react-router-7-i18n/setup.md` | `VendorReactRouter7I18nSetup` | i18n |
+| `vendor/react-router-7-i18n/usage.md` | `VendorReactRouter7I18nUsage` | i18n |
+| `vendor/react-router-7-i18n/operations.md` | `VendorReactRouter7I18nOperations` | i18n |
 | `vendor/payload-cms-3.md` | `VendorPayloadCms3` | backend |
 | `vendor/payload-rest-client.md` | `VendorPayloadRestClient` | backend |
 | `vendor/ory-hydra.md` | `VendorOryHydra` | auth |
@@ -789,7 +773,7 @@ For subdirectory files, the directory name + filename are joined in PascalCase.
 
 ### Domain mapping
 
-Group vendor entities by domain for the CLAUDE.md loading table:
+Group vendor reference entities by domain for KG reference discovery. Actual vendor content auto-loads via path-scoped rules in `.claude/rules/vendor/`:
 
 | Domain | Entities | Search query |
 |--------|----------|-------------|
@@ -797,7 +781,7 @@ Group vendor entities by domain for the CLAUDE.md loading table:
 | styling | `VendorDaisyui5`, `VendorTailwind4`, `VendorBaseUiReact` | `search_nodes("domain: styling")` |
 | backend | `VendorPayloadCms3`, `VendorPayloadRestClient` | `search_nodes("domain: backend")` |
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
-| i18n | `VendorReactRouter7I18n` | `search_nodes("domain: i18n")` |
+| i18n | `VendorReactRouter7I18nSetup`, `VendorReactRouter7I18nUsage`, `VendorReactRouter7I18nOperations` | `search_nodes("domain: i18n")` |
 | cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
 | forms | `VendorConformZod` | `search_nodes("domain: forms")` |
 | tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
@@ -818,7 +802,7 @@ Session progress → Claude Code auto memory (`MEMORY.md`), not the Knowledge Gr
 When you discover something that would help other projects:
 1. **Vendor issues:** Add to `vendor/{library}.md` in the boilerplate under "Known Issues"
 2. **General patterns:** Update the relevant `core/{subdir}/*.md` template
-3. **New library:** Create a new `vendor/{library}.md` template with `applies` and `target: graph`
+3. **New library:** Create a new `vendor/{library}.md` template with `applies` and `target: rules`
 
 Examples of what to contribute back:
 - Library version gotchas (e.g., "DaisyUI 5 removed form-control")

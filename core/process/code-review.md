@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.6.1
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -66,7 +66,7 @@ Flag these during every review:
 
 **Shared:**
 - Errors handled or intentionally propagated, never silently swallowed
-- Async fetch calls use AbortController for cancellation. Timers use cleanup functions. See `VendorReactHooks` for patterns
+- Async fetch calls use AbortController for cancellation. Timers use cleanup functions. See `vendor/react-hooks` (auto-loaded) for patterns
 - External service calls have error handling (not just happy path)
 - Environment-specific values come from config, not hardcoded
 
@@ -80,10 +80,10 @@ Load these before reviewing code that touches their domain:
 | Translations | `core/frontend/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
 | SSR/hydration | `core/frontend/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
 | Security | `core/process/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
-| UI/styling | KG `search_nodes("domain: styling")` | DaisyUI classes, v5 form patterns |
-| Tailwind | KG `search_nodes("domain: styling")` | CVA patterns, twMerge usage |
-| Routing/loaders | KG `search_nodes("domain: routing")` | Route IDs, loader types, fetcher patterns |
-| i18n setup | KG `search_nodes("domain: i18n")` | Namespace usage, language config |
+| UI/styling | `vendor/daisyui-5`, `vendor/tailwind-4` (auto-loaded) | DaisyUI classes, v5 form patterns |
+| Tailwind | `vendor/tailwind-4` (auto-loaded) | CVA patterns, twMerge usage |
+| Routing/loaders | `vendor/react-router-7/` rules (auto-loaded) | Route IDs, loader types, fetcher patterns |
+| i18n setup | `vendor/react-router-7-i18n/` rules (auto-loaded) | Namespace usage, language config |
 
 ## Early Bailout
 

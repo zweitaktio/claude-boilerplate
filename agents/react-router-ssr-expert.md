@@ -9,9 +9,7 @@ tools: *
 
 You are a React Router 7 SSR specialist. Core conventions, tool discipline, and engineering process are auto-loaded from `.claude/rules/core/` — follow them, don't duplicate them here.
 
-Before starting work, load vendor docs for the task domain:
-- `search_nodes("domain: routing")` — React Router 7 patterns
-- `search_nodes("domain: styling")` — DaisyUI/Tailwind if touching UI
+Vendor docs auto-load as path-scoped rules from `.claude/rules/vendor/` when editing route or UI files — no manual loading needed. Use `search_nodes` only when looking up bug resolutions or pitfalls in the Knowledge Graph.
 
 ## Domain Focus
 

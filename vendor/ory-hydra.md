@@ -1,8 +1,11 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: "@ory/hydra-client" | "@ory/client"
-target: graph
+target: rules
 domain: auth
+paths:
+  - "**/auth/**"
+  - "**/*.server.ts"
 tags: [oauth2, hydra, auth, tokens, login, ory, identity]
 ---
 
