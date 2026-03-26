@@ -409,6 +409,8 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    This single command deploys all rules, hooks, configs, merges settings, prunes stale files, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles. Report any `PRUNE` actions to the user — these are files removed because they no longer exist in the skill.
 
+   **Safe directories:** `.claude/rules/project/` is never touched — pruning is scoped to `core/` and `vendor/` only. Project-specific rules are always preserved.
+
 7. **Update vendor reference entities** — for each vendor item from the sync comparison:
 
     Vendor doc content is deployed as rule files by `sync.sh apply` (step 6). KG entities are lightweight references only.
@@ -450,7 +452,7 @@ In addition to per-template version comparison, the skill records the boilerplat
     Compare output against actual relations from `open_nodes`. Create missing ones via `create_relations`.
 
 10. **Cleanup legacy artifacts:**
-    - **Rules and hooks** are automatically pruned by `sync.sh apply` — files in the target that have no matching source in the manifest are deleted (action: `PRUNE` in the output). No manual cleanup needed.
+    - **Rules and hooks** are automatically pruned by `sync.sh apply` — files in `core/` and `vendor/` that have no matching source in the manifest are deleted (action: `PRUNE` in the output). `.claude/rules/project/` is never pruned. No manual cleanup needed.
     - **Stale KG reference entities** whose `source:` template no longer exists must be cleaned up manually — `search_nodes` for `vendor_doc` entities matching removed templates, propose `delete_entities` to user, wait for approval.
 
 11. **Scan for backport candidates** — check the project for knowledge worth contributing back to the skill:

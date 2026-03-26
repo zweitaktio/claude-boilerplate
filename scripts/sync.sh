@@ -574,7 +574,8 @@ done
 # After deploying, remove target files that are not in the manifest.
 # Groups sharing the same dest are merged before pruning so files from
 # one group aren't mistakenly deleted by another (e.g. hooks + hook-infra).
-# Scaffold, settings, and vendor (KG-only) are excluded.
+# Only prunes within each group's dest dir — .claude/rules/project/ is never touched.
+# Scaffold and settings are excluded (different versioning strategy).
 if [ "$COMMAND" = "apply" ]; then
   # Collect all dest dirs that need pruning, merging groups with same dest
   PRUNE_DESTS=""
