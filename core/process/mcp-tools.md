@@ -1,5 +1,5 @@
 ---
-version: 3.2.0
+version: 3.3.0
 applies: Always
 target: rules
 priority: high
@@ -18,12 +18,17 @@ The version determines which API is correct. Never assume you know the version.
 
 ### 2. Check the Knowledge Graph for project-specific docs and pitfalls
 
+Run ALL of these — do not skip any:
+
 ```
-search_nodes("domain: <domain>")   → open_nodes on results
-search_nodes("<library name>")     → open_nodes on results
+search_nodes("domain: <domain>")   → open_nodes on EVERY result
+search_nodes("<library name>")     → open_nodes on EVERY result
+search_nodes("Pitfall")            → open_nodes on EVERY result
 ```
 
-KG contains curated vendor docs, project pitfalls, and bug resolutions — authoritative for this project. Always follow up with step 3 for API details.
+`search_nodes` returns entity names only — you MUST call `open_nodes` to read the actual content. Skipping `open_nodes` means you never loaded the docs.
+
+KG contains curated vendor docs, project pitfalls, and bug resolutions — authoritative for this project. A PreToolUse hook blocks code edits until KG reads are detected. Always follow up with step 3 for API details.
 
 ### 3. Look up the API docs — Context7 + web search, in parallel
 

@@ -1,5 +1,5 @@
 ---
-version: 2.9.0
+version: 2.10.0
 applies: Always
 target: rules
 priority: high
@@ -108,6 +108,14 @@ mv old/component.tsx new/component.tsx
 ```
 
 Only read a file when you need to understand or modify its content.
+
+```
+# Bad — loads entire file to find one thing
+Read package.json → scan for "react" in dependencies
+
+# Good — targeted search, zero file content in context
+Grep: pattern="\"react\"" glob="package.json"
+```
 
 ### Edit Tool — Indentation Awareness
 

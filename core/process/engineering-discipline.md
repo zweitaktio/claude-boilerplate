@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: Always
 target: rules
 priority: high
@@ -14,7 +14,7 @@ If the task touches library code, run all three lookup steps in `core/process/mc
 
 ## Task Assessment
 
-Before touching code, understand what you're dealing with.
+Before touching code, classify the task using the table below.
 
 | Type | Criteria | Approach |
 |------|----------|----------|
@@ -95,7 +95,11 @@ Before implementing, classify the change to determine required safeguards.
 2. **One logical change at a time** — don't bundle unrelated changes
 3. **Verify between steps** — `yarn check` runs automatically via hook after each Edit/Write; read its output before continuing
 4. **Single-variable changes** — change one thing, check. Changing three things and having it break means you don't know which one caused it.
-5. **Rollback readiness** — before complex changes, ensure you can get back to a working state
+5. **Rollback readiness** — before complex changes, commit the current working state:
+   ```bash
+   git add -A && git commit -m "checkpoint: before refactoring auth middleware"
+   ```
+   If the change fails, `git diff HEAD~1` shows exactly what broke.
 
 ## Decision-Making
 
@@ -106,6 +110,16 @@ When multiple approaches, trade-offs, or design choices exist — present the op
 - Present options with concrete trade-offs (not abstract pros/cons)
 - Include your recommendation with reasoning, but frame it as a suggestion
 - Wait for the user's choice before implementing
+
+```
+# Bad — abstract pros/cons
+"Option A is more maintainable. Option B is more performant."
+
+# Good — concrete trade-offs
+"Option A: inline the query — 3 fewer files, but duplicates the filter logic in 2 routes.
+ Option B: shared loader util — DRY, but adds a module boundary (breaking change if the signature changes later).
+ I'd suggest A since both routes are in the same file today."
+```
 
 **Uncertain about implementation:**
 - Verify with documentation (Context7) or source code
