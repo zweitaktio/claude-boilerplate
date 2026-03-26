@@ -14,10 +14,9 @@ tags: [tailwind, css, styling, utilities, responsive, themes]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| Official docs | https://tailwindcss.com/docs | v4 docs (check version selector) |
-| v4 beta docs | https://v4.tailwindcss.com | During beta period |
-| Context7 | `/tailwindlabs/tailwindcss` | Verify v4 content |
+| Official docs | https://tailwindcss.com/docs | v4 docs |
 | GitHub | https://github.com/tailwindlabs/tailwindcss | Source, issues, changelog |
+| Context7 | `/tailwindlabs/tailwindcss` | Verify v4 content |
 
 ## Quick Reference
 

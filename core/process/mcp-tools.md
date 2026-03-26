@@ -1,5 +1,5 @@
 ---
-version: 4.0.0
+version: 4.1.0
 applies: Always
 target: rules
 priority: high
@@ -18,7 +18,7 @@ The version determines which API is correct. Never assume you know the version.
 
 ### 2. Vendor docs + KG pitfalls
 
-**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you edit files matching their path patterns.
+**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you edit files matching their path patterns. Each vendor doc has a `## Documentation` section with verified source URLs, GitHub repos, and Context7 library IDs — use these as the primary sources for API lookups in step 3.
 
 **Project-specific pitfalls and decisions** are in the Knowledge Graph. Check these before writing code:
 
@@ -32,14 +32,16 @@ To discover which vendor docs exist for a domain: `search_nodes("domain: <domain
 
 ### 3. Look up the API docs — Context7 + web search, in parallel
 
-Always run both. Vendor rules have project context; these have API details.
+Always run both. Vendor rules have project context; these have current API details.
+
+**Use the `## Documentation` section in the auto-loaded vendor doc** as your source list — it has the verified URLs, GitHub repos, and Context7 library IDs for each library. Don't guess at library IDs or doc URLs.
 
 ```
-# Context7 — version-specific API signatures and code examples
+# Context7 — use the library ID from the vendor doc's Documentation table
 resolve-library-id("<package-name>")  → query-docs(id, topic: "<what you need>")
 
-# Web search — official docs, changelogs, migration guides
-WebSearch("<library> <version> <topic> docs")
+# Web search — use the official docs URL from the vendor doc's Documentation table
+WebSearch("<library> <version> <topic> site:<docs-url>")
 ```
 
 Use the **specific version** in both queries — `"daisyui 5 form patterns"` not `"daisyui form patterns"`.

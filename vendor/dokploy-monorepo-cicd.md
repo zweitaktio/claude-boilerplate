@@ -20,7 +20,7 @@ Reusable GitHub Actions workflow pattern for monorepo deployments with path-base
 |--------|-----|-------|
 | Dokploy docs | https://docs.dokploy.com | Official docs |
 | Dokploy GitHub | https://github.com/Dokploy/dokploy | Source, issues |
-| Dokploy API | https://docs.dokploy.com/api | REST API reference |
+| Dokploy API | https://docs.dokploy.com/docs/api | REST API reference |
 | paths-filter | https://github.com/dorny/paths-filter | `dorny/paths-filter` for change detection |
 | Docker build-push | https://github.com/docker/build-push-action | `docker/build-push-action` |
 | GHA reusable workflows | https://docs.github.com/en/actions/using-workflows/reusing-workflows | `workflow_call` pattern |

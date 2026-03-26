@@ -16,7 +16,7 @@ Project-specific patterns for integrating React Router 7 with our stack. For cor
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| Official docs | https://reactrouter.com/docs | v7 docs |
+| Official docs | https://reactrouter.com/ | v7 docs |
 | API reference | https://api.reactrouter.com | Type definitions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, examples |

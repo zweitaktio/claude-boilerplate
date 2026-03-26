@@ -15,9 +15,9 @@ tags: [oauth2, hydra, auth, tokens, login, ory, identity]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| Ory docs | https://www.ory.sh/docs/hydra | Official Hydra docs |
-| API reference | https://www.ory.sh/docs/hydra/reference/api | REST API endpoints |
-| SDK reference | https://www.ory.sh/docs/hydra/sdk | Client SDKs |
+| Ory docs | https://www.ory.com/docs/hydra | Official Hydra docs |
+| API reference | https://www.ory.com/docs/hydra/reference/api | REST API endpoints |
+| SDK reference | https://www.ory.com/docs/hydra/sdk | Client SDKs |
 | GitHub | https://github.com/ory/hydra | Source, issues |
 | Ory Network | https://console.ory.sh | Managed service dashboard |
 

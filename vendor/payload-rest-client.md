@@ -17,7 +17,7 @@ tags: [payload, rest-client, api, fetch, typed-client]
 | Source | URL | Notes |
 |--------|-----|-------|
 | npm | https://www.npmjs.com/package/payload-rest-client | Package info |
-| GitHub | https://github.com/rilrom/payload-rest-client | Source, README |
+| GitHub | https://github.com/dkirchhof/payload-rest-client | Source, README |
 | Payload REST docs | https://payloadcms.com/docs/rest-api/overview | Underlying API reference |
 
 ## Critical: `where` not `filter`
