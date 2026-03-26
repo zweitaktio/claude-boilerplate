@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.2.2
 applies: react-router@7
 target: rules
 domain: routing
@@ -8,6 +8,15 @@ tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
 ---
 
 # Routing
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React Router docs | https://reactrouter.com/ | Official docs, v7 |
+| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
+| Context7 | `/remix-run/react-router` | Good coverage |
 
 For file conventions (`root.tsx`, `routes.ts`, etc.), see `VendorReactRouter7SpecialFiles`.
 

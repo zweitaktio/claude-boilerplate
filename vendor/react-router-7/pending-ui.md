@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.0.2
 applies: react-router@7
 target: rules
 domain: routing
@@ -8,6 +8,15 @@ tags: [pending, loading, optimistic, useNavigation, spinner, skeleton]
 ---
 
 # Pending UI and Optimistic Updates
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React Router docs | https://reactrouter.com/ | Official docs, v7 |
+| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
+| Context7 | `/remix-run/react-router` | Good coverage |
 
 **Key principle:** Show expected results immediately using `fetcher.formData`, then let React Router sync with the server.
 

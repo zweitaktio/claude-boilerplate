@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.0.2
 applies: react-router@7
 target: rules
 domain: routing
@@ -8,6 +8,15 @@ tags: [route-module, exports, loader, action, meta, links, handle]
 ---
 
 # Route Modules
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React Router docs | https://reactrouter.com/ | Official docs, v7 |
+| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
+| Context7 | `/remix-run/react-router` | Good coverage |
 
 Route modules are files referenced in `routes.ts` that define automatic code-splitting, data loading, actions, revalidation, error boundaries, and more.
 

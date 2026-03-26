@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: remix-i18next & react-router@7
 target: rules
 domain: i18n
@@ -10,6 +10,15 @@ tags: [i18n, routing, translations, components, namespace, trans, patterns]
 # React Router 7 i18n — Usage Patterns
 
 Component-level i18n patterns, namespace splitting, Trans component, and routing with language prefixes.
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| react-i18next | https://react.i18next.com | React bindings, hooks, Trans component |
+| i18next docs | https://www.i18next.com/overview/getting-started | Core i18n library |
+| GitHub | https://github.com/i18next/react-i18next | Source, issues |
+| Context7 | `/i18next/react-i18next` | Good coverage |
 
 ## Client Setup
 

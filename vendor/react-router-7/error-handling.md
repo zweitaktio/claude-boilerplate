@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.1.2
 applies: react-router@7
 target: rules
 domain: routing
@@ -8,6 +8,15 @@ tags: [errors, ErrorBoundary, error-handling, useRouteError, 404, 500]
 ---
 
 # Error Handling in React Router
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React Router docs | https://reactrouter.com/ | Official docs, v7 |
+| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
+| Context7 | `/remix-run/react-router` | Good coverage |
 
 React Router provides built-in mechanisms for catching and managing errors across your application through error boundaries and strategic error throwing.
 

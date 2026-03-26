@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: remix-i18next & react-router@7
 target: rules
 domain: i18n
@@ -10,6 +10,15 @@ tags: [i18n, translations, workflow, languages, pitfalls, operations]
 # React Router 7 i18n — Operations
 
 Translation workflow, language management, pitfalls, and known issues.
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| i18next docs | https://www.i18next.com/ | Core i18n library |
+| i18next-parser | https://github.com/i18next/i18next-parser | Key extraction tool |
+| remix-i18next | https://github.com/sergiodxa/remix-i18next | Integration library |
+| Context7 | `/i18next/i18next` | Good coverage |
 
 ## Translation File Workflow
 

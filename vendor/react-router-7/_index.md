@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.0.2
 applies: react-router@7
 target: rules
 domain: routing
@@ -9,6 +9,15 @@ tags: [react-router, routing, framework, overview]
 ---
 
 # React Router Framework Mode
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React Router docs | https://reactrouter.com/ | Official docs, v7 |
+| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
+| Context7 | `/remix-run/react-router` | Good coverage |
 
 React Router's framework mode enables full-stack development with file-based routing, multiple rendering strategies, data loading, mutations, and type-safe APIs.
 

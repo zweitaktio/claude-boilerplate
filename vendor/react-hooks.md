@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.0.2
 applies: react
 target: rules
 domain: frontend
@@ -10,6 +10,14 @@ tags: [react, hooks, useEffect, cleanup, race-conditions, stale-closures, type-g
 ---
 
 # React Hook Patterns
+
+## Documentation
+
+| Source | URL | Notes |
+|--------|-----|-------|
+| React docs | https://react.dev/reference/react | Hooks API reference |
+| GitHub | https://github.com/facebook/react | Source, issues |
+| Context7 | `/facebook/react` | Good coverage |
 
 ## API Type Guard Factory
 
