@@ -392,7 +392,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    Outputs JSON action table. Present it to the user as a formatted table.
 
-3. **Detect project-specific observations** in existing KG entities (observations that are NOT `domain:`, `rule:`, or `source:`). These are preserved during updates.
+3. **Detect project-specific observations** in existing KG entities. Project-specific observations are those that are NOT standard metadata (`version:`, `applies:`, `tags:`, `domain:`, `rule:`, `source:`) and NOT the content body. These are preserved during migration/updates — typically `Pitfall:`, `Backport:`, `GitHub:`, and `Docs:` observations.
 
 4. **Complete drift report** (C3 entity match check):
    ```bash
@@ -409,14 +409,28 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    This single command deploys all rules, hooks, configs, merges settings, prunes stale files, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles. Report any `PRUNE` actions to the user — these are files removed because they no longer exist in the skill.
 
-7. **Update vendor reference entities** — for each `CHECK_KG` item from the sync comparison:
+7. **Update vendor reference entities** — for each vendor item from the sync comparison:
 
     Vendor doc content is deployed as rule files by `sync.sh apply` (step 6). KG entities are lightweight references only.
 
     For new vendors → `create_entities` with lightweight reference (same as init step 6).
-    For existing vendors → `sync.sh apply` handles the rule file. Update KG entity reference if domain/rule/source changed:
-    1. `open_nodes(["VendorEntityName"])` — check current observations
-    2. If domain, rule, or source changed: `delete_observations` for the stale values, then `add_observations` with updated values
+
+    For existing vendors → `open_nodes(["VendorEntityName"])` to check current state, then:
+
+    **If entity has full content body (migration from pre-rules format):**
+    The entity was created under the old architecture where KG stored full vendor doc content. Migrate to lightweight reference:
+    1. Identify project-specific observations to preserve: any observation starting with `Pitfall:`, `Backport:`, `GitHub:`, or `Docs:` (from step 3)
+    2. `delete_entities(["VendorEntityName"])` — remove the full-content entity
+    3. `create_entities` with lightweight reference (domain, rule, source — same as init step 6)
+    4. `add_observations` to re-add the preserved project-specific observations from sub-step 1
+    5. `create_relations` to restore any relations the old entity had
+
+    **How to detect full-content entities:** if `open_nodes` returns more than 3-4 observations, or any observation does NOT start with a known prefix (`domain:`, `rule:`, `source:`, `Pitfall:`, `Backport:`, `GitHub:`, `Docs:`), the entity has full content and needs migration.
+
+    **If entity is already a lightweight reference:**
+    `sync.sh apply` handles the rule file. Update KG reference only if domain/rule/source changed:
+    1. `delete_observations` for the stale values
+    2. `add_observations` with updated values
 
 8. **Update Vendor Knowledge table:**
    ```bash
