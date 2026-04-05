@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.1.0
 applies: Always
 target: rules
 priority: high
@@ -11,6 +11,27 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 ## Library Doc Lookup — unconditional
 
 If the task touches library code, run the lookup steps in `core/process/mcp-tools` (package.json → KG pitfalls → Context7 + web) **before writing any code**. Vendor docs auto-load via path-scoped rules — no manual lookup needed. This applies to every task — trivial, simple, or complex. No exceptions.
+
+## Domain Pattern Lookup — before implementing features
+
+Before implementing a feature, identify the business domain it belongs to (e.g., e-commerce, authentication, content management, search, billing, notifications). Established domains have implementation patterns refined across the industry — use them instead of inventing new approaches.
+
+1. **Identify the domain** — what business area does this feature serve?
+2. **Research established patterns** — Context7 + web search for how this is conventionally built in the domain. Search for `"<domain> <feature> implementation pattern"`, not just the library API.
+3. **Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
+
+```
+# Wrong: invent a checkout flow from scratch
+# Single-page form that charges on submit, no intermediate validation
+
+# Right: follow the established e-commerce checkout pattern
+# Multi-step → validate each step → create payment intent → confirm → capture
+# This is standard across Stripe, Shopify, and the broader ecosystem for good reason
+```
+
+This applies to any domain with established conventions — cart and inventory management, OAuth/OIDC flows, RBAC, publishing workflows, faceted search, webhook retry with idempotency, rate limiting, pagination strategies, and so on.
+
+When uncertain whether a standard pattern exists: search first. If you find the same approach described across multiple sources, it's a standard — follow it.
 
 ## Task Assessment
 
