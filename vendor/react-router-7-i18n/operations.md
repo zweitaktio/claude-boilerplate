@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: remix-i18next & react-router@7
 target: rules
 domain: i18n
@@ -16,7 +16,7 @@ Translation workflow, language management, pitfalls, and known issues.
 | Source | URL | Notes |
 |--------|-----|-------|
 | i18next docs | https://www.i18next.com/ | Core i18n library |
-| i18next-parser | https://github.com/i18next/i18next-parser | Key extraction tool |
+| i18next-cli | https://github.com/i18next/i18next-cli | Key extraction tool |
 | remix-i18next | https://github.com/sergiodxa/remix-i18next | Integration library |
 | Context7 | `/i18next/i18next` | Good coverage |
 
@@ -147,7 +147,7 @@ export const LOCALE_MAP: Record<SupportedLanguage, string> = {
 
 ### 2. Parser Configuration
 
-**`i18next-parser.config.mjs`**
+**`i18next.config.ts`**
 
 ```javascript
 export default {
@@ -196,7 +196,7 @@ cp -r content/en content/fr
 | File | Change |
 |------|--------|
 | `app/config/i18n.ts` | Add to `SUPPORTED_LANGUAGES` and `LOCALE_MAP` |
-| `i18next-parser.config.mjs` | Add to `locales` array |
+| `i18next.config.ts` | Add to `locales` array |
 | `public/locales/*.{lang}.json` | Created by extraction, then translated |
 | `content/{lang}/` | Copy and translate (if content is localized) |
 | `app/i18n-types.d.ts` | No change needed (types from `en` only) |
@@ -222,7 +222,7 @@ export const LOCALE_MAP: Record<SupportedLanguage, string> = {
 
 ### 2. Parser Configuration
 
-**`i18next-parser.config.mjs`**
+**`i18next.config.ts`**
 
 ```javascript
 export default {
@@ -260,7 +260,7 @@ Confirms the removed language is no longer generated.
 | File | Change |
 |------|--------|
 | `app/config/i18n.ts` | Remove from `SUPPORTED_LANGUAGES` and `LOCALE_MAP` |
-| `i18next-parser.config.mjs` | Remove from `locales` array |
+| `i18next.config.ts` | Remove from `locales` array |
 | `public/locales/*.{lang}.json` | Delete files |
 | `content/{lang}/` | Delete directory (if content is localized) |
 
@@ -270,7 +270,7 @@ Confirms the removed language is no longer generated.
 
 ### Never pass an array to useTranslation()
 
-The i18next-parser extractor cannot resolve namespace arrays:
+The i18next-cli extractor cannot resolve namespace arrays:
 
 ```typescript
 // ❌ Extractor can't resolve this
@@ -333,7 +333,7 @@ Parent and child keys must not collide. `t('nav')` and `t('nav.about')` in the s
 
 **Fix:** Use unique parent keys or flatten the structure.
 
-### i18next-parser empty strings silently break t() fallbacks
+### i18next-cli empty strings silently break t() fallbacks
 
 `yarn i18n:extract` creates missing translation keys with empty string values (`""`) in locale JSON files. i18next's default `returnEmptyString: true` means existing keys with `""` return `""` instead of the fallback default value passed to `t()`.
 

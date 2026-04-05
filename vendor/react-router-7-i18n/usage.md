@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: remix-i18next & react-router@7
 target: rules
 domain: i18n
@@ -298,7 +298,7 @@ public/locales/
 
 ### Configuration
 
-Update `i18next-parser.config.mjs` to extract new namespaces:
+Update `i18next.config.ts` to extract new namespaces:
 
 ```javascript
 export default {
@@ -529,5 +529,5 @@ export const NavItemLink = ({ item, lang, className }: NavItemLinkProps) => {
 yarn i18n:extract
 
 # Add to package.json scripts:
-"i18n:extract": "i18next 'app/**/*.{js,ts,tsx}' --config i18next-parser.config.mjs"
+"i18n:extract": "i18next-cli extract && i18next-cli types"
 ```

@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: remix-i18next & react-router@7
 target: rules
 domain: i18n
@@ -18,7 +18,7 @@ Internationalization setup for React Router 7 SSR applications using remix-i18ne
 | remix-i18next | https://github.com/sergiodxa/remix-i18next | Primary integration library |
 | i18next docs | https://www.i18next.com/overview/getting-started | Core i18n library |
 | react-i18next | https://react.i18next.com | React bindings |
-| i18next-parser | https://github.com/i18next/i18next-parser | Key extraction tool |
+| i18next-cli | https://github.com/i18next/i18next-cli | Key extraction tool |
 | Context7 | `/i18next/i18next` | Good coverage |
 
 ## Dependencies
@@ -34,7 +34,7 @@ Internationalization setup for React Router 7 SSR applications using remix-i18ne
     "remix-i18next": "^7.x"
   },
   "devDependencies": {
-    "i18next-parser": "^9.x"
+    "i18next-cli": "^1.51.0"
   }
 }
 ```
@@ -62,7 +62,7 @@ public/
 └── locales/
     ├── common.en.json        # English translations
     └── common.de.json        # German translations
-i18next-parser.config.mjs     # Extraction tool config
+i18next.config.ts     # Extraction tool config
 ```
 
 ## Configuration Files
@@ -118,7 +118,7 @@ export const i18nextCookie = createCookie('i18next', {
 })
 ```
 
-### `i18next-parser.config.mjs` — Extraction Config
+### `i18next.config.ts` — Extraction Config
 
 ```javascript
 export default {
