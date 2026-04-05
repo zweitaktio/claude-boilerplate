@@ -23,6 +23,17 @@ yarn check        # Run all checks
 
 See `.claude/rules/core/tooling.md` for full workflow rules.
 
+## Critical Conventions
+
+These are enforced by auto-loaded rules in `.claude/rules/core/`. Summary for quick reference:
+
+- **CRITICAL:** Look up library docs (package.json → KG pitfalls → Context7) before writing any library code. Every time, no exceptions.
+- **CRITICAL:** Query the Knowledge Graph for pitfalls and architecture decisions before finalizing any plan.
+- **IMPORTANT:** Default to plan mode for anything beyond trivial fixes.
+- **IMPORTANT:** Research established domain patterns before implementing features — don't reinvent what the industry already solved.
+
+Full rules are in `core/process/engineering-discipline` and `core/process/mcp-tools` (auto-loaded).
+
 ## Architecture
 
 <!-- User adds project-specific architecture here -->
@@ -31,6 +42,8 @@ See `.claude/rules/core/tooling.md` for full workflow rules.
 
 Core conventions are in `.claude/rules/core/` (auto-loaded, managed by the webstack skill — **do not edit**).
 Add project-specific rules in `.claude/rules/project/` to keep them separate from skill-managed rules.
+
+Run `/webstack update` regularly to pull the latest rule and vendor doc improvements. The skill tracks versions — only changed templates are updated.
 
 ## Vendor Knowledge
 

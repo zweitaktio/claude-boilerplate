@@ -1,5 +1,5 @@
 ---
-version: 4.1.0
+version: 4.2.0
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ tags: [mcp, context7, knowledge-graph, tools, workflow]
 
 ## Library Doc Lookup — every time, not optional
 
-Before writing or modifying code that uses a library, run **all three** lookups. This is not conditional — do all three every time, regardless of task complexity.
+**CRITICAL:** Before writing or modifying code that uses a library, run **all three** lookups. Do all three every time, regardless of task complexity.
 
 ### 1. Read `package.json` for the exact installed version
 
@@ -20,7 +20,7 @@ The version determines which API is correct. Never assume you know the version.
 
 **Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you edit files matching their path patterns. Each vendor doc has a `## Documentation` section with verified source URLs, GitHub repos, and Context7 library IDs — use these as the primary sources for API lookups in step 3.
 
-**Project-specific pitfalls and decisions** are in the Knowledge Graph. Check these before writing code:
+**IMPORTANT:** Project-specific pitfalls and decisions are in the Knowledge Graph. Check these before writing code:
 
 ```
 search_nodes("bug_resolution")         → open_nodes on results

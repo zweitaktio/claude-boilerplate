@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.3.0
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 ## Library Doc Lookup — unconditional
 
-If the task touches library code, run the lookup steps in `core/process/mcp-tools` (package.json → KG pitfalls → Context7 + web) **before writing any code**. Vendor docs auto-load via path-scoped rules — no manual lookup needed. This applies to every task — trivial, simple, or complex. No exceptions.
+**CRITICAL:** If the task touches library code, run the lookup steps in `core/process/mcp-tools` (package.json → KG pitfalls → Context7 + web) **before writing any code**. Vendor docs auto-load via path-scoped rules — no manual lookup needed. This applies to every task — trivial, simple, or complex. No exceptions.
 
 ## Domain Pattern Lookup — before implementing features
 
@@ -18,7 +18,7 @@ Before implementing a feature, identify the business domain it belongs to (e.g.,
 
 1. **Identify the domain** — what business area does this feature serve?
 2. **Research established patterns** — Context7 + web search for how this is conventionally built in the domain. Search for `"<domain> <feature> implementation pattern"`, not just the library API.
-3. **Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
+3. **IMPORTANT: Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
 
 ```
 # Wrong: invent a checkout flow from scratch
@@ -56,12 +56,23 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 **Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
 
-Before finalizing a plan, check KG for known pitfalls (vendor docs auto-load separately):
+**CRITICAL:** Before finalizing a plan, query the Knowledge Graph for pitfalls and past decisions. Do this every time — not optional:
 1. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
 2. `search_nodes("architecture_decision")` — past decisions that constrain the approach
 3. Read any returned observations for gotchas, version-specific quirks, or past failures that apply
 
 Incorporate findings into the plan — flag risks, reference specific pitfalls, and choose approaches that avoid known issues. A plan that repeats a documented mistake is worse than no plan.
+
+### Self-review before presenting
+
+**IMPORTANT:** Before presenting a plan, challenge it — the user's review should be a strategic alignment check, not QA:
+
+- Does this actually address what the user asked, or did I drift?
+- What edge cases or failure modes exist?
+- Does it conflict with existing patterns in the codebase?
+- What would a reviewer push back on?
+
+Fix gaps before presenting.
 
 ## Verification Discipline
 
@@ -88,7 +99,7 @@ Before implementing, classify the change to determine required safeguards.
 - API endpoint changes (path, method, request/response shape)
 - Removed CSS classes or changed component prop interfaces
 
-*Required:* Find all consumers with `find_referencing_symbols`. Update all call sites. Consider migration path.
+**CRITICAL:** Find all consumers with `find_referencing_symbols`. Update all call sites. Consider migration path.
 
 **Additive** — extends without breaking existing behavior:
 - New exports, components, routes, endpoints

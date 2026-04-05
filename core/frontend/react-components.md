@@ -1,5 +1,5 @@
 ---
-version: 1.8.1
+version: 1.9.0
 applies: react
 target: rules
 priority: high
@@ -84,7 +84,7 @@ See `vendor/react-hooks` (auto-loaded) for race condition prevention, cleanup pa
 
 ## API Data Safety
 
-Never use `as Type` assertions for API responses — use runtime type guards:
+**IMPORTANT:** Never use `as Type` assertions for API responses — runtime shape changes will silently break. Use type guards:
 
 ```tsx
 // ❌ Unsafe — silently wrong if API shape changes

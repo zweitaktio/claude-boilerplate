@@ -1,8 +1,12 @@
-// version: 5.0.0
+// version: 6.0.0
 import { readStdin } from './core/stdin.mjs'
-import { inject, pass } from './core/output.mjs'
+import { deny, inject, pass } from './core/output.mjs'
+import { read } from './core/state.mjs'
+import { existsSync } from 'fs'
+import { join } from 'path'
 
 const { tool_name } = JSON.parse(await readStdin())
+const projectDir = process.env.CLAUDE_PROJECT_DIR ?? '.'
 
 if (tool_name === 'EnterPlanMode') {
   inject('PreToolUse', `Before designing your plan, complete these research steps.
@@ -33,6 +37,18 @@ Do NOT finalize the plan until steps 1-3 are complete.`)
 }
 
 if (tool_name === 'ExitPlanMode') {
+  const kgExists = existsSync(join(projectDir, '.memory', 'graph.jsonl'))
+  const kgQueried = read('kg-queried') !== null
+
+  if (kgExists && !kgQueried) {
+    deny('PreToolUse', `BLOCKED: Knowledge Graph was not queried this session. Before presenting your plan, run:
+  search_nodes("bug_resolution")
+  search_nodes("Pitfall")
+  search_nodes("architecture_decision")
+Then review findings and incorporate them into the plan.
+(core/process/engineering-discipline.md § Planning)`)
+  }
+
   inject('PreToolUse', `Before presenting: re-read the user's original request. Does the plan address everything they asked for? If not, update it.`)
 }
 
