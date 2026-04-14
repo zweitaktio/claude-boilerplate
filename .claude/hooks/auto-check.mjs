@@ -1,6 +1,7 @@
-// version: 1.0.0
+// version: 1.1.0
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import { write } from './core/state.mjs'
 import { execSync } from 'child_process'
 import { existsSync, readFileSync } from 'fs'
 import { dirname, basename, join } from 'path'
@@ -35,7 +36,9 @@ if (!workspace) pass()
 
 try {
   execSync('yarn check', { cwd: workspace, timeout: 120000, stdio: 'pipe' })
+  write('last-check-result', 'pass')
 } catch (err) {
+  write('last-check-result', 'fail')
   const output = (err.stdout?.toString() || '') + (err.stderr?.toString() || '')
   inject('PostToolUse', `yarn check failed in ${basename(workspace)}/:\n\n${output}`)
 }

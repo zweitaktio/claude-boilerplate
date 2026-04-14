@@ -1,5 +1,5 @@
 ---
-version: 2.3.0
+version: 2.5.0
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 ## Library Doc Lookup — unconditional
 
-**CRITICAL:** If the task touches library code, run the lookup steps in `core/process/mcp-tools` (package.json → KG pitfalls → Context7 + web) **before writing any code**. Vendor docs auto-load via path-scoped rules — no manual lookup needed. This applies to every task — trivial, simple, or complex. No exceptions.
+**CRITICAL:** If the task touches library code, run the 3-step lookup in `core/process/mcp-tools` **before writing any code**. Every task — trivial, simple, or complex. No exceptions.
 
 ## Domain Pattern Lookup — before implementing features
 
@@ -54,9 +54,9 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 ## Planning
 
-**Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
+**IMPORTANT: Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
 
-**CRITICAL:** Before finalizing a plan, query the Knowledge Graph for pitfalls and past decisions. Do this every time — not optional:
+**CRITICAL:** Before finalizing a plan, query the Knowledge Graph for pitfalls and past decisions. This is separate from the library doc lookup (which runs before writing code) — KG queries here catch architectural constraints early:
 1. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
 2. `search_nodes("architecture_decision")` — past decisions that constrain the approach
 3. Read any returned observations for gotchas, version-specific quirks, or past failures that apply
@@ -71,6 +71,9 @@ Incorporate findings into the plan — flag risks, reference specific pitfalls, 
 - What edge cases or failure modes exist?
 - Does it conflict with existing patterns in the codebase?
 - What would a reviewer push back on?
+- Are error paths covered for every external call (API, DB, file I/O)?
+- Are breaking changes flagged with migration paths?
+- How will the implementation be verified end-to-end?
 
 Fix gaps before presenting.
 
@@ -153,14 +156,20 @@ When multiple approaches, trade-offs, or design choices exist — present the op
  I'd suggest A since both routes are in the same file today."
 ```
 
-**Uncertain about implementation:**
-- Verify with documentation (Context7) or source code
-- Test with the smallest possible change first
-- Ask the user — don't guess at requirements
+**IMPORTANT: Ask, don't assume.** Assumptions are unreliable — most turn out wrong and cost more to fix than asking would have cost upfront. When any of these are true, stop and ask the user before proceeding:
 
-**Ambiguous requirements:**
-- Ask for clarification before implementing
-- Never proceed on assumptions when the user is available to answer
+- The requirement can be interpreted more than one way
+- You're about to pick an approach because it "seems right" without evidence
+- You're filling in details the user didn't specify
+- The implementation has trade-offs the user should know about
+- You're unsure whether a behavior is intended or a bug
+
+This applies to subagents too — when delegating, include "ask the parent agent if requirements are unclear" in the task prompt. Don't let subagents guess independently.
+
+**When you can proceed without asking:**
+- The codebase has an established pattern and you're following it
+- Documentation (Context7, vendor docs) confirms the approach
+- The task is a direct, unambiguous instruction ("rename X to Y")
 
 ## Failure Protocol
 

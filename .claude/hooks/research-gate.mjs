@@ -1,4 +1,4 @@
-// version: 6.0.0
+// version: 7.0.0
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 import { read } from './core/state.mjs'
@@ -9,31 +9,12 @@ const { tool_name } = JSON.parse(await readStdin())
 const projectDir = process.env.CLAUDE_PROJECT_DIR ?? '.'
 
 if (tool_name === 'EnterPlanMode') {
-  inject('PreToolUse', `Before designing your plan, complete these research steps.
+  inject('PreToolUse', `REQUIRED before designing:
+1. Library doc lookup (see core/process/mcp-tools — all 3 steps, no exceptions)
+2. KG pitfall search: search_nodes("bug_resolution"), search_nodes("Pitfall"), search_nodes("architecture_decision")
+3. Domain pattern research if implementing a feature (see core/process/engineering-discipline)
 
-Vendor docs auto-load via path-scoped rules — no manual lookup needed.
-
-STEP 1 — IDENTIFY LIBRARIES
-Read package.json to find every library the task touches and their exact versions.
-
-STEP 2 — CHECK KG FOR PROJECT-SPECIFIC KNOWLEDGE
-Run these searches for pitfalls and past decisions:
-  search_nodes("bug_resolution")           → open_nodes on results
-  search_nodes("Pitfall")                  → open_nodes on results
-  search_nodes("architecture_decision")    → past decisions that constrain this task
-
-STEP 3 — EXTERNAL DOCS (in parallel)
-  Context7: resolve-library-id("<package>") → query-docs(id, topic: "<specific topic>")
-  WebSearch: "<library> <version> <topic> docs"
-
-STEP 4 — YOUR PLAN MUST COVER:
-  - Edge cases — empty inputs, max limits, concurrent access, network failures
-  - Error paths — every external call (API, DB, file I/O) needs a failure mode
-  - Breaking changes — flag any changed exports, DB schema changes, or API contract changes
-  - KG findings — reference specific pitfalls or bug resolutions found in step 2
-  - Verification — how to confirm the implementation works end-to-end
-
-Do NOT finalize the plan until steps 1-3 are complete.`)
+Do NOT finalize the plan until these are complete.`)
 }
 
 if (tool_name === 'ExitPlanMode') {
@@ -62,7 +43,9 @@ if (tool_name === 'Task') {
    then paste relevant observations verbatim into the task prompt.
    Subagents cannot access the KG directly.
 
-3. ARCHITECTURE DECISIONS — paste any architecture_decision observations that constrain the approach.`)
+3. ARCHITECTURE DECISIONS — paste any architecture_decision observations that constrain the approach.
+
+4. NO ASSUMPTIONS — tell the subagent: "If requirements are unclear or you need to make a judgment call, report back instead of guessing."`)
 }
 
 pass()

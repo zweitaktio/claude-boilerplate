@@ -69,7 +69,7 @@ ESLint won't flag this — it's a readability judgment.
 ## Rule Sizing
 
 - **One rule file per topic** — `react-components.md`, not `frontend.md`
-- **Under 150 lines per file** — beyond that, split or cut. Adherence drops with length
+- **Aim for under 150 lines per file** — adherence drops with length. Longer is fine for complex topics (context window is not the constraint — attention is), but every line should earn its place. If a section could be a separate path-scoped rule, split it.
 - **Path-scope when possible** — a React rule shouldn't load when editing CI configs. Use `paths:` frontmatter
 - **5-10 actionable instructions per file** — each one something an agent could get wrong without the rule
 
@@ -93,9 +93,26 @@ A rule is dead weight when:
 - Nobody has violated it in months — it may be obvious enough to not need stating
 - It contradicts a newer rule or project convention
 
+## Making Rules Stick
+
+Compliance depends on mechanism, position, and contrast — in that order.
+
+**1. Mechanism beats keywords.** A hook that denies tool execution is more reliable than any CRITICAL marker. If a rule has 0% voluntary compliance, promote it to a hook — don't add more emphasis.
+
+**2. Position beats emphasis.** Top-of-file and end-of-file rules get more attention than mid-document rules (U-shaped attention curve). Place the most important rules first. A plain rule at line 1 outperforms a CRITICAL rule at line 80.
+
+**3. Emphasis works through contrast.** `CRITICAL` and `IMPORTANT` improve adherence only when rare. Budget: 3-5 per instruction set. Beyond that, each marker dilutes the others.
+
+**Escalation path when a rule is ignored:**
+1. Rewrite with a concrete before/after example
+2. Move to top of file
+3. Add CRITICAL/IMPORTANT marker
+4. Promote to a hook (inject reminder at the right moment)
+5. Promote to a hard gate (deny tool execution)
+
 ## Checking if a Rule Works
 
 A working rule produces **visible behavior change**. After deploying a rule:
 - Does the agent follow it without reminders? → Working
-- Does the agent follow it sometimes? → Too vague, add an example
-- Does the agent ignore it? → Buried, too abstract, or contradicted by another rule. Rewrite with a concrete before/after
+- Does the agent follow it sometimes? → Too vague, add an example or reposition to top of file
+- Does the agent ignore it? → Buried, too abstract, or needs hook enforcement. See escalation path above

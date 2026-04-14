@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: Always
 target: rules
 paths:
@@ -199,9 +199,24 @@ Brief description of tech stack and project structure.
 - Branch naming
 ```
 
-## Emphasis for Critical Rules
+## Emphasis and Compliance
 
-Use emphasis to improve adherence to important rules:
+### Compliance hierarchy
+
+Not all enforcement mechanisms are equal. Use the strongest tool that fits:
+
+| Mechanism | Reliability | When to use |
+|-----------|-------------|-------------|
+| **Hooks (deny)** | Highest — hard block | Rules with 0% voluntary compliance (KG reads, tool ordering) |
+| **Hooks (inject)** | High — timed reminder | Rules that need reinforcement at specific moments |
+| **Position (top of file)** | High — primacy effect | The most important rules in each file |
+| **Structure (headings, XML)** | Medium-high | Organizing rules so they're scannable |
+| **Emphasis keywords** | Medium — works through contrast | 3-5 rules max per instruction set |
+| **Plain text** | Baseline | Everything else |
+
+### Emphasis keywords
+
+`CRITICAL` and `IMPORTANT` improve adherence when used sparingly. They work through *contrast* — if everything is emphasized, nothing is.
 
 ```markdown
 # Regular rule
@@ -214,20 +229,27 @@ Use emphasis to improve adherence to important rules:
 - **CRITICAL:** All API endpoints must validate authentication
 ```
 
+**Budget:** 3-5 CRITICAL/IMPORTANT markers per instruction set. Beyond that, each additional marker dilutes the rest.
+
+**When emphasis alone won't work:** If a rule is consistently ignored despite CRITICAL markers, promote it to a hook. Emphasis reminds; hooks enforce.
+
+**Position matters more than keywords.** A plain rule at the top of a file gets more attention than a CRITICAL rule buried mid-document. Place the most important rules first in each file — the primacy and recency effects (U-shaped attention curve) are stronger than any keyword.
+
 ## Maintenance Checklist
 
 Review CLAUDE.md when:
 
-- [ ] **Things go wrong** — Claude ignored a rule? Make it more specific or add emphasis
+- [ ] **Things go wrong** — Claude ignored a rule? First try repositioning it (top of file). Then add emphasis. If still ignored, promote to a hook.
 - [ ] **Project evolves** — New patterns, deprecated approaches
 - [ ] **New team members join** — What do they need to know?
-- [ ] **Quarterly review** — Prune outdated rules, consolidate duplicates
+- [ ] **Quarterly review** — Prune outdated rules, consolidate duplicates, check emphasis budget
 
 **Signs your CLAUDE.md needs attention:**
-- Claude frequently ignores instructions → Rules too vague or buried
+- Claude frequently ignores instructions → Rule is buried, too vague, or needs hook enforcement
 - Claude asks obvious questions → Missing essential context
-- CLAUDE.md is >500 lines → Move domain knowledge to path-scoped rules or `.claude/docs/`
+- CLAUDE.md is unfocused or repetitive → Move domain knowledge to path-scoped rules or `.claude/docs/` (length alone isn't the issue — attention dilution is)
 - Rules contradict each other → Audit and consolidate
+- More than 5 rules marked CRITICAL → Emphasis is diluted, demote or promote to hooks
 
 ## Commands
 

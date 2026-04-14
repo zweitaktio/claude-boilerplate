@@ -1,4 +1,4 @@
-// version: 2.1.0
+// version: 3.0.0
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
 import { read, write, readLines, hasLine, append } from './core/state.mjs'
@@ -21,6 +21,14 @@ const run = (cmd) => {
 }
 
 const warnings = []
+
+// --- Check 0: Last yarn check failed ---
+if (!forcedReasons.has('verify')) {
+  const lastCheck = read('last-check-result')
+  if (lastCheck === 'fail') {
+    warnings.push('Last yarn check failed. Fix errors before stopping.')
+  }
+}
 
 // --- Check 1: Unfinished work markers ---
 if (/(?:\/\/|\/\*|#|^|\s)(TODO|FIXME|HACK|XXX)\s*[:(\-]/mi.test(input.last_assistant_message)) {
@@ -91,6 +99,7 @@ if (warnings.length === 0) pass()
 
 // Track which reasons we've forced for — avoid re-forcing the same check
 const newReasons = new Set(forcedReasons)
+if (warnings.some(w => w.includes('yarn check'))) newReasons.add('verify')
 if (warnings.some(w => w.includes('code files'))) newReasons.add('review')
 if (warnings.some(w => w.includes('markers') || w.includes('incomplete'))) newReasons.add('quality')
 

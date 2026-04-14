@@ -1,6 +1,6 @@
 # CLAUDE.md Bootstrap Template
 
-Deploy this template when creating or updating CLAUDE.md in target projects. The skill MUST ensure CLAUDE.md contains the vendor knowledge section, otherwise vendor docs in the Knowledge Graph won't be loaded correctly. MCP tool usage rules are in `.claude/rules/core/mcp-tools.md` (auto-loaded).
+Deploy this template when creating or updating CLAUDE.md in target projects. The vendor knowledge section in CLAUDE.md provides a domain-to-KG-entity mapping for discoverability via `search_nodes`. Vendor docs themselves auto-load via path-scoped rules in `.claude/rules/vendor/` regardless of CLAUDE.md content. MCP tool usage rules are in `.claude/rules/core/mcp-tools.md` (auto-loaded).
 
 ## Template
 
