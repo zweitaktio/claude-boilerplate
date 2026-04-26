@@ -1,5 +1,5 @@
 ---
-version: 1.2.2
+version: 1.2.3
 applies: tailwindcss@4
 target: rules
 domain: styling
@@ -104,3 +104,33 @@ Key rules:
 - Export `VariantProps<typeof xVariants>` for type-safe variant props
 - Put `defaultVariants` in CVA config, not in component defaults
 - Combine with DaisyUI classes as the base (e.g. `cva('btn', { ... })`)
+
+## Known Issues
+
+### Typography plugin: `not-prose` is a one-way escape
+
+`not-prose` cannot be re-entered. Nesting `prose` inside a `not-prose` ancestor has no effect — the Typography plugin strips styles permanently.
+
+```tsx
+// ❌ Broken — prose inside not-prose is ignored
+<div className="prose">
+  <div className="not-prose">
+    <div className="prose">  {/* Has NO effect */}
+      <h2>Unstyled heading</h2>
+    </div>
+  </div>
+</div>
+
+// ✅ Fix — make each rich text block self-contained
+// Remove prose from outer wrapper, remove not-prose from container blocks,
+// apply prose directly on each RichText component's own wrapper div
+<div>
+  <div>
+    <div className="prose max-w-none">
+      <h2>Styled heading</h2>
+    </div>
+  </div>
+</div>
+```
+
+This affects any layout with container blocks (sections, columns, cards) that need to opt out of prose for structural elements but re-enable it for rich text content inside.
