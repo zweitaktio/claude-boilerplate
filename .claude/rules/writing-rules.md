@@ -95,7 +95,7 @@ A rule is dead weight when:
 
 ## Making Rules Stick
 
-Compliance depends on mechanism, position, and contrast — in that order.
+Compliance depends on mechanism, position, and contrast — in that order. Opus 4.7's more literal instruction-following amplifies this: rules stated as precise, observable actions land without needing emphasis.
 
 **1. Mechanism beats keywords.** A hook that denies tool execution is more reliable than any CRITICAL marker. If a rule has 0% voluntary compliance, promote it to a hook — don't add more emphasis.
 
