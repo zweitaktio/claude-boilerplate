@@ -55,6 +55,7 @@ Vendor docs deploy as path-scoped rule files. Lightweight KG entities (`vendor_d
 
 - `vendor/daisyui-5.md` → rule: `.claude/rules/vendor/daisyui-5.md`, KG: `VendorDaisyui5`
 - `vendor/react-router-7/routing.md` → rule: `.claude/rules/vendor/react-router-7/routing.md`, KG: `VendorReactRouter7Routing`
+- `vendor/playwright.md` → rule: `.claude/rules/vendor/playwright.md`, KG: `VendorPlaywright` (domain: testing; scoped to `**/e2e/**`, `**/*.spec.ts`, `**/playwright.config.ts`)
 
 KG entities store only: `domain`, `rule` (path to deployed file), and `source` (path in boilerplate). Full content is in the rule file.
 
