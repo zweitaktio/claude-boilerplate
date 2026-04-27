@@ -32,6 +32,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/process/security-checklist` — Security review standards
 - `core/process/code-review` — Code review standards
 - `core/process/engineering-discipline` — Task assessment, verification, change classification, failure protocol
+- `core/process/interaction` — Use AskUserQuestion wizard for clarifications
 - `core/process/monorepo` — Directory discipline for multi-package projects
 
 **Path-scoped** (loaded only when touching matching files):
@@ -59,6 +60,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 | engineering-discipline | ~150 | Task assessment, verification, change classification |
 | code-review | ~110 | Review standards |
 | security-checklist | ~60 | Security review checklist |
+| interaction | ~25 | Use AskUserQuestion wizard for clarifications |
 | monorepo | ~30 | Directory discipline |
 
 Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` — they auto-load when editing files in their domain.
@@ -161,6 +163,7 @@ claude-boilerplate/
 │   │   ├── security-checklist.md
 │   │   ├── code-review.md
 │   │   ├── engineering-discipline.md
+│   │   ├── interaction.md
 │   │   ├── monorepo.md
 │   │   ├── backporting.md         # Path-scoped: .memory/**, .claude/**, CLAUDE.md
 │   │   ├── scripting.md          # Path-scoped: scripts/**, **/*.sh
