@@ -1,3 +1,10 @@
+---
+version: 1.0.0
+applies: Always
+target: rules
+priority: high
+tags: [rules, writing, compliance]
+---
 
 # Writing Effective Rules
 
