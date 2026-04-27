@@ -1,5 +1,5 @@
 ---
-version: 2.10.0
+version: 2.10.1
 applies: Always
 target: rules
 priority: high
@@ -138,12 +138,14 @@ Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutil
 
 Multiple agents (or the user) may be working on the same branch concurrently. Never mutate branch state in ways that would break other agents' work:
 
-- **`git stash`** — moves uncommitted changes out from under other agents. Commit or use a worktree instead.
+- **`git stash`** — moves uncommitted changes out from under other agents. Never use it.
+- **`git worktree`** — never use it, even if other plugins or skills suggest it. Treat the working tree as shared.
+- **New branches** — do not create branches to "isolate" your work. Stay on the current branch.
 - **`git revert`** — creates a revert commit that changes the branch for everyone. Confirm with the user first.
 - **`git reset`** — rewrites history. Blocked by hook unless user explicitly requests it.
 - **`git checkout <file>`** — silently discards uncommitted changes. Confirm first.
 
-If you need isolation, use a worktree (`git worktree add`) or a new branch.
+If files are dirty when you arrive, assume another agent put them there. Investigate before discarding or restaging. Stage and commit only the files you intentionally changed, by name — never `git add -A` / `git add .`.
 
 ## Agent Behavior
 
