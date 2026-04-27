@@ -1,5 +1,5 @@
 ---
-version: 2.10.1
+version: 2.10.2
 applies: Always
 target: rules
 priority: high
@@ -59,7 +59,7 @@ docker compose -f docker-compose.dev.yml up -d
 # Bad — unauditable, one hallucination away from damage
 python -c "import json; data = json.load(open('config.json')); ..."
 node -e "const fs = require('fs'); fs.readdirSync('.').forEach(f => { ... })"
-for f in $(find . -name '*.ts'); do sed -i '' 's/old/new/g' "$f"; done
+for f in $(find . -name '*.ts'); do mv "$f" "$f.bak"; done
 ```
 
 ### No Inline Scripts, Loops, or Pipe Chains (enforced by hook)

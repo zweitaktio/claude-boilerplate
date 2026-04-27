@@ -60,9 +60,6 @@ if (/git\s+commit/.test(trimmed) && /\b(feat|fix|chore|docs|style|refactor|perf|
 if (/\bgrep\s+.*-P\b/.test(trimmed)) block('grep -P (PCRE) is GNU-only, not available on macOS. Use grep -E instead. (tooling.md § Shell Scripts)')
 if (/\breadlink\s+-f\b/.test(trimmed)) block('readlink -f is GNU-only, not available on macOS. Use realpath or a manual loop. (tooling.md § Shell Scripts)')
 if (/\bfind\s+.*-regex\b/.test(trimmed)) block('find -regex uses GNU syntax, not portable on macOS. Use -name or -path instead. (tooling.md § Shell Scripts)')
-if (/\bsed\s+-i\b/.test(trimmed) && !/\bsed\s+-i\s+''/.test(trimmed)) {
-  warn("sed -i without '' arg differs on BSD/GNU. Use the Edit tool instead when possible. (tooling.md § Shell Scripts)")
-}
 if (/\bdeclare\s+-A\b/.test(trimmed)) block('declare -A (associative arrays) requires Bash 4+ — not available on macOS 3.2. (tooling.md § Shell Scripts)')
 if (/\b(readarray|mapfile)\b/.test(trimmed)) block('readarray/mapfile requires Bash 4+ — not available on macOS 3.2. (tooling.md § Shell Scripts)')
 if (/\bcoproc\b/.test(trimmed)) block('coproc requires Bash 4+ — not available on macOS 3.2. (tooling.md § Shell Scripts)')
