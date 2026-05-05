@@ -205,8 +205,10 @@ claude-boilerplate/
 │   │   ├── setup.md
 │   │   ├── usage.md
 │   │   └── operations.md
-│   ├── payload-cms-3.md
-│   ├── payload-rest-client.md
+│   ├── payload/
+│   │   ├── cms-3.md
+│   │   ├── rest-client.md
+│   │   └── live-preview.md
 │   ├── ory-hydra.md
 │   ├── remark-frontmatter-schema.md
 │   ├── dokploy-monorepo-cicd.md
@@ -548,7 +550,7 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
    |-----------|-------------|-------------|-----------|--------|
    | daisyui-5.md | 1.3.0 | 1.3.0 | 5.8.0 | PASS |
    | react-router-7/routing.md | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
-   | payload-cms-3.md | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (rule v3, installed v4) |
+   | payload/cms-3.md | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (rule v3, installed v4) |
    | old-library.md | — | 1.0.0 | (removed) | ORPHAN |
    ```
    Report-only. DRIFT → suggest running `/webstack update`. MISMATCH → warn that entity may contain outdated patterns. ORPHAN → propose removal in step 11.
@@ -776,8 +778,9 @@ KG lightweight reference entities use `Vendor` prefix with PascalCase template n
 | `vendor/react-router-7-i18n/setup.md` | `VendorReactRouter7I18nSetup` | i18n |
 | `vendor/react-router-7-i18n/usage.md` | `VendorReactRouter7I18nUsage` | i18n |
 | `vendor/react-router-7-i18n/operations.md` | `VendorReactRouter7I18nOperations` | i18n |
-| `vendor/payload-cms-3.md` | `VendorPayloadCms3` | backend |
-| `vendor/payload-rest-client.md` | `VendorPayloadRestClient` | backend |
+| `vendor/payload/cms-3.md` | `VendorPayloadCms3` | backend |
+| `vendor/payload/rest-client.md` | `VendorPayloadRestClient` | backend |
+| `vendor/payload/live-preview.md` | `VendorPayloadLivePreview` | full-stack |
 | `vendor/ory-hydra.md` | `VendorOryHydra` | auth |
 | `vendor/remark-frontmatter-schema.md` | `VendorRemarkFrontmatterSchema` | tooling |
 | `vendor/dokploy-monorepo-cicd.md` | `VendorDokployMonorepoCicd` | cicd |
@@ -801,6 +804,7 @@ Group vendor reference entities by domain for KG reference discovery. Actual ven
 | routing | `VendorReactRouter7*` | `search_nodes("domain: routing")` |
 | styling | `VendorDaisyui5`, `VendorTailwind4`, `VendorBaseUiReact` | `search_nodes("domain: styling")` |
 | backend | `VendorPayloadCms3`, `VendorPayloadRestClient` | `search_nodes("domain: backend")` |
+| full-stack | `VendorPayloadLivePreview` | `search_nodes("domain: full-stack")` |
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
 | i18n | `VendorReactRouter7I18nSetup`, `VendorReactRouter7I18nUsage`, `VendorReactRouter7I18nOperations` | `search_nodes("domain: i18n")` |
 | cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
