@@ -1,5 +1,5 @@
 ---
-version: 4.1.0
+version: 4.2.0
 applies: Always
 target: rules
 paths:
@@ -47,8 +47,10 @@ claude plugin install context-mode@claude-context-mode
 
 ```bash
 # Payload MCP — PROJECT-SCOPED (connects to project-specific backend)
-# Requires @payloadcms/plugin-mcp in the backend Payload config
-claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
+# Requires @payloadcms/plugin-mcp in the backend Payload config.
+# Get an API key from the Payload admin panel under MCP API Keys, then substitute
+# it for MCP-USER-API-KEY below. The plugin rejects requests without a Bearer token.
+claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp
 ```
 
 ## Scope Model

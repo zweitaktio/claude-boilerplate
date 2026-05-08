@@ -67,15 +67,12 @@ if (/\|\&/.test(command)) block('|& (pipe stderr) requires Bash 4+ — not avail
 if (/\$\{[^}]+(,,|^^)\}/.test(command)) block('${var,,}/${var^^} (case conversion) requires Bash 4+ — not available on macOS 3.2. Use tr instead. (tooling.md § Shell Scripts)')
 
 // --- Payload-specific ---
-if (/payload-api\.sh/.test(trimmed) && /\-X\s*(POST|PATCH|DELETE|PUT)/.test(trimmed)) {
-  block('payload-api.sh with write methods must use context-mode. (payload-api.md § Workflow 2)')
-}
 if (/payload-api\.sh/.test(trimmed)) {
-  block('Never run payload-api.sh via plain Bash — use context-mode tools. (payload-api.md § Workflow 1)')
+  block('Never run payload-api.sh — use the Payload MCP plugin (mcp__payload__*). (payload-api.md)')
 }
 if (/payload-token\.sh/.test(trimmed)) block('payload-token.sh has been superseded by the Payload MCP plugin. (payload-api.md)')
 if (/\bcurl\b.*\/api\//.test(trimmed) && /\-X\s*(POST|PATCH|DELETE|PUT)/.test(trimmed)) {
-  block('Prohibited: curl to /api/ with write methods. (payload-api.md § Workflow 2)')
+  block('Prohibited: curl to /api/ with write methods — use the Payload MCP plugin (mcp__payload__*). (payload-api.md)')
 }
 
 // --- Emit accumulated warnings ---

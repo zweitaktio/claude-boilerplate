@@ -42,7 +42,7 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/frontend/ssr-hydration` — `**/*.tsx`, `**/*.ts` — SSR and client-only code
 - `core/process/backporting` — `.memory/**`, `.claude/**`, `CLAUDE.md` — When to tag KG findings for backport
 - `core/process/scripting` — `scripts/**`, `**/*.sh` — Script requirements, shell compatibility
-- `core/process/payload-api` — `scripts/payload-*`, `backend/**` — Payload REST API helpers
+- `core/process/payload-api` — `backend/**` — Payload MCP plugin usage
 - `core/testing/e2e-testing` — `**/*.test.*`, `**/*.spec.*`, `**/e2e/**` — Playwright testing patterns
 - `core/testing/e2e-validation` — `**/*.spec.*`, `**/e2e/**`, `**/routes/**` — Three-layer E2E test validation (results → network → logs)
 - `core/testing/unit-testing` — `**/*.test.ts`, `**/*.spec.ts` — Vitest unit testing patterns
@@ -90,7 +90,7 @@ Verify each by attempting a lightweight call. If any fails, show the missing ser
 |--------|------------|---------|---------|
 | Knowledge Graph | `search_nodes("preflight")` | Bug resolutions, decisions, vendor references | `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory` |
 | Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp` |
-| Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp` |
+| Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp` |
 
 ### Plugins
 
@@ -167,7 +167,7 @@ claude-boilerplate/
 │   │   ├── monorepo.md
 │   │   ├── backporting.md         # Path-scoped: .memory/**, .claude/**, CLAUDE.md
 │   │   ├── scripting.md          # Path-scoped: scripts/**, **/*.sh
-│   │   └── payload-api.md        # Path-scoped: scripts/payload-*, backend/**
+│   │   └── payload-api.md        # Path-scoped: backend/**
 │   ├── frontend/               # Path-scoped to *.tsx, *.ts
 │   │   ├── react-components.md
 │   │   ├── state-management.md
@@ -309,7 +309,7 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
    ```bash
-   claude mcp add payload --transport http --scope project -- http://localhost:3000/api/plugin/mcp
+   claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp
    ```
    This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
 

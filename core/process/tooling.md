@@ -1,5 +1,5 @@
 ---
-version: 2.10.2
+version: 2.11.0
 applies: Always
 target: rules
 priority: high
@@ -133,6 +133,20 @@ On session start, check `.editorconfig` at the project root. If `indent_style = 
 ### Shell Scripts — Cross-Platform Compatibility
 
 Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths. For detailed requirements, see `core/process/scripting`.
+
+### TypeScript 6 — default and locked-option changes
+
+When upgrading from TS 5.x to 6.x, several `tsconfig.json` defaults change and previously-tunable options become locked. Audit the project tsconfig before bumping:
+
+| Option | TS 5.x | TS 6.x | Impact |
+|--------|--------|--------|--------|
+| `noUncheckedSideEffectImports` | `false` | `true` | Breaks side-effect-only imports without type declarations (e.g. `@payloadcms/next/css`). Set explicitly to `false` if you have such imports |
+| `baseUrl` | optional, used by `paths` | deprecated (removed in TS7) | `paths` now resolve relative to the tsconfig directory by default. Drop `baseUrl` from tsconfig; update any code that relied on it (e.g. Payload `importMap.js` may need bare `src/...` imports rewritten to `@/...`) |
+| `types` default | `["*"]` (auto-include all `@types/*`) | `[]` | Projects with no explicit `types:` lose all `@types/*` auto-inclusion. Add the packages you actually depend on, e.g. `"types": ["node"]` |
+| `esModuleInterop` | tunable | locked to `true` | Cannot disable; remove from tsconfig or accept the value |
+| `allowSyntheticDefaultImports` | tunable | locked to `true` | Same — cannot disable |
+
+Run `tsc --build --noEmit` after the bump and read errors literally — many are mechanical config fixes, not real type problems.
 
 ## Shared Branch Safety
 

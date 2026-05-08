@@ -1,5 +1,5 @@
 ---
-version: 1.5.1
+version: 1.6.0
 applies: payload@3
 target: rules
 domain: backend
@@ -94,6 +94,12 @@ Key points:
 1. Use `txReq` (with transactionID), not original `req`
 2. Always rollback on error
 3. Rethrow after rollback
+
+### Never wrap external API calls in a transaction
+
+A transaction holds a Postgres connection in `idle-in-transaction` state for the duration of every `await` inside it. If you call an external API (OpenAI, Stripe, third-party HTTP) inside a transaction, that connection sits idle for seconds to minutes — holding row locks and a pool slot. Under load, the pool starves and unrelated services sharing the same Postgres instance (Hydra OAuth, jobs queue, other apps) start failing with connection timeouts.
+
+Each external call is independent — there's no atomicity benefit. Run the external call first, then open a short transaction only around the DB writes that need to be atomic. If the DB writes are also independent (one row each), skip the transaction entirely.
 
 ## File Upload via REST API
 
@@ -211,6 +217,25 @@ When a `blocks` / `layout` field is NOT localized at the top level but individua
 
 HTML checkboxes send no value when unchecked → Conform/Zod parses as `undefined` → Payload ignores `undefined` fields in updates (field stays at its previous value). **Always default to `false`** when passing optional boolean fields to Payload: `marketingConsent: formData.marketingConsent ?? false`.
 
+### `jobs.queue()` does not run jobs
+
+`payload.jobs.queue({...})` only inserts a job record into the queue — it does NOT execute it. Jobs only run when (1) an `autoRun` schedule polls the job's queue, or (2) `jobs.runByID()` is called explicitly.
+
+For on-demand workflows (triggered by hooks, endpoints, user actions), you must call `runByID()` after `queue()` or the job sits in the queue forever:
+
+```typescript
+const job = await req.payload.jobs.queue({
+  workflow: 'recomputePrices',
+  input: { ... },
+})
+// Fire-and-forget — don't await, don't block the request
+req.payload.jobs.runByID({ id: job.id }).catch((err) =>
+  req.payload.logger.error({ err, jobId: job.id }, '[Jobs] runByID failed'),
+)
+```
+
+If you have a `crons:` config on the workflow, scheduled runs handle execution; otherwise treat `queue()` + `runByID()` as a single unit.
+
 ## Known Issues
 
 ### PostgreSQL identifier length limit
@@ -241,6 +266,19 @@ Payload's admin UI uses SCSS modules internally. Custom admin components must fo
 ```
 
 Key CSS variables: `--theme-bg`, `--theme-text`, `--theme-border-color`, `--theme-elevation-*`, `--base`, `--radius-s/m/l`.
+
+### `drizzle session.execute()` doesn't serialize FOR UPDATE locks
+
+Raw SQL with `FOR UPDATE` (or `FOR UPDATE NOWAIT`) executed via `req.payload.db.session(transactionID).db.execute(sql\`...\`)` does NOT serialize concurrent transactions — observed on `@payloadcms/drizzle@3.82.x–3.84.x`. The same SQL run through a raw `pg` client correctly blocks the second caller until the first commits, but through drizzle the second `.execute()` returns immediately without waiting for the first transaction's commit. The lock appears to be released at statement end rather than transaction end, or the SQL is routed through a connection outside the transaction.
+
+This breaks any concurrency control built on `SELECT ... FOR UPDATE` (stock holds, balance checks, idempotency guards). Symptom: race tests pass intermittently or never serialize at all under parallel load.
+
+**Workarounds:**
+- Use Postgres advisory locks (`pg_advisory_xact_lock(key)`) — these are tied to the transaction and respected by drizzle's session routing.
+- Add a `unique` index on the column you're guarding (e.g. `stripePaymentIntentId`) and let the DB raise a constraint violation on the loser. Catch it and treat as the "already created" branch.
+- Drop into raw `pg` for the locking query when you need true row-level serialization.
+
+Avoid relying on `FOR UPDATE` through drizzle until upstream confirms a fix.
 
 ### Migration table after prod data import
 When importing prod data to dev, the `payload_migrations` table reflects prod's state. Dev mode creates a `dev` entry with `batch = -1`. To reset and allow dev mode to push schema changes:

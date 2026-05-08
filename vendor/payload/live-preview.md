@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: payload@3
 target: rules
 domain: full-stack
@@ -62,6 +62,7 @@ If any one is wrong, the iframe blanks out or shows stale content with no obviou
 | `?preview=true` returns 404 even though the page exists | Empty-shell catch uses `instanceof Response` but loader threw `data()` | Throw `new Response(...)` for HTTP errors, not `data()` |
 | `POST /api/pages/undefined 500` | Live-preview hook ran with no document id (empty shell case) | Skip `useLivePreview` when `initialData.id` is missing |
 | `?preview=true` shows empty layout for an existing page | Payload `find?draft=true&where[slug]=…` returns 0 docs when only published exists | Pass `id=` in the preview URL and fetch by id; or fall back to a published `find` |
+| Initial SSR works but admin edits never update the iframe; console shows `Access-Control-Allow-Origin: * … must not be the wildcard when credentials mode is include` for `POST /api/<collection>/<id>` | `next.config.*` defines a `headers` block with `Access-Control-Allow-Origin: *` on `/api/:path*`. Next.js applies these headers AFTER Payload's CORS middleware, clobbering the dynamically-reflected origin. The hook's populate fetch uses `credentials: 'include'`, so the wildcard is rejected | Remove the `headers` block from `next.config.*` entirely. CORS belongs to Payload (`payload.config.ts` `cors` + `csrf`) — never duplicate it at the Next.js layer, which can't reflect request origin dynamically |
 
 ## Backend — Pages Collection (Payload 3)
 
