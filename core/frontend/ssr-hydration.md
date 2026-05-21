@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.3.2
 applies: react-router | next | remix
 target: rules
 paths:
@@ -129,5 +129,5 @@ See `vendor/react-router-7/rendering-strategies` (auto-loaded for route files) f
 
 ## See Also
 
-- `core/frontend/react-components` — Component patterns (auto-loaded)
-- `core/process/code-review` — SSR safety checks (auto-loaded)
+- `core/react-components` — Component patterns (auto-loaded)
+- `core/code-review` — SSR safety checks (auto-loaded)

@@ -1,5 +1,5 @@
 ---
-version: 1.6.1
+version: 1.6.2
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, best-practices]
@@ -17,7 +17,7 @@ tags: [code-review, review, security, quality, validation, smells, best-practice
 
 Run every item. Load the Convention Adherence table before starting.
 
-1. **Security** — validate inputs at boundaries, check auth, review `core/process/security-checklist`
+1. **Security** — validate inputs at boundaries, check auth, review `core/security-checklist`
 2. **Correctness** — trace logic through edge cases and error paths
 3. **Performance** — check for N+1 queries, unbounded collections, memory leaks
 4. **Architecture** — verify separation of concerns and dependency direction
@@ -60,9 +60,9 @@ Flag these during every review:
 
 ## Domain Best Practices
 
-**Frontend:** See `core/frontend/react-components` for React/SSR patterns (useEffect, derived state, data fetching in loaders).
+**Frontend:** See `core/react-components` for React/SSR patterns (useEffect, derived state, data fetching in loaders).
 
-**Backend:** See `core/process/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/testing/unit-testing` for conventions.
+**Backend:** See `core/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/unit-testing` for conventions.
 
 **Shared:**
 - Errors handled or intentionally propagated, never silently swallowed
@@ -76,10 +76,10 @@ Load these before reviewing code that touches their domain:
 
 | If code touches... | Reference | Look for |
 |--------------------|-----------|----------|
-| React components | `core/frontend/react-components` (auto-loaded) | Arrow functions, Props typing, named exports |
-| Translations | `core/frontend/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
-| SSR/hydration | `core/frontend/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
-| Security | `core/process/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
+| React components | `core/react-components` (auto-loaded) | Arrow functions, Props typing, named exports |
+| Translations | `core/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
+| SSR/hydration | `core/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
+| Security | `core/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
 | UI/styling | `vendor/daisyui-5`, `vendor/tailwind-4` (auto-loaded) | DaisyUI classes, v5 form patterns |
 | Tailwind | `vendor/tailwind-4` (auto-loaded) | CVA patterns, twMerge usage |
 | Routing/loaders | `vendor/react-router-7/` rules (auto-loaded) | Route IDs, loader types, fetcher patterns |
@@ -87,4 +87,4 @@ Load these before reviewing code that touches their domain:
 
 ## Early Bailout
 
-Fail fast after 2-3 repeated failures. See `core/process/engineering-discipline` Failure Protocol for the full procedure.
+Fail fast after 2-3 repeated failures. See `core/engineering-discipline` Failure Protocol for the full procedure.

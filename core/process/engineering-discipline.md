@@ -1,5 +1,5 @@
 ---
-version: 2.5.0
+version: 2.5.1
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 ## Library Doc Lookup — unconditional
 
-**CRITICAL:** If the task touches library code, run the 3-step lookup in `core/process/mcp-tools` **before writing any code**. Every task — trivial, simple, or complex. No exceptions.
+**CRITICAL:** If the task touches library code, run the 3-step lookup in `core/mcp-tools` **before writing any code**. Every task — trivial, simple, or complex. No exceptions.
 
 ## Domain Pattern Lookup — before implementing features
 

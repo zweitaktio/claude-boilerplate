@@ -1,5 +1,5 @@
 ---
-version: 1.9.0
+version: 1.9.1
 applies: react
 target: rules
 priority: high
@@ -143,6 +143,6 @@ See `vendor/react-router-7/` rules (auto-loaded for route files) for route compo
 
 ## See Also
 
-- `core/frontend/state-management` — When to use Context vs Zustand (auto-loaded)
-- `core/frontend/ssr-hydration` — Client-only code patterns (auto-loaded)
-- `core/frontend/i18n` — Translation in components (auto-loaded)
+- `core/state-management` — When to use Context vs Zustand (auto-loaded)
+- `core/ssr-hydration` — Client-only code patterns (auto-loaded)
+- `core/i18n` — Translation in components (auto-loaded)

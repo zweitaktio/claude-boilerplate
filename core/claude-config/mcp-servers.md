@@ -1,5 +1,5 @@
 ---
-version: 4.2.0
+version: 4.2.1
 applies: Always
 target: rules
 paths:
@@ -12,7 +12,7 @@ tags: [mcp, context-mode, context7, playwright, configuration, setup]
 # MCP Server & Plugin Setup
 
 Installation and configuration reference for MCP servers and plugins.
-For **tool usage rules**, see `core/process/mcp-tools` (auto-loaded from `.claude/rules/core/mcp-tools.md`).
+For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/core/mcp-tools.md`).
 
 ## Documentation
 

@@ -1,5 +1,5 @@
 ---
-version: 2.3.0
+version: 2.3.1
 applies: Always
 target: rules
 priority: high
@@ -101,7 +101,7 @@ yarn status    # Verify all connections
 
 ## Verification
 
-See `core/process/tooling` for `yarn check`, `yarn build`, and verification workflow.
+See `core/tooling` for `yarn check`, `yarn build`, and verification workflow.
 
 For cross-workspace type sync after backend collection changes:
 ```bash

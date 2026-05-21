@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.2.2
 applies: react
 target: rules
 paths:
@@ -118,5 +118,5 @@ const { data: users } = useQuery({
 
 ## See Also
 
-- `core/frontend/react-components` — Component patterns, useEffect (auto-loaded)
-- `core/frontend/ssr-hydration` — Hydration considerations for state (auto-loaded)
+- `core/react-components` — Component patterns, useEffect (auto-loaded)
+- `core/ssr-hydration` — Hydration considerations for state (auto-loaded)

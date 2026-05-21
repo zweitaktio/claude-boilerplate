@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.3.2
 applies: Always
 target: rules
 tags: [security, auth, validation, XSS, CSRF, injection]
@@ -57,5 +57,5 @@ Apply at the proxy level (Caddy, nginx) or application level:
 
 ## See Also
 
-- `core/process/code-review` — Security in code review priority (auto-loaded)
-- `core/frontend/ssr-hydration` — Server-only code patterns (auto-loaded)
+- `core/code-review` — Security in code review priority (auto-loaded)
+- `core/ssr-hydration` — Server-only code patterns (auto-loaded)

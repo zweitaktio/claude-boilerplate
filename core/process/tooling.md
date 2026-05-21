@@ -1,5 +1,5 @@
 ---
-version: 2.11.0
+version: 2.11.1
 applies: Always
 target: rules
 priority: high
@@ -132,7 +132,7 @@ On session start, check `.editorconfig` at the project root. If `indent_style = 
 
 ### Shell Scripts — Cross-Platform Compatibility
 
-Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths. For detailed requirements, see `core/process/scripting`.
+Every Bash script in the project must work on both macOS (Bash 3.2, BSD coreutils) and Linux (Bash 4+, GNU coreutils). Avoid GNU-only flags, bashisms above 3.2, and Linux-only paths. For detailed requirements, see `core/scripting`.
 
 ### TypeScript 6 — default and locked-option changes
 
@@ -165,13 +165,13 @@ If files are dirty when you arrive, assume another agent put them there. Investi
 
 ### Always Do
 - **Use task lists** for any work with 2+ steps — create tasks, track progress, keep the user informed
-- Use platform tools that don't require manual approval (see `core/claude-config/claude-settings`)
-- In monorepos, ensure every command runs in the correct workspace directory (see `core/process/monorepo`)
-- Follow `core/process/engineering-discipline` for task assessment, verification, and implementation process
+- Use platform tools that don't require manual approval (see `core/claude-settings`)
+- In monorepos, ensure every command runs in the correct workspace directory (see `core/monorepo`)
+- Follow `core/engineering-discipline` for task assessment, verification, and implementation process
 
 ## Monorepo Verification
 
-See `core/process/monorepo` for ports, logs, type flow, and cross-workspace verification.
+See `core/monorepo` for ports, logs, type flow, and cross-workspace verification.
 
 ## Session Start Protocol
 
@@ -179,5 +179,5 @@ Core conventions are auto-loaded from `.claude/rules/core/` — no manual loadin
 
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides
-2. Load KG entities for the task's domain — see `core/process/mcp-tools` and domain-specific rules for exact queries
+2. Load KG entities for the task's domain — see `core/mcp-tools` and domain-specific rules for exact queries
 3. If `.editorconfig` exists at project root, read it — indentation style affects tool selection (see Edit Tool — Indentation Awareness above)

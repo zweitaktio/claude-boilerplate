@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: playwright | "@playwright/test"
 target: rules
 paths:
@@ -96,4 +96,4 @@ Auth: navigate to the login page first. Credentials are in CLAUDE.md.
 
 ## Writing New E2E Tests
 
-See `core/testing/e2e-testing` for selector strategy, naming, and test structure. Test files go in the e2e test directory under the relevant domain.
+See `core/e2e-testing` for selector strategy, naming, and test structure. Test files go in the e2e test directory under the relevant domain.
