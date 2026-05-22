@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: Always
 target: rules
 paths:
@@ -51,7 +51,7 @@ Every change must pass `yarn check` before moving to the next step.
 Consider the implications of breaking changes carefully.
 
 # Good
-If a symbol is exported from a module boundary, run `find_referencing_symbols`
+If a symbol is exported from a module boundary, Grep for the symbol
 and update all call sites before changing its signature.
 ```
 

@@ -1,5 +1,5 @@
 ---
-version: 2.5.1
+version: 2.5.2
 applies: Always
 target: rules
 priority: high
@@ -47,7 +47,7 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 **For complex tasks:**
 1. Identify all affected files and modules
-2. Check who consumes what you're changing — `find_referencing_symbols` at module boundaries
+2. Check who consumes what you're changing — Grep for the symbol across the codebase at module boundaries
 3. Determine if changes cross package/workspace boundaries
 4. Decompose into incremental, independently verifiable steps before starting
 5. Check existing patterns in the codebase before creating anything new
@@ -102,7 +102,7 @@ Before implementing, classify the change to determine required safeguards.
 - API endpoint changes (path, method, request/response shape)
 - Removed CSS classes or changed component prop interfaces
 
-**CRITICAL:** Find all consumers with `find_referencing_symbols`. Update all call sites. Consider migration path.
+**CRITICAL:** Find all consumers with the Grep tool. Update all call sites. Consider migration path.
 
 **Additive** — extends without breaking existing behavior:
 - New exports, components, routes, endpoints
@@ -116,11 +116,11 @@ Before implementing, classify the change to determine required safeguards.
 - Extracting helpers, renaming locals, reorganizing files
 - Performance improvements with identical output
 
-*Required:* Verify tests pass. Confirm no exported interface changes. Use `find_referencing_symbols` if uncertain.
+*Required:* Verify tests pass. Confirm no exported interface changes. Grep for the symbol if uncertain.
 
 **How to decide:**
 - Is the symbol exported from a module boundary? → Potentially breaking
-- Does anyone import or call it? → Check with `find_referencing_symbols`
+- Does anyone import or call it? → Check with the Grep tool
 - Does only the current file use it? → Safe refactor
 - Does the database schema change? → Always treat as breaking
 

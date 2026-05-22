@@ -1,4 +1,4 @@
-// version: 1.0.0
+// version: 1.1.0
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 
@@ -33,7 +33,9 @@ if (/^\s*(for|while)\s/.test(trimmed)) block('No loops/iteration in Bash — cre
 if (/\bxargs\b/.test(trimmed)) block('No xargs batch operations — create a script file in scripts/ instead. (tooling.md § Never Run Inline)')
 
 // --- Pipe chains (3+) ---
-const pipeCount = (command.match(/\|/g) || []).length
+// Count only shell-level pipes; ignore | inside quotes (grep "a\|b" alternation, jq '..|..' filters).
+const shellLevel = command.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '')
+const pipeCount = (shellLevel.match(/\|/g) || []).length
 if (pipeCount >= 3) block('No piped processing chains (3+ pipes) — create a script file instead. (tooling.md § Never Run Inline)')
 
 // --- Git safety: block ---

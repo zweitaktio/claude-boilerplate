@@ -1,5 +1,5 @@
 ---
-version: 2.11.1
+version: 2.12.0
 applies: Always
 target: rules
 priority: high
@@ -48,7 +48,7 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 ### Bash Tool — Allowlisted Commands Only
 
-Allowed: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`. Chaining with `&&` is fine. Everything else uses dedicated tools.
+Allowed: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`, `grep`, `curl`. Chaining with `&&` is fine. Everything else uses dedicated tools.
 
 ```bash
 # Good — obvious, reviewable
@@ -71,7 +71,7 @@ for f in $(find . -name '*.ts'); do mv "$f" "$f.bak"; done
 | Instead of | Use |
 |------------|-----|
 | `cat`, `head`, `tail` | Read tool |
-| `grep`, `rg` | Grep tool |
+| `rg` | Grep tool |
 | `find`, `ls` | Glob tool |
 | `awk` | Edit tool |
 | `echo >`, heredoc | Write tool |
