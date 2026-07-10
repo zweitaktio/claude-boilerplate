@@ -1,5 +1,5 @@
 ---
-version: 1.9.1
+version: 1.9.2
 applies: react
 target: rules
 priority: high
@@ -71,8 +71,8 @@ export async function action({ request }: Route.ActionArgs) {
   return { success: true }
 }
 
-export function meta({ data }: Route.MetaArgs) {
-  return [{ title: data?.title ?? 'Default' }]
+export function meta({ loaderData }: Route.MetaArgs) {
+  return [{ title: loaderData?.title ?? 'Default' }]
 }
 ```
 
@@ -139,7 +139,7 @@ return { error: "Not found" }
 
 See `vendor/daisyui-5` (auto-loaded) for DaisyUI 5 component markup patterns.
 See `vendor/base-ui-react` (auto-loaded) for headless component patterns (dialogs, popovers, menus, selects, tooltips).
-See `vendor/react-router-7/` rules (auto-loaded for route files) for route component patterns.
+See `vendor/react-router-8/` rules (auto-loaded for route files) for route component patterns.
 
 ## See Also
 

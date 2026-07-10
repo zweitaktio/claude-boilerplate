@@ -1,6 +1,6 @@
 ---
-version: 1.2.2
-applies: react-router@7
+version: 2.1.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -13,12 +13,12 @@ tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v7 |
-| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| React Router docs | https://reactrouter.com/ | Official docs, v8 |
+| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 
-For file conventions (`root.tsx`, `routes.ts`, etc.), see `VendorReactRouter7SpecialFiles`.
+For file conventions (`root.tsx`, `routes.ts`, etc.), see `VendorReactRouter8SpecialFiles`.
 
 ## Route Configuration
 
@@ -101,6 +101,8 @@ export default function Dashboard() {
   )
 }
 ```
+
+**Layout components render children through `<Outlet />`, never a `children` prop** — `Route.ComponentProps` has no `children`. `{ children }: Route.ComponentProps` is always wrong.
 
 ## Root Route
 

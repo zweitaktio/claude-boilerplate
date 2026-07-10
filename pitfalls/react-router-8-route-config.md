@@ -1,12 +1,12 @@
 ---
-version: 1.0.0
-vendor: VendorReactRouter7Routing
-source_template: vendor/react-router-7/routing.md
-applies: react-router@7
+version: 2.0.0
+vendor: VendorReactRouter8Routing
+source_template: vendor/react-router-8/routing.md
+applies: react-router@8
 tags: [react-router, routing, routes.ts, file-based]
 ---
 
-# React Router 7 explicit route config
+# React Router 8 explicit route config
 
 Pitfall: Projects using explicit route config (`routes.ts`) require manual route registration — new route files are NOT auto-discovered like in file-based routing mode.
 
@@ -16,7 +16,7 @@ New route file created but page returns 404. No errors in console — the route 
 
 ## Root Cause
 
-React Router 7 supports two routing modes:
+React Router 8 supports two routing modes:
 1. **File-based routing** — routes auto-discovered from file structure (convention-based)
 2. **Explicit route config** — routes declared in `routes.ts` (config-based)
 

@@ -86,7 +86,7 @@ Organize rules by ownership — skill-managed vs project-specific:
     │   └── ...
     ├── vendor/            # Vendor docs (path-scoped, auto-loaded) — DO NOT EDIT
     │   ├── daisyui-5.md
-    │   ├── react-router-7/
+    │   ├── react-router-8/
     │   └── ...
     └── project/           # Project-specific rules (your code)
         ├── code-style.md

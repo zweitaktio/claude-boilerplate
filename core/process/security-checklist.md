@@ -27,7 +27,7 @@ Check every section during code review and before committing code that handles u
 
 ## Frontend
 
-See `vendor/react-router-7/routing` (auto-loaded for route files) for protected route patterns.
+See `vendor/react-router-8/routing` (auto-loaded for route files) for protected route patterns.
 
 - Escape user content in templates
 - Use `rel="noopener noreferrer"` on external links with `target="_blank"`

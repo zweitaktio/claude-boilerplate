@@ -1,6 +1,6 @@
 ---
-version: 1.0.2
-applies: react-router@7
+version: 2.0.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -13,8 +13,8 @@ tags: [route-module, exports, loader, action, meta, links, handle]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v7 |
-| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| React Router docs | https://reactrouter.com/ | Official docs, v8 |
+| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 
@@ -30,7 +30,7 @@ The framework supports 13 primary exports across server and client environments.
 |--------|---------|
 | `loader` | Pre-render data fetching |
 | `action` | Form mutation handling |
-| `middleware` | Request preprocessing (v7.9.0+) |
+| `middleware` | Request preprocessing |
 | `headers` | HTTP response headers |
 
 ### Client-Side Exports
@@ -39,7 +39,7 @@ The framework supports 13 primary exports across server and client environments.
 |--------|---------|
 | `clientLoader` | Browser data loading |
 | `clientAction` | Client-side mutations |
-| `clientMiddleware` | Navigation processing (v7.9.0+) |
+| `clientMiddleware` | Navigation processing |
 | `HydrateFallback` | Loading states during hydration |
 
 ### Shared Exports
@@ -92,15 +92,15 @@ export async function action({ request }: Route.ActionArgs) {
 ```tsx
 import type { Route } from "./+types/product";
 
-export function meta({ data }: Route.MetaArgs) {
+export function meta({ loaderData }: Route.MetaArgs) {
   return [
-    { title: data.name },
-    { name: "description", content: data.description },
+    { title: loaderData.name },
+    { name: "description", content: loaderData.description },
   ];
 }
 ```
 
-**Important:** Reference `loaderData` rather than deprecated alternatives in meta exports.
+**Important:** Use `loaderData` in meta exports. The `data` argument was removed in v8 — read parent data via `matches` (`matches.find(m => m.id === "root")?.loaderData`).
 
 ## Links Export
 
@@ -254,6 +254,6 @@ app/
 
 ## See Also
 
-- `VendorReactRouter7DataLoading` - Loader patterns
-- `VendorReactRouter7Actions` - Action patterns
-- `VendorReactRouter7ErrorHandling` - Error boundary patterns
+- `VendorReactRouter8DataLoading` - Loader patterns
+- `VendorReactRouter8Actions` - Action patterns
+- `VendorReactRouter8ErrorHandling` - Error boundary patterns

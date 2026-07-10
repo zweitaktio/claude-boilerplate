@@ -1,6 +1,6 @@
 ---
-version: 1.0.2
-applies: react-router@7.9.0+
+version: 2.0.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -13,43 +13,16 @@ tags: [middleware, context, auth, request, response, headers]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v7 |
-| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| React Router docs | https://reactrouter.com/ | Official docs, v8 |
+| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 
-## Version Requirements - Check First!
+## Middleware is Built In (v8)
 
-**Before implementing middleware, verify your React Router version:**
+Middleware is stable and enabled by default in React Router 8 — no config flag, no minimum-version gate. Export `middleware` (server) or `clientMiddleware` (client) from any route module and it runs.
 
-```bash
-npm list react-router
-```
-
-| Feature    | Minimum Version | Config Flag Required  |
-| ---------- | --------------- | --------------------- |
-| Middleware | 7.9.0+          | `v8_middleware: true` |
-
-**If your version is below 7.9.0:**
-
-- Middleware is not available
-- Use loaders/actions for request processing instead
-- Or upgrade: `npm install react-router@latest`
-
-### Enabling Middleware
-
-```ts
-// react-router.config.ts
-import type { Config } from "@react-router/dev/config";
-
-export default {
-  future: {
-    v8_middleware: true, // Required for middleware
-  },
-} satisfies Config;
-```
-
-See https://reactrouter.com/how-to/middleware#changes-to-getloadcontextapploadcontext for migration instructions.
+> **Migrating from v7:** middleware was opt-in behind `future.v8_middleware` and required 7.9.0+. In v8 that flag is removed and the behavior is always on. If you drove context through a custom server's `getLoadContext`, migrate it per https://reactrouter.com/how-to/middleware#migration-from-apploadcontext.
 
 ## Overview
 
@@ -71,15 +44,15 @@ Root middleware end
 import type { Route } from "./+types/dashboard";
 import { redirect } from "react-router";
 
-async function authMiddleware({ request, context }: Route.MiddlewareArgs) {
+const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
   const user = await getUserFromSession(request);
   if (!user) {
     throw redirect("/login");
   }
   context.set(userContext, user);
-}
+};
 
-export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+export const middleware = [authMiddleware];
 ```
 
 ### The `next` Function
@@ -87,17 +60,14 @@ export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
 Call `next()` to continue the chain and get the response:
 
 ```tsx
-async function loggingMiddleware(
-  { request }: Route.MiddlewareArgs,
-  next: Route.MiddlewareNext,
-) {
+const loggingMiddleware: Route.MiddlewareFunction = async ({ request }, next) => {
   console.log(`→ ${request.method} ${request.url}`);
 
   const response = await next();
 
   console.log(`← ${response.status}`);
   return response;
-}
+};
 ```
 
 - Call `next()` only once
@@ -121,12 +91,12 @@ export const dbContext = createContext<Database>();
 ```tsx
 import { userContext } from "~/context";
 
-async function authMiddleware({ request, context }: Route.MiddlewareArgs) {
+const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
   const user = await getUser(request);
   context.set(userContext, user);
-}
+};
 
-export const middleware: Route.MiddlewareFunction[] = [authMiddleware];
+export const middleware = [authMiddleware];
 ```
 
 ### Reading Context in Loaders/Actions
@@ -195,22 +165,19 @@ export async function loader() {
 ### Authentication
 
 ```tsx
-async function authMiddleware({ request, context }: Route.MiddlewareArgs) {
+const authMiddleware: Route.MiddlewareFunction = async ({ request, context }) => {
   const session = await getSession(request);
   if (!session.get("userId")) {
     throw redirect("/login");
   }
   context.set(userContext, await getUserById(session.get("userId")));
-}
+};
 ```
 
 ### Request Logging
 
 ```tsx
-async function loggingMiddleware(
-  { request }: Route.MiddlewareArgs,
-  next: Route.MiddlewareNext,
-) {
+const loggingMiddleware: Route.MiddlewareFunction = async ({ request }, next) => {
   const id = crypto.randomUUID();
   const start = performance.now();
 
@@ -219,39 +186,33 @@ async function loggingMiddleware(
   console.log(`[${id}] ${response.status} (${performance.now() - start}ms)`);
 
   return response;
-}
+};
 ```
 
 ### Response Headers
 
 ```tsx
-async function securityHeaders(
-  _: Route.MiddlewareArgs,
-  next: Route.MiddlewareNext,
-) {
+const securityHeaders: Route.MiddlewareFunction = async (_, next) => {
   const response = await next();
   response.headers.set("X-Frame-Options", "DENY");
   response.headers.set("X-Content-Type-Options", "nosniff");
   return response;
-}
+};
 ```
 
 ### 404 Fallback
 
 ```tsx
-async function cmsFallback(
-  { request }: Route.MiddlewareArgs,
-  next: Route.MiddlewareNext,
-) {
+const cmsFallback: Route.MiddlewareFunction = async ({ request }, next) => {
   const response = await next();
 
   if (response.status === 404) {
-    const redirect = await checkCmsRedirects(request.url);
-    if (redirect) throw redirect(redirect, 302);
+    const target = await checkCmsRedirects(request.url);
+    if (target) throw redirect(target, 302);
   }
 
   return response;
-}
+};
 ```
 
 ### Conditional Execution

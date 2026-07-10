@@ -1,6 +1,6 @@
 ---
-version: 1.2.1
-applies: react-router@7
+version: 2.0.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -8,15 +8,15 @@ type: integration
 tags: [conform, zod, oauth2, feature-modules, auth, validation, known-issues]
 ---
 
-# React Router 7 Integration
+# React Router 8 Integration
 
-Project-specific patterns for integrating React Router 7 with our stack. For core RR7 reference, see `VendorReactRouter7Index`.
+Project-specific patterns for integrating React Router 8 with our stack. For core RR8 reference, see `VendorReactRouter8Index`.
 
 ## Documentation Sources
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| Official docs | https://reactrouter.com/ | v7 docs |
+| Official docs | https://reactrouter.com/ | v8 docs |
 | API reference | https://api.reactrouter.com | Type definitions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, examples |

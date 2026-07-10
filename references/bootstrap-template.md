@@ -55,7 +55,7 @@ The Knowledge Graph holds lightweight references for discoverability. Use `searc
 | Task domain | Vendor rules (auto-loaded) | KG entities |
 |-------------|---------------------------|-------------|
 <!-- Add rows here for each deployed domain. Example:
-| Routing | auto-loads on route files | VendorReactRouter7* |
+| Routing | auto-loads on route files | VendorReactRouter8* |
 | Styling | auto-loads on *.tsx / *.css | VendorDaisyui5, VendorTailwind4 |
 -->
 

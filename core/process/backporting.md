@@ -23,13 +23,13 @@ create_entities:
   name: ClientLoaderSSRBug, type: bug_resolution
   "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
   "Backport: library behavior, not project-specific"
-create_relations: ClientLoaderSSRBug -> depends_on -> VendorReactRouter7Routing
+create_relations: ClientLoaderSSRBug -> depends_on -> VendorReactRouter8Routing
 
 # Generalizable — reusable pattern
 create_entities:
   name: FormResetAfterSubmit, type: convention
   "Pattern: call form.reset() in the action's redirect, not in the component"
-  "Backport: applies to any Conform + RR7 project"
+  "Backport: applies to any Conform + RR8 project"
 
 # Project-specific — do NOT mark for backport
 create_entities:

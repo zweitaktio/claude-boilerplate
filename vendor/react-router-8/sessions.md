@@ -1,6 +1,6 @@
 ---
-version: 1.0.2
-applies: react-router@7
+version: 2.0.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -13,8 +13,8 @@ tags: [sessions, cookies, auth, login, logout, flash]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v7 |
-| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| React Router docs | https://reactrouter.com/ | Official docs, v8 |
+| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 
@@ -303,4 +303,4 @@ secrets: ["new-secret", "old-secret"];
 ## See Also
 
 - [React Router Sessions & Cookies Documentation](https://reactrouter.com/explanation/sessions-and-cookies)
-- `VendorReactRouter7Middleware` - Middleware patterns for auth
+- `VendorReactRouter8Middleware` - Middleware patterns for auth

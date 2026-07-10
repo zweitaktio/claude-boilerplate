@@ -186,7 +186,7 @@ claude-boilerplate/
 ├── vendor/                     # → deployed as path-scoped rules in .claude/rules/vendor/
 │   ├── daisyui-5.md            # → entity: VendorDaisyui5
 │   ├── tailwind-4.md           # → entity: VendorTailwind4
-│   ├── react-router-7/         # → entities: VendorReactRouter7{Topic}
+│   ├── react-router-8/         # → entities: VendorReactRouter8{Topic}
 │   │   ├── _index.md
 │   │   ├── routing.md
 │   │   ├── data-loading.md
@@ -200,8 +200,8 @@ claude-boilerplate/
 │   │   ├── route-modules.md
 │   │   ├── sessions.md
 │   │   └── middleware.md
-│   ├── react-router-7-integration.md
-│   ├── react-router-7-i18n/
+│   ├── react-router-8-integration.md
+│   ├── react-router-8-i18n/
 │   │   ├── setup.md
 │   │   ├── usage.md
 │   │   └── operations.md
@@ -491,8 +491,8 @@ In addition to per-template version comparison, the skill records the boilerplat
 
     | Source | Type | Content | Action |
     |--------|------|---------|--------|
-    | VendorReactRouter7Routing | pitfall | clientLoader SSR behavior | Add to vendor/react-router-7/routing.md |
-    | HydrationMismatchOnDateFormat | bug_resolution | Date.now() server/client divergence | Add to vendor/react-router-7/routing.md Known Issues |
+    | VendorReactRouter8Routing | pitfall | clientLoader SSR behavior | Add to vendor/react-router-8/routing.md |
+    | HydrationMismatchOnDateFormat | bug_resolution | Date.now() server/client divergence | Add to vendor/react-router-8/routing.md Known Issues |
     | VendorStripeCheckout | vendor_doc (no source) | Project-created Stripe reference | Create vendor/stripe-checkout.md template |
     | .claude/rules/api-conventions.md | project rule | REST naming + error shape conventions | Consider new core template |
     ```
@@ -549,7 +549,7 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
    | Rule File | Template Ver | Deployed Ver | Installed | Status |
    |-----------|-------------|-------------|-----------|--------|
    | daisyui-5.md | 1.3.0 | 1.3.0 | 5.8.0 | PASS |
-   | react-router-7/routing.md | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
+   | react-router-8/routing.md | 2.0.0 | 1.5.0 | 7.11.0 | DRIFT |
    | payload/cms-3.md | 1.2.0 | 1.2.0 | 4.1.0 | MISMATCH (rule v3, installed v4) |
    | old-library.md | — | 1.0.0 | (removed) | ORPHAN |
    ```
@@ -588,7 +588,7 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
 5. **KG entity quality check** — inspect entities for structural issues:
 
    - **Missing standard observations** on `vendor_doc` entities — each should have: `domain:`, `rule:`, `source:`
-   - **Duplicate entities** — entities with very similar names that may overlap (e.g., `ReactRouterLoading` vs `VendorReactRouter7DataLoading`)
+   - **Duplicate entities** — entities with very similar names that may overlap (e.g., `ReactRouterLoading` vs `VendorReactRouter8DataLoading`)
    - **Empty/minimal entities** — entities with fewer than 2 observations (likely placeholders)
    - **Type mismatches** — e.g., a `vendor_doc` without a `source:` observation (likely project-created, should be `convention` or `dependency`)
 
@@ -665,13 +665,13 @@ Audits KG entities, rules, relations, and project hygiene without deploying temp
    ### Cross-Entity Contradictions
    | Entity A | Entity B | Topic | Conflict |
    |----------|----------|-------|----------|
-   | VendorRR7Routing | VendorRR7DataLoading | clientLoader | Contradicting SSR behavior description |
+   | VendorRR8Routing | VendorRR8DataLoading | clientLoader | Contradicting SSR behavior description |
 
    ### Stale Pitfalls (Context7 verified)
    | Entity | Pitfall | Current Status |
    |--------|---------|---------------|
    | VendorDaisyui5 | "btn-ghost needs explicit color in v5" | FIXED in 5.7.0 |
-   | VendorRR7Routing | "clientLoader skips on SSR" | STILL VALID |
+   | VendorRR8Routing | "clientLoader skips on SSR" | STILL VALID |
    ```
    Report-only. Stale pitfalls proposed for removal in step 11.
 
@@ -771,13 +771,13 @@ KG lightweight reference entities use `Vendor` prefix with PascalCase template n
 |----------------|---------------|--------|
 | `vendor/daisyui-5.md` | `VendorDaisyui5` | styling |
 | `vendor/tailwind-4.md` | `VendorTailwind4` | styling |
-| `vendor/react-router-7/routing.md` | `VendorReactRouter7Routing` | routing |
-| `vendor/react-router-7/data-loading.md` | `VendorReactRouter7DataLoading` | routing |
-| `vendor/react-router-7/_index.md` | `VendorReactRouter7Index` | routing |
-| `vendor/react-router-7-integration.md` | `VendorReactRouter7Integration` | routing |
-| `vendor/react-router-7-i18n/setup.md` | `VendorReactRouter7I18nSetup` | i18n |
-| `vendor/react-router-7-i18n/usage.md` | `VendorReactRouter7I18nUsage` | i18n |
-| `vendor/react-router-7-i18n/operations.md` | `VendorReactRouter7I18nOperations` | i18n |
+| `vendor/react-router-8/routing.md` | `VendorReactRouter8Routing` | routing |
+| `vendor/react-router-8/data-loading.md` | `VendorReactRouter8DataLoading` | routing |
+| `vendor/react-router-8/_index.md` | `VendorReactRouter8Index` | routing |
+| `vendor/react-router-8-integration.md` | `VendorReactRouter8Integration` | routing |
+| `vendor/react-router-8-i18n/setup.md` | `VendorReactRouter8I18nSetup` | i18n |
+| `vendor/react-router-8-i18n/usage.md` | `VendorReactRouter8I18nUsage` | i18n |
+| `vendor/react-router-8-i18n/operations.md` | `VendorReactRouter8I18nOperations` | i18n |
 | `vendor/payload/cms-3.md` | `VendorPayloadCms3` | backend |
 | `vendor/payload/rest-client.md` | `VendorPayloadRestClient` | backend |
 | `vendor/payload/live-preview.md` | `VendorPayloadLivePreview` | full-stack |
@@ -801,12 +801,12 @@ Group vendor reference entities by domain for KG reference discovery. Actual ven
 
 | Domain | Entities | Search query |
 |--------|----------|-------------|
-| routing | `VendorReactRouter7*` | `search_nodes("domain: routing")` |
+| routing | `VendorReactRouter8*` | `search_nodes("domain: routing")` |
 | styling | `VendorDaisyui5`, `VendorTailwind4`, `VendorBaseUiReact` | `search_nodes("domain: styling")` |
 | backend | `VendorPayloadCms3`, `VendorPayloadRestClient` | `search_nodes("domain: backend")` |
 | full-stack | `VendorPayloadLivePreview` | `search_nodes("domain: full-stack")` |
 | auth | `VendorOryHydra` | `search_nodes("domain: auth")` |
-| i18n | `VendorReactRouter7I18nSetup`, `VendorReactRouter7I18nUsage`, `VendorReactRouter7I18nOperations` | `search_nodes("domain: i18n")` |
+| i18n | `VendorReactRouter8I18nSetup`, `VendorReactRouter8I18nUsage`, `VendorReactRouter8I18nOperations` | `search_nodes("domain: i18n")` |
 | cicd | `VendorDokployMonorepoCicd` | `search_nodes("domain: cicd")` |
 | forms | `VendorConformZod` | `search_nodes("domain: forms")` |
 | tooling | `VendorRemarkFrontmatterSchema`, `VendorProjectScaffolding` | `search_nodes("domain: tooling")` |
@@ -832,7 +832,7 @@ When you discover something that would help other projects:
 
 Examples of what to contribute back:
 - Library version gotchas (e.g., "DaisyUI 5 removed form-control")
-- Framework quirks (e.g., "RR7 loaders run in parallel, not sequentially")
+- Framework quirks (e.g., "RR8 loaders run in parallel, not sequentially")
 - Security patterns discovered during reviews
 - Build/tooling issues that affect multiple projects
 

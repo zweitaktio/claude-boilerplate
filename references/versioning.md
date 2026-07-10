@@ -31,10 +31,10 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 | `react` | `react` in dependencies or devDependencies |
 | `react-i18next` | `react-i18next` in dependencies or devDependencies |
 | `daisyui@5` | `daisyui` installed, version starts with `5.` |
-| `react-router@7.9.0+` | `react-router` installed, version >= 7.9.0 (numeric semver comparison, same major only) |
+| `react-router@8.1.0+` | `react-router` installed, version >= 8.1.0 (numeric semver comparison, same major only) |
 | `playwright \| "@playwright/test"` | Either package in dependencies or devDependencies (OR) |
 | `react-router \| next \| remix` | Any of these packages in dependencies or devDependencies (OR) |
-| `remix-i18next & react-router@7` | Both conditions must match (AND) |
+| `remix-i18next@8 & react-router@8` | Both conditions must match (AND) |
 
 ### Operators
 

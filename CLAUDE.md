@@ -46,7 +46,7 @@ The `applies` field uses these patterns:
 - `Always` — unconditional
 - `react` — package name in dependencies (falls back to checking enabled plugins in `.claude/settings*.json`)
 - `daisyui@5` — package version starts with `5.`
-- `react-router@7.9.0+` — version >= 7.9.0
+- `react-router@8.1.0+` — version >= 8.1.0
 - `playwright | "@playwright/test"` — either package present
 
 ### Vendor KG References
@@ -54,7 +54,7 @@ The `applies` field uses these patterns:
 Vendor docs deploy as path-scoped rule files. Lightweight KG entities (`vendor_doc` type) reference the deployed rule files for discoverability:
 
 - `vendor/daisyui-5.md` → rule: `.claude/rules/vendor/daisyui-5.md`, KG: `VendorDaisyui5`
-- `vendor/react-router-7/routing.md` → rule: `.claude/rules/vendor/react-router-7/routing.md`, KG: `VendorReactRouter7Routing`
+- `vendor/react-router-8/routing.md` → rule: `.claude/rules/vendor/react-router-8/routing.md`, KG: `VendorReactRouter8Routing`
 - `vendor/playwright.md` → rule: `.claude/rules/vendor/playwright.md`, KG: `VendorPlaywright` (domain: testing; scoped to `**/e2e/**`, `**/*.spec.ts`, `**/playwright.config.ts`)
 
 KG entities store only: `domain`, `rule` (path to deployed file), and `source` (path in boilerplate). Full content is in the rule file.

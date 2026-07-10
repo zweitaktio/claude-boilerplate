@@ -1,6 +1,6 @@
 ---
-version: 1.0.2
-applies: react-router@7
+version: 2.0.0
+applies: react-router@8
 target: rules
 domain: routing
 paths: ["**/routes/**", "**/routes.ts"]
@@ -13,8 +13,8 @@ tags: [root, config, entry, server-only, client-only, special-files]
 
 | Source | URL | Notes |
 |--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v7 |
-| API reference | https://api.reactrouter.com/v7/ | v7 API reference |
+| React Router docs | https://reactrouter.com/ | Official docs, v8 |
+| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
 | Context7 | `/remix-run/react-router` | Good coverage |
 
@@ -196,13 +196,10 @@ export default {
 
   // Base path for all routes
   basename: "/my-app",
-
-  // Future flags
-  future: {
-    v8_middleware: true,
-  },
 } satisfies Config
 ```
+
+Middleware is on by default in v8 — no `future` flag is needed to enable it.
 
 ### Common Configuration Options
 
@@ -283,4 +280,4 @@ app/
 
 **Don't create a separate layout just for nav/footer** — put global UI in `root.tsx`.
 
-**Don't use flat routes when nesting makes sense** — see `VendorReactRouter7Routing` for proper nested route patterns.
+**Don't use flat routes when nesting makes sense** — see `VendorReactRouter8Routing` for proper nested route patterns.

@@ -168,7 +168,7 @@ services:
   # docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --force
 ```
 
-## Frontend — React Router 7
+## Frontend — React Router 8
 
 ### Two backend URLs (internal vs public)
 
@@ -413,9 +413,9 @@ Walk through these in a real browser when wiring up live preview on a new projec
 
 ## Backport
 
-Mark KG entries with `Backport: <reason>` so `/webstack update` can lift these to other Payload+RR7 projects:
+Mark KG entries with `Backport: <reason>` so `/webstack update` can lift these to other Payload+RR8 projects:
 
-- `RouterDataNotInstanceofResponse` — RR7 framework behavior, applies anywhere
+- `RouterDataNotInstanceofResponse` — RR8 framework behavior, applies anywhere
 - `FrontendApiUrlInternalVsPublic` — applies to any Payload + Docker-deployed frontend
 - `CaddyVolumeMountedConfigNeedsRestart` — applies to any Caddy + compose deployment
 - `PayloadFindDraftSlugReturnsEmpty` — Payload v3 quirk, applies to any project using `find?draft=true&where[slug]`
@@ -425,5 +425,5 @@ Mark KG entries with `Backport: <reason>` so `/webstack update` can lift these t
 
 - `vendor/payload/cms-3` — General Payload 3 patterns
 - `vendor/payload/rest-client` — REST client usage
-- `vendor/react-router-7/special-files` — `root.tsx`, `entry.server.tsx`
-- `vendor/react-router-7/error-handling` — `instanceof Response` vs `data()`
+- `vendor/react-router-8/special-files` — `root.tsx`, `entry.server.tsx`
+- `vendor/react-router-8/error-handling` — `instanceof Response` vs `data()`

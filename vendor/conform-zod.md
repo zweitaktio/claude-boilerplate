@@ -8,7 +8,7 @@ paths:
 tags: [forms, validation, zod, conform, react-router]
 ---
 
-# Form Handling: Conform + Zod + React Router 7
+# Form Handling: Conform + Zod + React Router 8
 
 ## Documentation Sources
 
@@ -30,7 +30,7 @@ import { getFormProps, getInputProps, useForm } from '@conform-to/react'
 // Conform + Zod v4 integration — MUST use /v4 subpath
 import { getZodConstraint, parseWithZod } from '@conform-to/zod/v4'
 
-// React Router 7
+// React Router 8
 import { data, Form, redirect, useActionData, useNavigation } from 'react-router'
 
 // Zod
@@ -732,6 +732,6 @@ import { createLoginSchema } from '~/schemas/login'
 
 ## See Also
 
-- `VendorReactRouter7Actions` — Form submission patterns, useFetcher
-- `VendorReactRouter7Integration` — Integration-specific gotchas (checkbox coercion, dynamic form ID, Conform duplicate input bug)
+- `VendorReactRouter8Actions` — Form submission patterns, useFetcher
+- `VendorReactRouter8Integration` — Integration-specific gotchas (checkbox coercion, dynamic form ID, Conform duplicate input bug)
 - `VendorDaisyui5` — Full DaisyUI 5 component class reference

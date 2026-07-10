@@ -23,7 +23,7 @@ tags: [monorepo, directory, scripts, lifecycle]
 ```
 project/
 ├── backend/       # API + admin (Payload CMS / Next.js)
-├── frontend/      # SSR storefront (React Router 7)
+├── frontend/      # SSR storefront (React Router 8)
 ├── services/      # Docker, sync tools, E2E tests
 ├── scripts/       # Git hooks, setup scripts
 ├── .github/       # CI/CD workflows

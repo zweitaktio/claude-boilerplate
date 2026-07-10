@@ -125,7 +125,7 @@ Only variables prefixed with `VITE_` (Vite) or `PUBLIC_` are available client-si
 - Use `useEffect` cleanup for any client-side timers
 - Never access `process.env` in components or shared modules — use loaders/actions or `.server` files
 
-See `vendor/react-router-7/rendering-strategies` (auto-loaded for route files) for rendering strategy patterns.
+See `vendor/react-router-8/rendering-strategies` (auto-loaded for route files) for rendering strategy patterns.
 
 ## See Also
 

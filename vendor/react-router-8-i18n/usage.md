@@ -1,13 +1,13 @@
 ---
-version: 1.1.0
-applies: remix-i18next & react-router@7
+version: 2.0.0
+applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
 paths: ["**/*.tsx", "**/locales/**"]
 tags: [i18n, routing, translations, components, namespace, trans, patterns]
 ---
 
-# React Router 7 i18n — Usage Patterns
+# React Router 8 i18n — Usage Patterns
 
 Component-level i18n patterns, namespace splitting, Trans component, and routing with language prefixes.
 
@@ -22,78 +22,32 @@ Component-level i18n patterns, namespace splitting, Trans component, and routing
 
 ## Client Setup
 
-### `app/entry.client.tsx` — Client Hydration
+The client (`entry.client.tsx`) loads namespaces from the `/api/locales/:lang/:ns` resource route via `i18next-fetch-backend`, with `detection: { caches: [], order: ['htmlTag'] }` so it trusts the server-set `<html lang>`. See `VendorReactRouter8I18nSetup` for the full file. Do **not** use `i18next-http-backend` / `getInitialNamespaces` — those are the v7 pattern.
+
+## Root Layout & Language Sync
+
+**`useChangeLanguage` was removed in remix-i18next v8.** Sync i18next to the server-detected locale (`loaderData.locale`, from the root loader's `getLocale(context)`) with an effect, and drive `<html lang>`/`dir` from i18next:
 
 ```typescript
-import i18next from 'i18next'
-import I18nLanguageDetector from 'i18next-browser-languagedetector'
-import I18nBackend from 'i18next-http-backend'
-import { startTransition, StrictMode } from 'react'
-import { hydrateRoot } from 'react-dom/client'
-import { I18nextProvider, initReactI18next } from 'react-i18next'
-import { HydratedRouter } from 'react-router/dom'
-import { getInitialNamespaces } from 'remix-i18next/client'
-
-import i18n from '~/i18n'
-
-async function hydrate() {
-  await i18next
-    .use(initReactI18next)
-    .use(I18nLanguageDetector)
-    .use(I18nBackend)
-    .init({
-      ...i18n,
-      backend: { loadPath: `/locales/${i18n.jsonFileSchema}` },
-      detection: {
-        // Only use htmlTag — trust server-detected language via <html lang>
-        caches: [],
-        order: ['htmlTag'],
-      },
-      ns: getInitialNamespaces(),
-    })
-
-  startTransition(() => {
-    hydrateRoot(
-      document,
-      <I18nextProvider i18n={i18next}>
-        <StrictMode>
-          <HydratedRouter />
-        </StrictMode>
-      </I18nextProvider>,
-    )
-  })
-}
-
-void hydrate()
-```
-
-## Root Layout
-
-### `app/root.tsx` — Language Sync
-
-```typescript
-import { type PropsWithChildren } from 'react'
+import { useEffect, type PropsWithChildren } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router'
-import { useChangeLanguage } from 'remix-i18next/react'
 
-// Declare which namespace(s) this route uses
-export const handle = {
-  i18n: 'common',
-}
+// Declare which namespace(s) this route tree uses
+export const handle = { i18n: ['common'] }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { i18n } = useTranslation()
+  useEffect(() => {
+    if (i18n.language !== loaderData.locale) void i18n.changeLanguage(loaderData.locale)
+  }, [i18n, loaderData.locale])
   return <Outlet />
 }
 
 export function Layout({ children }: PropsWithChildren) {
   const { i18n } = useTranslation()
-
-  // Sync React Router's detected language with react-i18next
-  useChangeLanguage(i18n.language)
-
   return (
-    <html dir={i18n.dir()} lang={i18n.language}>
+    <html dir={i18n.dir(i18n.language)} lang={i18n.language}>
       <head>
         <meta charSet="utf-8" />
         <meta content="width=device-width, initial-scale=1" name="viewport" />
@@ -135,83 +89,62 @@ export default [
 
 ### `app/routes/_index.tsx` — Root Redirect
 
+The bare `/` route redirects to the detected locale. Read it from `context` (the i18n middleware set it); use 302 since the target is content-negotiated:
+
 ```typescript
-import { type LoaderFunctionArgs, redirect } from 'react-router'
+import { redirect } from 'react-router'
 
-import i18nextServer from '~/i18next.server'
+import { getLocale } from '~/middleware/i18next'
+import { type Route } from './+types/_index'
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const locale = await i18nextServer.getLocale(request)
-  return redirect(`/${locale}/`)
+export async function loader({ context }: Route.LoaderArgs) {
+  throw redirect(`/${getLocale(context)}`, 302)
 }
 ```
 
-### `app/routes/$lang._index.tsx` — Language-Prefixed Page
+### `app/routes/home.tsx` — Language-Prefixed Page
+
+Routes under the `:lang` prefix don't re-validate the language — the `_lang-guard` layout already 404s unsupported locales. Just read `params.lang`:
 
 ```typescript
-import { type LoaderFunctionArgs } from 'react-router'
+import { type Route } from './+types/home'
 
-import {
-  DEFAULT_LANGUAGE,
-  SUPPORTED_LANGUAGES,
-  type SupportedLanguage,
-} from '~/config/i18n'
-
-export const loader = async ({ params }: LoaderFunctionArgs) => {
-  const lang = params.lang as SupportedLanguage
-
-  // Validate language — 404 if unsupported
-  if (!SUPPORTED_LANGUAGES.includes(lang)) {
-    throw new Response('Not Found', { status: 404 })
-  }
-
-  return { lang }
+export async function loader({ params }: Route.LoaderArgs) {
+  return { lang: params.lang }
 }
 
-const HomePage = ({ loaderData }: Route.ComponentProps) => {
+export default function HomePage({ loaderData }: Route.ComponentProps) {
   return <div>Home page in {loaderData.lang}</div>
 }
-export default HomePage
 ```
 
 ## TypeScript Types
 
-### `app/i18n-types.d.ts` — Type Augmentation
+`i18next-cli` generates `app/types/i18next.d.ts` (and `resources.d.ts`) from your source-language files — run `yarn i18n:types` (or `i18n:extract`, which runs types too). Don't hand-write the augmentation:
 
 ```typescript
-import type commonEn from '../public/locales/common.en.json'
+// app/types/i18next.d.ts — generated
+import type Resources from './resources'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
     defaultNS: 'common'
-    resources: {
-      common: typeof commonEn
-    }
+    enableSelector: false
+    resources: Resources
   }
 }
 ```
 
 ## Translation Files
 
-### `public/locales/common.en.json`
+Each namespace is a JSON file at `app/locales/{lng}/{ns}.json`. The file *is* the namespace — keys live at the top level (no wrapping `common` key):
+
+### `app/locales/en/common.json`
 
 ```json
 {
-  "common": {
-    "404": {
-      "message": "The page you are looking for does not exist.",
-      "title": "Page not found"
-    }
-  },
-  "nav": {
-    "about": "About",
-    "contact": "Contact",
-    "home": "Home"
-  },
-  "footer": {
-    "copyright": "© {{year}} Company Name",
-    "rss": "RSS"
-  },
+  "nav": { "about": "About", "contact": "Contact", "home": "Home" },
+  "footer": { "copyright": "© {{year}} Company Name", "rss": "RSS" },
   "items_one": "{{count}} item",
   "items_other": "{{count}} items"
 }
@@ -277,13 +210,15 @@ Split translations into multiple files (namespaces) to:
 ### File Structure
 
 ```
-public/locales/
-├── common.en.json      # Shared UI: nav, footer, errors, 404
-├── common.de.json
-├── admin.en.json       # Admin panel only
-├── admin.de.json
-├── checkout.en.json    # Checkout flow only
-└── checkout.de.json
+app/locales/
+├── en/
+│   ├── common.json     # Shared UI: nav, footer, errors, 404
+│   ├── admin.json      # Admin panel only
+│   └── checkout.json   # Checkout flow only
+└── de/
+    ├── common.json
+    ├── admin.json
+    └── checkout.json
 ```
 
 ### When to Create a New Namespace
@@ -298,15 +233,7 @@ public/locales/
 
 ### Configuration
 
-Update `i18next.config.ts` to extract new namespaces:
-
-```javascript
-export default {
-  defaultNamespace: 'common',
-  // Parser extracts based on useTranslation() calls
-  // No need to list namespaces explicitly
-}
-```
+No per-namespace config needed — `i18next-cli` discovers namespaces from `useTranslation('...')` and `t('ns:key')` usage. See `VendorReactRouter8I18nOperations` for the full `i18next.config.ts`.
 
 ### Route Declaration
 
@@ -349,7 +276,7 @@ export const AdminSidebar = () => {
 ### Translation File Example
 
 ```json
-// public/locales/admin.en.json
+// app/locales/en/admin.json
 {
   "nav": {
     "content": "Content",
@@ -386,21 +313,7 @@ const { t: tAdmin } = useTranslation('admin')
 
 ### TypeScript Types for Multiple Namespaces
 
-```typescript
-// app/i18n-types.d.ts
-import type adminEn from '../public/locales/admin.en.json'
-import type commonEn from '../public/locales/common.en.json'
-
-declare module 'i18next' {
-  interface CustomTypeOptions {
-    defaultNS: 'common'
-    resources: {
-      admin: typeof adminEn
-      common: typeof commonEn
-    }
-  }
-}
-```
+No manual work — `i18next-cli` regenerates `app/types/resources.d.ts` for **all** namespaces on `yarn i18n:extract` / `i18n:types`. Just add the namespace's JSON files and re-run extraction.
 
 ### Trans Component for JSX in Translations
 

@@ -86,7 +86,7 @@ See `vendor/state-management-libs` (auto-loaded) for library examples (Zustand, 
 
 ## Server State ≠ Client State
 
-See `vendor/react-router-7/data-loading` (auto-loaded for route files) for loader vs client state patterns.
+See `vendor/react-router-8/data-loading` (auto-loaded for route files) for loader vs client state patterns.
 
 **Never use Zustand for server data.** Use TanStack Query instead.
 
