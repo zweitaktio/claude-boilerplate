@@ -1,11 +1,11 @@
 ---
-version: 1.6.2
+version: 1.8.1
 applies: Always
 target: rules
-tags: [code-review, review, security, quality, validation, smells, best-practices]
+tags: [code-review, review, security, quality, validation, smells, comments, best-practices]
 ---
 
-# Code Review Standards
+# Code Quality Standards
 
 ## Priority Levels
 - **Critical:** Security vulnerabilities, data loss, crashes
@@ -27,7 +27,7 @@ Run every item. Load the Convention Adherence table before starting.
 
 ## Code Smells & Cruft
 
-Flag these during every review:
+Don't write these in the first place — they're authoring rules, not just review flags. The Review Checklist (step 5) is the safety net for what slips through, not the primary defense.
 
 **Dead weight:**
 - Unused imports, variables, parameters, or functions
@@ -57,6 +57,15 @@ Flag these during every review:
 - APIs or patterns from a previous major version of a dependency
 - Workarounds for bugs that have been fixed upstream
 - Compatibility shims for removed functionality
+
+## Comments
+
+Write the code to read on its own first; add a comment only where the code genuinely can't explain itself. These are authoring rules — apply them as you write, not just at review.
+
+- **Comment the why, not the what.** Restating the mechanism (`// increment the counter`) rots and adds noise. Explain what the code can't: why this approach over the obvious one, a non-obvious constraint, an invariant callers must uphold.
+- **Anchor the non-obvious to a source.** Workarounds link the issue/PR; magic values cite where they come from. A claim in a comment that nobody can verify is worse than no comment.
+- **Don't restate types or narrate lines.** `// returns a string` duplicates the signature; line-by-line narration duplicates the code. Both drift out of sync with what they describe.
+- **A `TODO`/`FIXME` carries an owner or issue link** — a bare one is invisible forever. (Commented-out code: delete it — see Dead weight above.)
 
 ## Domain Best Practices
 
