@@ -1,4 +1,4 @@
-// version: 1.1.0
+// version: 1.2.0
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 
@@ -24,19 +24,21 @@ if (/^(yarn|npm|npx|pnpm)\s+(dev|start)\b/.test(trimmed)) block('Never start dev
 if (/^(yarn|npm|pnpm)\s+run\s+dev\b/.test(trimmed)) block('Never start dev servers — assume they are already running. (tooling.md § Dev Server Logs)')
 
 // --- Inline scripts ---
-if (/^(python|python3)\s+-c\b/.test(trimmed)) block('No inline scripts — create a script file instead. (tooling.md § Never Run Inline)')
-if (/^node\s+(-e|--eval|-p|--print)\b/.test(trimmed)) block('No inline scripts — create a script file instead. (tooling.md § Never Run Inline)')
-if (/^ruby\s+-e\b/.test(trimmed)) block('No inline scripts — create a script file instead. (tooling.md § Never Run Inline)')
+const INLINE_ALT = 'Run it in context-mode ctx_execute (sandboxed, output stays out of context), or a script file in scripts/ for something reusable.'
+if (/^(python|python3)\s+-c\b/.test(trimmed)) block(`No inline scripts in Bash. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
+if (/^node\s+(-e|--eval|-p|--print)\b/.test(trimmed)) block(`No inline scripts in Bash. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
+if (/^ruby\s+-e\b/.test(trimmed)) block(`No inline scripts in Bash. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
 
 // --- Loops ---
-if (/^\s*(for|while)\s/.test(trimmed)) block('No loops/iteration in Bash — create a script file in scripts/ instead. (tooling.md § Never Run Inline)')
-if (/\bxargs\b/.test(trimmed)) block('No xargs batch operations — create a script file in scripts/ instead. (tooling.md § Never Run Inline)')
+if (/^\s*(for|while)\s/.test(trimmed)) block(`No loops/iteration in Bash. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
+if (/\bxargs\b/.test(trimmed)) block(`No xargs batch operations in Bash. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
 
-// --- Pipe chains (3+) ---
+// --- Pipe chains (5+) ---
 // Count only shell-level pipes; ignore | inside quotes (grep "a\|b" alternation, jq '..|..' filters).
+// Short chains are normal shell usage; only long chains signal unauditable processing.
 const shellLevel = command.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '')
 const pipeCount = (shellLevel.match(/\|/g) || []).length
-if (pipeCount >= 3) block('No piped processing chains (3+ pipes) — create a script file instead. (tooling.md § Never Run Inline)')
+if (pipeCount >= 5) block(`Long pipe chain (5+ pipes) is hard to audit. ${INLINE_ALT} (tooling.md § Never Run Inline)`)
 
 // --- Git safety: block ---
 if (/(^|\s)--no-verify(\s|$)/.test(trimmed)) block('Never skip pre-commit hooks (--no-verify). (tooling.md § Commit Rules)')

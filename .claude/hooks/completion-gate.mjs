@@ -1,4 +1,4 @@
-// version: 3.0.0
+// version: 3.1.0
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
 import { read, write, readLines, hasLine, append } from './core/state.mjs'
@@ -75,7 +75,8 @@ if (!forcedReasons.has('review')) {
           `- Type safety: any casts, missing null checks, unvalidated inputs\n` +
           `- SSR/hydration: if React components changed, verify no server/client mismatches\n` +
           `- Security: injection vectors, exposed secrets, auth bypasses\n` +
-          `- Pattern consistency: does this follow existing patterns? Are there existing utilities that could replace new code?\n\n` +
+          `- Pattern consistency: does this follow existing patterns? Are there existing utilities that could replace new code?\n` +
+          `- Behavior-change gates: every behavior change should carry an INTENT check (spec/test/code agree); every fixed defect a TWINS search for other sites.\n\n` +
           `Report findings inline — no separate document.`
       } else {
         review = `${codeFiles.length} code files modified across: ${affectedDirs}\n\n` +
@@ -86,7 +87,8 @@ if (!forcedReasons.has('review')) {
           `3. Architecture — pattern consistency, reuse opportunities, unnecessary abstractions\n` +
           `4. Regression — signature compatibility at all call sites, removed/renamed exports\n` +
           `5. Tests — run unit and e2e suites, report failures\n` +
-          `6. Summary — findings by severity (CRITICAL > HIGH > MEDIUM), test results, commit readiness\n\n` +
+          `6. Behavior-change gates — every behavior change carries an INTENT check (spec/test/code agree); every fixed defect carries a TWINS search for other sites\n` +
+          `7. Summary — findings by severity (CRITICAL > HIGH > MEDIUM), test results, commit readiness\n\n` +
           `Report findings by severity. State whether the change is safe to commit.`
       }
 

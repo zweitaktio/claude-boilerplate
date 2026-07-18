@@ -1,7 +1,7 @@
-// version: 1.1.0
+// version: 1.2.1
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
-import { append, hasLine } from './core/state.mjs'
+import { append, hasLine, read, write } from './core/state.mjs'
 
 const { tool_name, tool_input } = JSON.parse(await readStdin())
 
@@ -9,6 +9,7 @@ if (tool_name !== 'Write' && tool_name !== 'Edit') pass()
 
 const file = tool_input?.file_path ?? ''
 const content = tool_name === 'Write' ? (tool_input?.content ?? '') : (tool_input?.new_string ?? '')
+const oldContent = tool_name === 'Edit' ? (tool_input?.old_string ?? '') : ''
 const warnings = []
 
 function block(msg) { deny('PreToolUse', msg) }
@@ -26,6 +27,23 @@ if (/\.(test|spec)\.ts$/.test(file)) {
   }
   if (/\b(getByText|getByLabel)\b/.test(content)) {
     warn('Avoid text-based selectors (getByText, getByLabel) — breaks on locale change. Use data-testid. (e2e-testing.md)')
+  }
+
+  // Weakened-check detection (Edit only): a test loosened to pass is a fraud signal.
+  if (tool_name === 'Edit' && oldContent) {
+    const asserts = (s) => (s.match(/\b(expect|assert)\s*\(/g) || []).length
+    const disables = (s) => /\b(it|test|describe)\.skip\b|\bx(it|describe)\b|\.only\b/.test(s)
+    const loose = (s) => /\btoBe(Truthy|Falsy|Defined|GreaterThan|LessThan|CloseTo)\b|expect\.any\(/.test(s)
+    const mocks = (s) => /\b(vi|jest)\.mock\(|mockResolvedValue|mockReturnValue\b/.test(s)
+
+    const nowDisabled = disables(content) && !disables(oldContent)
+    const fewerAsserts = asserts(content) < asserts(oldContent)
+    const nowLoose = loose(content) && !loose(oldContent)
+    const nowMocked = mocks(content) && !mocks(oldContent)
+
+    if (nowDisabled || fewerAsserts || nowLoose || nowMocked) {
+      warn('This edit weakens a test — assertions removed or loosened, a test skipped/narrowed to .only, or a real call replaced by a mock. A changed test is guilty until its justification traces to the spec: confirm the spec changed, not just the test. (code-review.md)')
+    }
   }
 }
 
@@ -89,6 +107,13 @@ else if (/\.sh$/.test(file)) {
 // Track files edited in this session for completion-gate scoping
 if (file && !hasLine('session-edited-files', file)) {
   append('session-edited-files', file)
+}
+
+// INTENT primer — once per session, on the first edit to existing (non-test) code.
+// Non-blocking nudge to write the INTENT line before changing behavior.
+if (tool_name === 'Edit' && /\.(ts|tsx|js|jsx|py|go|rs)$/.test(file) && !/\.(test|spec)\./.test(file) && !read('intent-reminded')) {
+  write('intent-reminded', '1')
+  warnings.push('Changing what this code does? Write the INTENT line first — `INTENT: code does <X>; the check expects <Y>; the spec says <Z>` — and if they disagree, that contradiction is the finding, not a thing to silently edit away. (code-change-gates.md)')
 }
 
 // Inject accumulated warnings

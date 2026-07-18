@@ -1,5 +1,5 @@
 ---
-version: 2.12.0
+version: 2.14.0
 applies: Always
 target: rules
 priority: high
@@ -50,6 +50,26 @@ Run after adding new `t()` calls to extract keys to translation files.
 
 Allowed: `git`, `yarn`, `docker`, `docker compose`, `mkdir`, `cp`, `mv`, `ln`, `chmod`, `jq`, `grep`, `curl`. Chaining with `&&` is fine. Everything else uses dedicated tools.
 
+### `curl` — Files Only, Never Web Content
+
+Use `curl` only to download a file to disk. Fetch web content — docs, API references, changelogs, HTML pages, JSON you intend to read — with context-mode `fetch_and_index`, then `search`.
+
+`curl` dumps the whole response into context. `fetch_and_index` keeps it in the sandbox and returns a preview, so the bytes you never read cost you nothing.
+
+```bash
+# Good — curl writes to disk, nothing enters context
+curl -o vendor/schema.json https://example.com/schema.json
+
+# Bad — the entire page lands in context, unindexed and unsearchable
+curl https://react-router.com/start/framework/route-module
+```
+
+```
+# Good — indexed in the sandbox, retrievable on demand
+ctx_fetch_and_index(url: "https://react-router.com/start/framework/route-module", source: "RR8 route modules")
+ctx_search(queries: ["clientLoader hydration"])
+```
+
 ```bash
 # Good — obvious, reviewable
 yarn check
@@ -62,9 +82,9 @@ node -e "const fs = require('fs'); fs.readdirSync('.').forEach(f => { ... })"
 for f in $(find . -name '*.ts'); do mv "$f" "$f.bak"; done
 ```
 
-### No Inline Scripts, Loops, or Pipe Chains (enforced by hook)
+### No Inline Scripts, Loops, or Long Pipe Chains (enforced by hook)
 
-`python -c`, `node -e`, `ruby -e`, `for`/`while` loops, `xargs`, and 3+ pipe chains are blocked. Create a script file in `scripts/` instead.
+`python -c`, `node -e`, `ruby -e`, `for`/`while` loops, `xargs`, and pipe chains of 5+ are blocked. Short pipe chains (up to 4) are fine — they're normal shell usage. For anything longer or with real logic, run it in **context-mode `ctx_execute`** (sandboxed; the output stays out of context), or create a script file in `scripts/` if it's reusable.
 
 ### Use Dedicated Tools Instead
 

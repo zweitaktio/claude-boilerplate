@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 priority: high
@@ -114,8 +114,9 @@ Compliance depends on mechanism, position, and contrast — in that order. Opus 
 1. Rewrite with a concrete before/after example
 2. Move to top of file
 3. Add CRITICAL/IMPORTANT marker
-4. Promote to a hook (inject reminder at the right moment)
-5. Promote to a hard gate (deny tool execution)
+4. Restructure as a forced artifact — demand a literal output line (e.g. `INTENT:`, `TWINS:`), then grep for it. Writing the line forces the work; the token makes the next rung possible
+5. Promote to a hook (inject reminder at the right moment)
+6. Promote to a hard gate (deny tool execution)
 
 ## Checking if a Rule Works
 

@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: Always
 target: rules
 paths:
@@ -41,6 +41,21 @@ You are a senior engineer who writes clean, maintainable code.
 # Good — observable constraint
 Every change must pass `yarn check` before moving to the next step.
 ```
+
+## Forced Artifacts — Make a Rule Check Itself
+
+The strongest form of "could you check compliance by reading the output?" is a rule that *requires* a specific line in the output. Rewrite an unverifiable "think about X" rule to demand a written artifact:
+
+```
+# Weak — an internal check, invisible and unverifiable
+Before changing behavior, confirm the code, test, and spec agree.
+
+# Strong — a forced artifact
+Before a behavior-changing edit, write:
+`INTENT: code does <X>; the check expects <Y>; the spec says <Z>`
+```
+
+Two mechanisms do the work: the agent can't fill `<Z>` without opening the spec (the skipped step becomes impossible to skip silently), and the literal token is greppable so a hook can enforce its presence. Reach for a forced artifact before adding another `CRITICAL` — it's the step that makes an otherwise-unenforceable rule hook-enforceable.
 
 ## Common Mistakes
 

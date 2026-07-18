@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.5.1
 applies: Always
 target: rules
 paths:
@@ -209,10 +209,26 @@ Not all enforcement mechanisms are equal. Use the strongest tool that fits:
 |-----------|-------------|-------------|
 | **Hooks (deny)** | Highest — hard block | Rules with 0% voluntary compliance (KG reads, tool ordering) |
 | **Hooks (inject)** | High — timed reminder | Rules that need reinforcement at specific moments |
+| **Forced artifact (required output line)** | High — makes compliance checkable, and hook-enforceable | Unverifiable "did you consider X" rules: demand a literal line (e.g. `INTENT:`, `TWINS:`, `AUTH:`) and grep for it |
 | **Position (top of file)** | High — primacy effect | The most important rules in each file |
 | **Structure (headings, XML)** | Medium-high | Organizing rules so they're scannable |
 | **Emphasis keywords** | Medium — works through contrast | 3-5 rules max per instruction set |
 | **Plain text** | Baseline | Everything else |
+
+### Forced artifacts
+
+Some rules ask the agent to *think* something ("confirm the spec before changing behavior") — invisible, and impossible to check. Rewrite the rule to require *writing* a specific line, and it becomes both self-forcing and enforceable:
+
+```markdown
+# Weak — an internal check nobody can verify
+Before changing behavior, make sure the code, test, and spec agree.
+
+# Strong — a forced artifact
+Before a behavior-changing edit, write:
+`INTENT: code does <X>; the check expects <Y>; the spec says <Z>`
+```
+
+Two things happen. The agent cannot fill `<Z>` without opening the spec, so the skipped step becomes impossible to skip silently. And the literal token is greppable, so a hook can check for its presence. This is the rung that turns an unenforceable rule into a hook-enforceable one — reach for it before adding another `CRITICAL`. (Live examples: the `INTENT:`/`TWINS:` gates in `core/code-change-gates`, and `AUTH:` in `core/engineering-discipline`.)
 
 ### Emphasis keywords
 

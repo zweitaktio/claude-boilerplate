@@ -1,5 +1,5 @@
 ---
-version: 2.5.2
+version: 2.9.0
 applies: Always
 target: rules
 priority: high
@@ -21,21 +21,23 @@ Before implementing a feature, identify the business domain it belongs to (e.g.,
 3. **IMPORTANT: Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
 
 ```
-# Wrong: invent a checkout flow from scratch
-# Single-page form that charges on submit, no intermediate validation
-
-# Right: follow the established e-commerce checkout pattern
-# Multi-step → validate each step → create payment intent → confirm → capture
-# This is standard across Stripe, Shopify, and the broader ecosystem for good reason
+# Wrong: invent a checkout — single-page form that charges on submit
+# Right: follow the pattern — multi-step → validate → payment intent → confirm → capture
 ```
 
-This applies to any domain with established conventions — cart and inventory management, OAuth/OIDC flows, RBAC, publishing workflows, faceted search, webhook retry with idempotency, rate limiting, pagination strategies, and so on.
-
-When uncertain whether a standard pattern exists: search first. If you find the same approach described across multiple sources, it's a standard — follow it.
+This applies to any domain with established conventions (cart/inventory, OAuth/OIDC, RBAC, publishing workflows, faceted search, webhook retry with idempotency, rate limiting, pagination). When uncertain whether a standard exists, search first: the same approach across multiple sources is a standard — follow it.
 
 ## Task Assessment
 
-Before touching code, classify the task using the table below.
+**First classify the ask's shape** — it decides what "done" produces:
+
+- **Question / assessment** ("why is X slow?", "what do you think?", user thinks out loud) → findings and a recommendation. Change nothing.
+- **Task** ("fix", "build", "change", "make") → the completed change, verified.
+- **Plan-first** (ambiguous scope, an irreversible or outward-facing action, or the user asked for a plan) → a plan with your recommendation; stop for approval.
+
+A mixed ask ("why is it failing, and can you fix it?") is a Task whose report also answers the question. Genuinely unsure between Task and Plan-first → choose Plan-first.
+
+**Then size the work** using the table below.
 
 | Type | Criteria | Approach |
 |------|----------|----------|
@@ -44,6 +46,13 @@ Before touching code, classify the task using the table below.
 | **Complex** | >3 files, changes exports, unknown root cause, or crosses workspace boundaries | Full assessment below |
 
 A task is **complex** when any of these are true: it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex.
+
+## Gather Evidence Before Deciding
+
+- **Primary sources beat memory.** Any fact you'd write from recall — an API signature, endpoint, config key, env var name, magic constant, price, or figure — is not evidence. Open its source before you use it, or write it and label it unverified. For library APIs this is mandatory and hook-enforced (see Library Doc Lookup); for everything else it's on you. Catching yourself about to type a fact from memory re-opens evidence gathering.
+- **Orient before reading.** Enumerate what exists — list the directory, glob the project — before picking files to read. You can't choose the right files from memory of what a project usually contains.
+- **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on (Grep the symbol at module boundaries; trace the loaders/actions/endpoints it touches). Edge cases and breakage live at these seams, not in the file you opened first.
+- **Surprises route the work.** Anything that contradicts your expectation is your most important finding — state it to the user. If it changes what "done" means, revise it; if it changes what the user is actually asking for, re-classify the ask. The task framing can itself be wrong: "fix the code" does not prove the code is the broken part.
 
 **For complex tasks:**
 1. Identify all affected files and modules
@@ -77,9 +86,17 @@ Incorporate findings into the plan — flag risks, reference specific pitfalls, 
 
 Fix gaps before presenting.
 
-## Verification Discipline
+## Commit an Approach (before acting)
 
-Read error messages literally — don't pattern-match to what you expect.
+For any non-trivial task, reason to a committed approach *before* the first edit — not while editing. Write it as a forced artifact — a literal committed line before you act — where it belongs in the flow:
+
+```
+APPROACH: goal <what done looks like>; evidence <the 2-3 sources that shaped it>; approach <the one chosen; alternatives dismissed in a line>; risks <edge cases, integration points, what could break>
+```
+
+Filling `evidence` forces you to read before deciding; filling `risks` forces you past the happy path into edge cases and integration seams. This does **not** stop for approval — it's for reversible, task-shaped work you'll proceed on, and the load-bearing parts (chosen approach, main risks) surface in what you tell the user, not as step scaffolding. Plan-first tasks (ambiguous scope, or an irreversible/outward action) use plan mode instead, and stop. Trivial tasks are exempt.
+
+## Verification Discipline
 
 Read error messages literally — don't pattern-match to what you expect.
 
@@ -90,6 +107,8 @@ Read error messages literally — don't pattern-match to what you expect.
 # Right: check package.json first, see daisyui@5.x, look up docs
 <fieldset className="fieldset">  // DaisyUI 5 replacement
 ```
+
+**Verify by observation, not inference.** Confirm the done criterion actually ran, rendered, or counted — reading the code and concluding it should work is not verification. Both halves must hold: the specific criterion passes, *and* the surrounding build/tests/lint for the touched area stay green (a green targeted check on a broken build is a failed verification). If something genuinely can't be verified — no runtime, needs credentials, needs human eyes — say exactly that. Never let an unverified claim pass as verified.
 
 ## Change Classification
 
@@ -123,6 +142,18 @@ Before implementing, classify the change to determine required safeguards.
 - Does anyone import or call it? → Check with the Grep tool
 - Does only the current file use it? → Safe refactor
 - Does the database schema change? → Always treat as breaking
+
+## Authorization Gate
+
+Before any **irreversible or outward-facing action** — one another person or system can observe before you could undo it: push, publish, deploy, send, delete shared data, payment, permission change — write the line:
+
+```
+AUTH: user said "<their exact words>"
+```
+
+No quote in the conversation authorizing it → don't act; put the action in the report as a proposed next step. Project docs saying a deploy "must follow" your change make it documented, never authorized — the standing prohibitions in `core/tooling` still bind. Local working-tree changes are reversible and need no AUTH.
+
+This is a forced artifact: writing the line forces you to find the authorizing quote, and the token stays greppable. Two more forced artifacts — **INTENT** (before a behavior-changing edit) and **TWINS** (after fixing a defect) — load from `core/code-change-gates` when you are editing code.
 
 ## Implementation Process
 
