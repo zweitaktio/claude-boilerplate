@@ -26,14 +26,15 @@ The boilerplate provides sensible defaults, not mandates. When in doubt, ask the
 
 Core conventions are deployed to `.claude/rules/core/`. Some load on every interaction, others are **path-scoped** and only load when touching relevant files — keeping context lean.
 
-**Always loaded** (~20KB) — `core/process/`:
+**Always loaded** (~23KB) — `core/process/`:
 - `core/process/tooling` — Commands, verification, git, agent behavior
 - `core/process/mcp-tools` — MCP & plugin usage rules (KG, Context7), workflows
 - `core/process/security-checklist` — Security review standards
-- `core/process/code-review` — Code review standards
+- `core/process/code-review` — Code quality standards (smells, comments, review)
 - `core/process/engineering-discipline` — Task assessment, verification, change classification, failure protocol
 - `core/process/interaction` — Use AskUserQuestion wizard for clarifications
 - `core/process/monorepo` — Directory discipline for multi-package projects
+- `core/process/issue-tracking` — When to open GitHub issues, DoD as verification barrier, labels, splitting, commit/PR linking
 
 **Path-scoped** (loaded only when touching matching files):
 - `core/frontend/react-components` — `**/*.tsx`, `**/*.ts` — Component patterns, useEffect
@@ -51,17 +52,18 @@ Core conventions are deployed to `.claude/rules/core/`. Some load on every inter
 - `core/claude-config/mcp-servers` — `.claude/**` — MCP server setup
 - `core/claude-config/writing-rules` — `CLAUDE.md`, `.claude/**`, `SKILL.md`, `**/rules/**` — How to write effective agent rules
 
-**Context budget:** Always-loaded rules total ~850 lines (~20KB). This is the per-turn baseline cost. If adding new always-loaded rules, check whether path-scoping is possible first.
+**Context budget:** Always-loaded rules total ~950 lines (~23KB). This is the per-turn baseline cost. If adding new always-loaded rules, check whether path-scoping is possible first.
 
 | Rule | Lines | Notes |
 |------|-------|-------|
 | tooling | ~195 | Commands, verification, git, tool discipline, agent behavior |
 | mcp-tools | ~145 | Tool usage rules, KG read/write triggers |
 | engineering-discipline | ~150 | Task assessment, verification, change classification |
-| code-review | ~110 | Review standards |
+| code-review | ~120 | Code quality standards (smells, comments, review) |
 | security-checklist | ~60 | Security review checklist |
 | interaction | ~25 | Use AskUserQuestion wizard for clarifications |
 | monorepo | ~30 | Directory discipline |
+| issue-tracking | ~95 | When to open issues, DoD barrier, labels, splitting, commit/PR linking |
 
 Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` — they auto-load when editing files in their domain.
 
