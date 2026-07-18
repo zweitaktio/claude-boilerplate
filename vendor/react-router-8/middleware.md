@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -23,6 +23,8 @@ tags: [middleware, context, auth, request, response, headers]
 Middleware is stable and enabled by default in React Router 8 — no config flag, no minimum-version gate. Export `middleware` (server) or `clientMiddleware` (client) from any route module and it runs.
 
 > **Migrating from v7:** middleware was opt-in behind `future.v8_middleware` and required 7.9.0+. In v8 that flag is removed and the behavior is always on. If you drove context through a custom server's `getLoadContext`, migrate it per https://reactrouter.com/how-to/middleware#migration-from-apploadcontext.
+
+> **Pitfall — `react-router typegen` crashes after the v8 bump, before tsc runs:** if `react-router.config.ts` still sets `future: { v8_middleware: true }`, typegen throws `The future.v8_middleware flag has been removed because middleware is now always enabled`. The crash is in `createConfigLoader`, so `yarn check` fails before any TS errors surface. Fix: delete **both** the `future` block **and** the `declare module 'react-router' { interface Future { v8_middleware: true } }` augmentation. The minimal config is `export default { ssr: true } satisfies Config`.
 
 ## Overview
 

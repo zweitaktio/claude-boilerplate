@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -27,6 +27,10 @@ Internationalization for React Router 8 SSR apps using **remix-i18next v8** (mid
 - **Locale detection runs in RR8 route middleware**, not in `entry.server.tsx`. Middleware is on by default in v8 — no `future` flag.
 - **`useChangeLanguage` was removed.** Sync the language with a `useEffect` (see `VendorReactRouter8I18nUsage`).
 - **Resources are bundled TS modules** and served to the browser by a resource route + `i18next-fetch-backend` — no `i18next-fs-backend` / `i18next-http-backend`.
+
+> **Pitfall — v8 subpath exports dropped:** remix-i18next v8 exposes only the `.` entry. Old imports like `remix-i18next/middleware` or `remix-i18next/react` no longer resolve — import `createI18nextMiddleware` from the bare `'remix-i18next'`.
+
+> **Pitfall — `findLocale` param is now an args object, not a bare `Request`:** in v8 it receives `LanguageDetectorArgs` (RR8 `MiddlewareArgs`, which has both `request` and a normalized `url`). Writing `async findLocale(request)` errors TS7006 (implicit any). Destructure the field you need: `async findLocale({ url })` for path-based detection, `async findLocale({ request })` for cookie / `Accept-Language`.
 
 ## Dependencies
 
