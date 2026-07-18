@@ -40,7 +40,7 @@ claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config
 
 ```bash
 # context-mode — user-scoped (default)
-claude plugin install context-mode@claude-context-mode
+claude plugin install context-mode@context-mode
 ```
 
 ## Payload MCP (Payload projects)

@@ -94,6 +94,10 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh test-companion"
+          },
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh edit-review"
           }
         ]
       },
@@ -208,6 +212,6 @@
     ]
   },
   "enabledPlugins": {
-    "context-mode@claude-context-mode": true
+    "context-mode@context-mode": true
   }
 }

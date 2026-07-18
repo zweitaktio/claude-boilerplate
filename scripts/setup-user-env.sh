@@ -73,7 +73,7 @@ install_plugin() {
   fi
 }
 
-install_plugin "context-mode" "context-mode@claude-context-mode" "context-mode"
+install_plugin "context-mode" "context-mode@context-mode" "context-mode"
 
 # --- MCP Servers (user-scoped) ---
 echo ""

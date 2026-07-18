@@ -98,7 +98,7 @@ Verify by checking if the tool is available in the current session. If missing, 
 
 | Plugin | Verify with | Purpose | Install |
 |--------|------------|---------|---------|
-| context-mode | Any `mcp__plugin_context-mode_*` tool available | Large output handling, context budget management | `claude plugin install context-mode@claude-context-mode` |
+| context-mode | Any `mcp__plugin_context-mode_*` tool available | Large output handling, context budget management | `claude plugin install context-mode@context-mode` |
 
 ### User Environment Setup (one-time)
 
@@ -118,7 +118,7 @@ Run this at the start of every `/webstack init` or `/webstack update`:
 1. Run `scripts/preflight.sh` — if exit code is non-zero, report missing CLI tools with install commands and stop
 2. Call `search_nodes("preflight")` — if the tool is not available, report "Knowledge Graph MCP server not configured. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory`" and stop
 3. Call `resolve-library-id` with query `"react"` — if the tool is not available, report "Context7 MCP server not configured. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp`" and stop
-4. Check if `mcp__plugin_context-mode_context-mode__execute` is available — if not, report "context-mode plugin not installed. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude plugin install context-mode@claude-context-mode`" and stop
+4. Check if `mcp__plugin_context-mode_context-mode__execute` is available — if not, report "context-mode plugin not installed. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude plugin install context-mode@context-mode`" and stop
 
 If all checks pass, continue with the init/update flow.
 
