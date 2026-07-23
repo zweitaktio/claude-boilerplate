@@ -9,19 +9,14 @@ if (tool_name !== 'Bash') pass()
 const command = (tool_input?.command ?? '').trim()
 
 // Match dependency addition commands (not bare install/add with no package)
-const addPatterns = [
-  /^yarn\s+add\s+\S/,
-  /^npm\s+install\s+\S/,
-  /^npm\s+i\s+\S/,
-  /^pnpm\s+add\s+\S/,
-]
+const addPatterns = [/^yarn\s+add\s+\S/, /^npm\s+install\s+\S/, /^npm\s+i\s+\S/, /^pnpm\s+add\s+\S/]
 
-const isDepAdd = addPatterns.some(p => p.test(command))
+const isDepAdd = addPatterns.some((p) => p.test(command))
 if (!isDepAdd) pass()
 
 // Extract package names (strip flags like -D, --save-dev, etc.)
 const args = command.split(/\s+/).slice(2)
-const packages = args.filter(a => !a.startsWith('-'))
+const packages = args.filter((a) => !a.startsWith('-'))
 const pkgList = packages.join(', ')
 
 const reminders = [

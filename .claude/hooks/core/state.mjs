@@ -1,6 +1,13 @@
-import { readFileSync, writeFileSync, unlinkSync, existsSync, statSync, appendFileSync } from 'fs'
-import { tmpdir } from 'os'
-import { join } from 'path'
+import {
+  readFileSync,
+  writeFileSync,
+  unlinkSync,
+  existsSync,
+  statSync,
+  appendFileSync,
+} from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
 const sessionId = process.env.CLAUDE_SESSION_ID ?? process.ppid ?? 'unknown'
 
@@ -10,7 +17,7 @@ export function statePath(name) {
 
 export function read(name, fallback = null) {
   const p = statePath(name)
-  return existsSync(p) ? readFileSync(p, 'utf-8').trim() : fallback
+  return existsSync(p) ? readFileSync(p, 'utf8').trim() : fallback
 }
 
 export function write(name, value) {
@@ -22,7 +29,9 @@ export function append(name, line) {
 }
 
 export function clear(name) {
-  try { unlinkSync(statePath(name)) } catch {}
+  try {
+    unlinkSync(statePath(name))
+  } catch {}
 }
 
 export function ageSeconds(name) {

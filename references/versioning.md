@@ -8,7 +8,7 @@ Each template file has frontmatter:
 ---
 version: 1.0.0
 applies: daisyui@5
-target: graph
+target: rules
 tags: [daisyui, ui, components]
 ---
 ```
@@ -17,7 +17,7 @@ tags: [daisyui, ui, components]
 |-------|---------|
 | `version` | Semantic version — bump when template content changes |
 | `applies` | Condition for when template applies to a project |
-| `target` | Deployment target: `rules` or `graph` |
+| `target` | Deployment target: always `rules` (Markdown rule file) |
 | `priority` | Optional. `high` = load/process first. Omit for normal priority |
 | `tags` | Searchable keywords for the template |
 
@@ -51,8 +51,8 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 
 | Target | Source | Deploy to | Discovery |
 |--------|--------|-----------|-----------|
-| `rules` | `core/{subdir}/{name}.md` | `.claude/rules/core/{name}.md` (subdir stripped) | Auto-discovered by Claude Code |
-| `graph` | `vendor/{name}.md` | KG entity `Vendor{PascalCaseName}` | `search_nodes` + `open_nodes` |
+| `rules` (core) | `core/{subdir}/{name}.md` | `.claude/rules/core/{name}.md` (subdir stripped) | Auto-loaded by Claude Code |
+| `rules` (vendor) | `vendor/{path}.md` | `.claude/rules/vendor/{path}.md` (path preserved) | Path-scoped auto-load via `paths:` |
 
 ## Version Comparison Rules
 

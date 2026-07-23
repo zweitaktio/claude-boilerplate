@@ -1,9 +1,9 @@
 ---
-version: 4.2.0
+version: 5.0.0
 applies: Always
 target: rules
 priority: high
-tags: [mcp, context7, knowledge-graph, tools, workflow]
+tags: [mcp, context7, knowledge-base, tools, workflow]
 ---
 
 # MCP Tools & Plugins
@@ -16,19 +16,11 @@ tags: [mcp, context7, knowledge-graph, tools, workflow]
 
 The version determines which API is correct. Never assume you know the version.
 
-### 2. Vendor docs + KG pitfalls
+### 2. Vendor docs + project pitfalls
 
-**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you edit files matching their path patterns. Each vendor doc has a `## Documentation` section with verified source URLs, GitHub repos, and Context7 library IDs — use these as the primary sources for API lookups in step 3.
+**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you read files matching their path patterns. Each vendor doc has a `## Documentation` section with verified source URLs, GitHub repos, and Context7 library IDs — use these as the primary sources for API lookups in step 3.
 
-**IMPORTANT:** Project-specific pitfalls and decisions are in the Knowledge Graph. Check these before writing code:
-
-```
-search_nodes("bug_resolution")         → open_nodes on results
-search_nodes("Pitfall")                → open_nodes on results
-search_nodes("architecture_decision")  → open_nodes on results
-```
-
-To discover which vendor docs exist for a domain: `search_nodes("domain: <domain>")` — these are lightweight references pointing to the auto-loaded rule files.
+**Project-specific pitfalls and decisions** are path-scoped Markdown under `.claude/rules/project/` — they auto-load when you read the files they concern, so you rarely have to look. For an area you won't open, run `.claude/scripts/wiki.sh find "<topic>"`. There is no Knowledge Graph to query. See `core/process/knowledge-base`.
 
 ### 3. Look up the API docs — Context7 + web search, in parallel
 
@@ -48,50 +40,15 @@ Use the **specific version** in both queries — `"daisyui 5 form patterns"` not
 
 ### Repeat before writing code that uses a different library
 
-Run the steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check KG for pitfalls first: `search_nodes("Pitfall")`.
+Run the steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check for a recorded pitfall first: `.claude/scripts/wiki.sh find "<symptom>"`.
 
 ---
 
-## Knowledge Graph
+## Project knowledge
 
-The KG stores project decisions, bug resolutions, and lightweight vendor references as named entities with typed relations. Data lives in `.memory/graph.jsonl`.
-
-**Read:** `search_nodes` (search names, types, observations) → `open_nodes` (retrieve by name) → `read_graph` (dump all — use sparingly)
-
-**Write:** `create_entities` (new nodes) · `add_observations` (append facts) · `create_relations` (directed edges)
-
-**Delete:** `delete_entities` · `delete_observations` · `delete_relations`
-
-### Entity conventions
-
-**Names:** PascalCase — `VendorDaisyui5`, `AuthStrategy`, `HydrationMismatchBug`
-
-| Type | Purpose | Example |
-|------|---------|---------|
-| `vendor_doc` | Lightweight reference to auto-loaded vendor rule | `VendorDaisyui5` → `rule: .claude/rules/vendor/daisyui-5.md` |
-| `architecture_decision` | Why approach X was chosen over Y | `AuthStrategy` |
-| `bug_resolution` | Symptom → root cause → fix | `HydrationMismatchOnDateFormat` |
-| `convention` | Project patterns and rules | `FormValidationPattern` |
-
-**Relations:** `depends_on`, `replaced_by`, `requires`, `configures`, `integrates_with`
-
-Vendor doc content lives in `.claude/rules/vendor/` (auto-loaded by path). KG `vendor_doc` entities are lightweight references with domain tags for discoverability.
-
-### KG write triggers — record immediately, not later
-
-The kg-discipline hook reminds you after 4+ code file edits without a KG write. Record findings while details are fresh:
-
-| Event | Action | Format |
-|-------|--------|--------|
-| Bug that misled you or spanned >3 files | `create_entities` type `bug_resolution` | Symptom, Root cause, Fix, Area |
-| Chose approach X over Y for a reason | `create_entities` type `architecture_decision` | Decision, Why, Rejected alternatives |
-| Something failed non-obviously | `create_entities` type `bug_resolution` | Link to vendor via `depends_on` relation |
-| Found a GitHub issue explaining behavior | `create_entities` type `bug_resolution` | `"GitHub: {url} — {summary}"` |
-| Established a repeating pattern | `create_entities` type `convention` | Pattern, When to use, Example |
-
-Before creating an entity, `search_nodes` first — if a near-match exists, `add_observations` instead of duplicating.
-
-After creating any entity, `create_relations` to link it to the relevant `vendor_doc` reference (`depends_on` for bugs/decisions, `configures` for conventions). No orphan entities.
+Project decisions, bug resolutions, and conventions live in path-scoped Markdown under
+`.claude/rules/project/`, not a Knowledge Graph. They auto-load when you read the files they concern.
+Full read/write rules, the tiered model, and the frontmatter schema are in `core/process/knowledge-base`.
 
 ---
 

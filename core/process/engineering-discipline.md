@@ -65,10 +65,7 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 **IMPORTANT: Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
 
-**CRITICAL:** Before finalizing a plan, query the Knowledge Graph for pitfalls and past decisions. This is separate from the library doc lookup (which runs before writing code) — KG queries here catch architectural constraints early:
-1. `search_nodes("Pitfall")` or `search_nodes("bug_resolution")` — find recorded issues in this project
-2. `search_nodes("architecture_decision")` — past decisions that constrain the approach
-3. Read any returned observations for gotchas, version-specific quirks, or past failures that apply
+**Before finalizing a plan, surface recorded pitfalls and past decisions for the areas you'll touch.** Pitfalls/decisions for files in scope auto-load as path-scoped rules once you read those files. For areas the plan spans that you haven't opened, run `.claude/scripts/wiki.sh find "<topic>"` (see `core/process/knowledge-base`). This is separate from the library doc lookup (which runs before writing code) — it catches architectural constraints early.
 
 Incorporate findings into the plan — flag risks, reference specific pitfalls, and choose approaches that avoid known issues. A plan that repeats a documented mistake is worse than no plan.
 

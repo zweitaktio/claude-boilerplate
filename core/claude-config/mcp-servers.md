@@ -57,7 +57,6 @@ claude mcp add payload --transport http --scope project --header "Authorization:
 
 | Tool | Scope | Reason |
 |------|-------|--------|
-| Knowledge Graph (`memory`) | **user** | Generic server, data stays in project CWD (`.memory/graph.jsonl`) |
 | Context7 (`context7`) | **project** | Set up per-project during `/webstack init` |
 | context-mode | **user** | Plugin, user is the default scope |
 | Playwright (`playwright`) | **project** | Uses project-local `--config .claude/playwright-mcp.config.json` |

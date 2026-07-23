@@ -37,7 +37,6 @@ Actions:
   REVIEW   — versions match but git SHA shows content changed
   REPLACE  — target has no version (legacy)
   MERGE    — settings.json hook key merge
-  CHECK_KG — vendor doc, requires MCP deployment
   PRUNE    — file in target has no matching source (removed)
 
 Requires: jq, node or bun
@@ -285,25 +284,6 @@ EOF2
   fi
 }
 
-# ─── Vendor entity name ──────────────────────────────────────────────────────
-vendor_entity_name() {
-  local file="$1"
-  local name="${file#vendor/}"
-  name="${name%.md}"
-  # Strip leading underscore from _index segments (becomes "index" → "Index" in PascalCase)
-  name=$(echo "$name" | sed 's/_index$/index/')
-  # Convert kebab-case/slashes to PascalCase
-  # Split on - and /, capitalize each word
-  local result="Vendor"
-  local IFS='-/'
-  for part in $name; do
-    local first rest
-    first=$(echo "$part" | cut -c1 | tr '[:lower:]' '[:upper:]')
-    rest=$(echo "$part" | cut -c2-)
-    result="${result}${first}${rest}"
-  done
-  echo "$result"
-}
 
 # ─── Settings merge ──────────────────────────────────────────────────────────
 run_settings_merge() {
@@ -323,6 +303,7 @@ let tgt = {};
 try { tgt = JSON.parse(fs.readFileSync(tgtFile, "utf8")); } catch(e) {}
 
 const isWs = cmd => cmd && cmd.includes(".claude/hooks/");
+const norm = e => JSON.stringify({ matcher: e.matcher === undefined ? null : e.matcher, hooks: e.hooks || [] });
 const stats = { added: 0, updated: 0, preserved: 0 };
 
 // Build merged hooks
@@ -331,18 +312,24 @@ const mergedHooks = {};
 // Process events in source
 for (const [event, srcEntries] of Object.entries(src.hooks || {})) {
   const tgtEntries = (tgt.hooks || {})[event] || [];
+  const srcKeys = {};
+  for (const se of srcEntries) srcKeys[norm(se)] = true;
 
-  // Keep project-specific entries from target
+  // Keep project-specific entries from target. An entry qualifies only if it
+  // has no webstack hook command AND is not an identical copy of a source
+  // entry we are about to re-append. Without the second test, a source entry
+  // whose command is not a .claude/hooks/ path (e.g. an inline echo) is both
+  // kept and re-added, duplicating itself on every single run.
   const kept = tgtEntries.filter(e =>
-    e.hooks && e.hooks.every(h => !isWs(h.command))
+    e.hooks && e.hooks.every(h => !isWs(h.command)) && !srcKeys[norm(e)]
   );
   stats.preserved += kept.length;
 
   // Count new vs updated source entries
   for (const se of srcEntries) {
     const existed = tgtEntries.some(te =>
-      te.matcher === se.matcher &&
-      te.hooks && te.hooks.some(h => isWs(h.command))
+      norm(te) === norm(se) ||
+      (te.matcher === se.matcher && te.hooks && te.hooks.some(h => isWs(h.command)))
     );
     if (existed) stats.updated++;
     else stats.added++;
@@ -403,7 +390,6 @@ while [ "$g" -lt "$NUM_GROUPS" ]; do
   FLATTEN=$(echo "$GROUP_JSON" | jq -r '.flatten // "false"')
   CONDITIONAL=$(echo "$GROUP_JSON" | jq -r '.conditional // "false"')
   DO_CHMOD=$(echo "$GROUP_JSON" | jq -r '.chmod // "false"')
-  DEPLOY_METHOD=$(echo "$GROUP_JSON" | jq -r '.deployMethod // "file"')
   OPTIONAL=$(echo "$GROUP_JSON" | jq -r '.optional // "false"')
 
   # ── Optional groups: skip on apply unless explicitly requested ──
@@ -475,22 +461,6 @@ while [ "$g" -lt "$NUM_GROUPS" ]; do
           '{group: $group, file: $file, action: $action, reason: $reason}'
         continue
       fi
-    fi
-
-    # ── KG-deployed (vendor docs) ──
-    if [ "$DEPLOY_METHOD" = "kg" ]; then
-      ver=$(extract_frontmatter_version "$src_file")
-      domain=$(extract_frontmatter_domain "$src_file")
-      entity=$(vendor_entity_name "$rel_from_skill")
-      emit \
-        --arg group "$NAME" \
-        --arg file "$rel_from_skill" \
-        --arg action "CHECK_KG" \
-        --arg entity "$entity" \
-        --arg version "${ver:-unknown}" \
-        --arg domain "${domain:-unknown}" \
-        '{group: $group, file: $file, action: $action, entity: $entity, version: $version, domain: $domain}'
-      continue
     fi
 
     # ── Compute target path ──

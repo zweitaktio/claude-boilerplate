@@ -5,7 +5,9 @@ import { inject, pass } from './core/output.mjs'
 const { tool_name } = JSON.parse(await readStdin())
 
 if (tool_name === 'EnterPlanMode') {
-  inject('PreToolUse', `REQUIREMENTS CHECK — before designing, ask the user:
+  inject(
+    'PreToolUse',
+    `REQUIREMENTS CHECK — before designing, ask the user:
 
 1. What does the feature do? What triggers it? What are the inputs and outputs?
 2. What are the scope boundaries — what is explicitly NOT included?
@@ -15,7 +17,8 @@ if (tool_name === 'EnterPlanMode') {
 
 Do NOT proceed to solution design until you have clear answers to questions 1-2.
 If the user's request already answers these, state your understanding and confirm.
-(core/process/requirements-engineering.md)`)
+(core/process/requirements-engineering.md)`,
+  )
 }
 
 pass()

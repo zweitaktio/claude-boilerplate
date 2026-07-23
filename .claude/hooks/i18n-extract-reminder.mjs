@@ -11,9 +11,12 @@ if (!file.endsWith('.tsx') && !file.endsWith('.ts')) pass()
 
 const content = tool_name === 'Edit' ? tool_input?.new_string : tool_input?.content
 if (content && /\bt\(['"]/.test(content)) {
-  inject('PostToolUse', `New t() calls detected. Run \`yarn i18n:extract\` to update translation files.
+  inject(
+    'PostToolUse',
+    `New t() calls detected. Run \`yarn i18n:extract\` to update translation files.
 Do not edit locale JSON files directly.
-(core/frontend/i18n.md § Adding new translated text)`)
+(core/frontend/i18n.md § Adding new translated text)`,
+  )
 }
 
 pass()

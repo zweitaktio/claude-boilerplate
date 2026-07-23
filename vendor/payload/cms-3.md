@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: payload@3
 target: rules
 domain: backend
@@ -237,6 +237,28 @@ req.payload.jobs.runByID({ id: job.id }).catch((err) =>
 If you have a `crons:` config on the workflow, scheduled runs handle execution; otherwise treat `queue()` + `runByID()` as a single unit.
 
 ## Known Issues
+
+### `serverURL` breaks frontend media URLs (403s)
+
+**Symptom:** 403 on all frontend images after adding `serverURL` to the Payload config.
+
+**Cause:** Payload prepends `serverURL` to `media.url`, turning relative paths (`/api/media/file/x.jpg`)
+into absolute URLs. A frontend image service that only recognizes *relative* Payload paths lets the
+absolute URL fall through to domain validation and blocks it.
+
+**Fix:** in the image-URL processing, strip the backend origin (`API_URL` minus the `/api` suffix) from
+absolute URLs before the Payload-endpoint check — handle both relative and absolute `media.url` forms.
+
+### Migrations auto-apply in dev — never run `migrate` manually
+
+**Symptom:** migration errors on dev-server startup, or "table/column already exists" after a manual
+`yarn payload migrate` in local dev.
+
+**Cause:** Payload's dev mode applies pending migrations automatically on startup. A manual `migrate`
+double-applies or races the dev server's own run.
+
+**Fix:** in local dev use only `yarn payload migrate:create` (generate the file); let the dev server
+apply it on restart. `migrate` is for production/staging where the server doesn't auto-apply.
 
 ### PostgreSQL identifier length limit
 PostgreSQL has a 63-character limit for table and enum names. Payload auto-generates long names for nested fields. Use `dbName` and `enumName` for long paths:

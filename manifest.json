@@ -4,7 +4,7 @@
       "name": "hooks",
       "src": ".claude/hooks",
       "dest": ".claude/hooks",
-      "include": ["*.mjs"],
+      "include": ["*.mjs", "*.ts"],
       "versioning": "comment",
       "chmod": true
     },
@@ -13,6 +13,14 @@
       "src": ".claude/hooks",
       "dest": ".claude/hooks",
       "include": ["run.sh", "core/*.mjs"],
+      "versioning": "checksum",
+      "chmod": true
+    },
+    {
+      "name": "wiki-scripts",
+      "src": "scripts",
+      "dest": ".claude/scripts",
+      "include": ["wiki.sh", "kg-to-wiki.sh"],
       "versioning": "checksum",
       "chmod": true
     },

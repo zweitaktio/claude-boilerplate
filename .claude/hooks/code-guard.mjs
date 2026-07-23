@@ -12,8 +12,12 @@ const content = tool_name === 'Write' ? (tool_input?.content ?? '') : (tool_inpu
 const oldContent = tool_name === 'Edit' ? (tool_input?.old_string ?? '') : ''
 const warnings = []
 
-function block(msg) { deny('PreToolUse', msg) }
-function warn(msg) { warnings.push(msg) }
+function block(msg) {
+  deny('PreToolUse', msg)
+}
+function warn(msg) {
+  warnings.push(msg)
+}
 
 // === Test files (.test.tsx / .spec.tsx — block) ===
 if (/\.(test|spec)\.tsx$/.test(file)) {
@@ -23,17 +27,22 @@ if (/\.(test|spec)\.tsx$/.test(file)) {
 // === Test files (.test.ts / .spec.ts) ===
 if (/\.(test|spec)\.ts$/.test(file)) {
   if (/@testing-library/.test(content)) {
-    block('No React component tests — no jsdom, no @testing-library. Use Playwright for UI testing. (unit-testing.md)')
+    block(
+      'No React component tests — no jsdom, no @testing-library. Use Playwright for UI testing. (unit-testing.md)',
+    )
   }
   if (/\b(getByText|getByLabel)\b/.test(content)) {
-    warn('Avoid text-based selectors (getByText, getByLabel) — breaks on locale change. Use data-testid. (e2e-testing.md)')
+    warn(
+      'Avoid text-based selectors (getByText, getByLabel) — breaks on locale change. Use data-testid. (e2e-testing.md)',
+    )
   }
 
   // Weakened-check detection (Edit only): a test loosened to pass is a fraud signal.
   if (tool_name === 'Edit' && oldContent) {
     const asserts = (s) => (s.match(/\b(expect|assert)\s*\(/g) || []).length
     const disables = (s) => /\b(it|test|describe)\.skip\b|\bx(it|describe)\b|\.only\b/.test(s)
-    const loose = (s) => /\btoBe(Truthy|Falsy|Defined|GreaterThan|LessThan|CloseTo)\b|expect\.any\(/.test(s)
+    const loose = (s) =>
+      /\btoBe(Truthy|Falsy|Defined|GreaterThan|LessThan|CloseTo)\b|expect\.any\(/.test(s)
     const mocks = (s) => /\b(vi|jest)\.mock\(|mockResolvedValue|mockReturnValue\b/.test(s)
 
     const nowDisabled = disables(content) && !disables(oldContent)
@@ -42,7 +51,9 @@ if (/\.(test|spec)\.ts$/.test(file)) {
     const nowMocked = mocks(content) && !mocks(oldContent)
 
     if (nowDisabled || fewerAsserts || nowLoose || nowMocked) {
-      warn('This edit weakens a test — assertions removed or loosened, a test skipped/narrowed to .only, or a real call replaced by a mock. A changed test is guilty until its justification traces to the spec: confirm the spec changed, not just the test. (code-review.md)')
+      warn(
+        'This edit weakens a test — assertions removed or loosened, a test skipped/narrowed to .only, or a real call replaced by a mock. A changed test is guilty until its justification traces to the spec: confirm the spec changed, not just the test. (code-review.md)',
+      )
     }
   }
 }
@@ -59,10 +70,14 @@ else if (/\.(tsx|ts)$/.test(file)) {
     warn('t() must use static string literals, not template literals. (i18n.md)')
   }
   if (/\bt\([A-Za-z_$]/.test(content)) {
-    warn('t() must use static string keys, not variables — parser can\'t extract dynamic keys. (i18n.md)')
+    warn(
+      "t() must use static string keys, not variables — parser can't extract dynamic keys. (i18n.md)",
+    )
   }
   if (/\bt\(\s*'[^']*'\s*\)/.test(content) || /\bt\(\s*"[^"]*"\s*\)/.test(content)) {
-    warn('t() calls should include an English default as 2nd argument: t(\'key\', \'Default text\'). (i18n.md)')
+    warn(
+      "t() calls should include an English default as 2nd argument: t('key', 'Default text'). (i18n.md)",
+    )
   }
 }
 
@@ -111,9 +126,16 @@ if (file && !hasLine('session-edited-files', file)) {
 
 // INTENT primer — once per session, on the first edit to existing (non-test) code.
 // Non-blocking nudge to write the INTENT line before changing behavior.
-if (tool_name === 'Edit' && /\.(ts|tsx|js|jsx|py|go|rs)$/.test(file) && !/\.(test|spec)\./.test(file) && !read('intent-reminded')) {
+if (
+  tool_name === 'Edit' &&
+  /\.(ts|tsx|js|jsx|py|go|rs)$/.test(file) &&
+  !/\.(test|spec)\./.test(file) &&
+  !read('intent-reminded')
+) {
   write('intent-reminded', '1')
-  warnings.push('Changing what this code does? Write the INTENT line first — `INTENT: code does <X>; the check expects <Y>; the spec says <Z>` — and if they disagree, that contradiction is the finding, not a thing to silently edit away. (code-change-gates.md)')
+  warnings.push(
+    'Changing what this code does? Write the INTENT line first — `INTENT: code does <X>; the check expects <Y>; the spec says <Z>` — and if they disagree, that contradiction is the finding, not a thing to silently edit away. (code-change-gates.md)',
+  )
 }
 
 // Inject accumulated warnings

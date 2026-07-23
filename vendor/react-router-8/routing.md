@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.2.0
 applies: react-router@8
 target: rules
 domain: routing
@@ -355,3 +355,19 @@ export function shouldRevalidate({
 - Routes with expensive loaders (aggregations, search)
 
 **When NOT to override:** If the route's data depends on other routes' mutations (e.g., a count that changes when items are added), let default revalidation handle it.
+
+### New route file 404s under explicit `routes.ts` config
+
+**Symptom:** a new file under `app/routes/` returns 404 with no errors — the route simply doesn't exist.
+
+**Cause:** RR8 has two modes — file-based (auto-discovered) and explicit config (`routes.ts`). When the
+project has a `routes.ts` exporting a `RouteConfig`, new route files are **not** auto-discovered.
+
+**Fix:** register the route in `routes.ts` too. Check for `routes.ts` before creating any route file.
+
+```ts
+export default [
+  route('/', 'routes/home.tsx'),
+  route('/about', 'routes/about.tsx'),   // new routes MUST be added here
+] satisfies RouteConfig
+```

@@ -16,10 +16,11 @@ Usage: context-budget.sh <project-path>
 
 Measures per-turn context cost of always-loaded content:
 
-  a) Always-loaded rules — files in .claude/rules/core/ WITHOUT paths:
-     in YAML frontmatter. These load every turn.
-  b) Path-scoped rules — files in .claude/rules/core/ WITH paths: frontmatter.
-     Flags overly broad patterns as INFO.
+  a) Always-loaded rules — files in .claude/rules/core/ or .claude/rules/project/
+     WITHOUT paths: in YAML frontmatter. These load every turn (a project wiki page
+     without paths: is a bug — it should be scoped).
+  b) Path-scoped rules — files in .claude/rules/core/ or .claude/rules/project/ WITH
+     paths: frontmatter. Flags overly broad patterns as INFO.
   c) CLAUDE.md size — flags if over 100 lines.
   d) Totals — compares always-loaded + CLAUDE.md against budget
      (850 lines / 20480 bytes). Flags WARN if exceeded.
@@ -126,9 +127,12 @@ is_broad() {
   echo "false"
 }
 
-# ─── Scan .claude/rules/core/ ──
+# ─── Scan .claude/rules/core/ and .claude/rules/project/ (the wiki) ──
+# Both auto-load: a page with no paths: always-loads (taxes every turn); a page with paths: is
+# path-scoped. Scanning project/ too means an unscoped wiki page can't hide from the budget.
 CORE_DIR="$PROJECT/.claude/rules/core"
-if [ -d "$CORE_DIR" ]; then
+PROJECT_RULES_DIR="$PROJECT/.claude/rules/project"
+if [ -d "$CORE_DIR" ] || [ -d "$PROJECT_RULES_DIR" ]; then
   while IFS= read -r filepath; do
     [ -z "$filepath" ] && continue
     [ ! -f "$filepath" ] && continue
@@ -165,7 +169,7 @@ if [ -d "$CORE_DIR" ]; then
     fi
 
   done <<EOF
-$(find "$CORE_DIR" -name '*.md' -type f 2>/dev/null || true)
+$({ [ -d "$CORE_DIR" ] && find "$CORE_DIR" -name '*.md' -type f; [ -d "$PROJECT_RULES_DIR" ] && find "$PROJECT_RULES_DIR" -name '*.md' -type f; } 2>/dev/null || true)
 EOF
 fi
 

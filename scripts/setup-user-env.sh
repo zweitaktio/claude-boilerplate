@@ -22,7 +22,7 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   echo ""
   echo "Installs:"
   echo "  Plugins:     context-mode"
-  echo "  MCP servers: memory (Knowledge Graph), context7 (library docs)"
+  echo "  MCP servers: context7 (library docs); memory (general Knowledge Graph — NOT used by webstack)"
   echo ""
   echo "Project-scoped servers (Playwright, Payload MCP) are configured"
   echo "during /webstack init — this script does not install those."
@@ -106,6 +106,9 @@ install_mcp() {
   fi
 }
 
+# context7 is required by webstack (library doc lookups).
+# memory is a general-purpose Knowledge Graph server webstack no longer uses — it stays installed
+# for other projects/tools. Remove this line if you don't want it on this machine.
 install_mcp "memory" npx -y @modelcontextprotocol/server-memory
 install_mcp "context7" npx -y @upstash/context7-mcp
 

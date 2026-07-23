@@ -125,42 +125,39 @@ paths:
 
 ## Project Docs (`.claude/docs/`)
 
-For architecture docs, ADRs, and reference material too detailed for rules, use `.claude/docs/`:
+For heavy architecture docs, ADRs, and reference material too long for a rule, use `.claude/docs/`.
+This is the Tier-3 layer of the knowledge model — **`core/process/knowledge-base` is the authority** on
+the full model (pitfalls/decisions/conventions, domain maps, and these on-demand docs). Summary:
 
 ```
 .claude/
-├── CLAUDE.md
 ├── rules/
 │   └── project/
-│       └── architecture-docs.md   # Index rule (auto-loaded)
+│       ├── domains/checkout.md    # domain map — path-scoped, points to the docs below
+│       └── pitfalls/*.md          # bug knowledge — auto-loads at the code it concerns
 └── docs/
-    ├── architecture/              # Architecture & pattern docs
-    │   ├── checkout-flow.md
-    │   └── auth-system.md
-    └── issues/                    # Issue tracking
-        ├── open.md
-        └── resolved.md
+    └── systems/                   # heavy, on-demand
+        ├── checkout-flow.md
+        └── auth-system.md
 ```
 
 **Key principles:**
-- Docs are **not auto-loaded** — they're read on-demand via the Read tool
-- Create an **index rule** in `.claude/rules/project/` that lists available docs and when to read them
-- The index rule auto-loads every turn, making docs discoverable without loading their full content
-- Use for: architecture decisions, system flows, migration plans, complex patterns, issue tracking
-- Don't use for: conventions (use rules), vendor docs (auto-loaded from `.claude/rules/vendor/`), transient state
+- Docs in `.claude/docs/` are **not auto-loaded** — read on-demand via the Read tool
+- A **domain map** in `.claude/rules/project/domains/` (path-scoped to the area) names which docs to read
+- Bug knowledge is a **pitfall page** (`.claude/rules/project/pitfalls/`), not a docs log — it auto-loads
+  at the file it concerns. There is no `issues/` log; open work items go to GitHub Issues (`gh`).
+- Don't use docs for: conventions (use rules), vendor docs (auto-loaded from `.claude/rules/vendor/`), transient state
 
-**Example index rule:**
+**Example domain map** (scope to the area, never `**`):
 ```markdown
 ---
-paths: ["**"]
+schema: 1
+type: domain-map
+status: active
+paths: ["**/routes/checkout/**", "**/services/cart/**"]
 ---
-# Architecture Docs
-Read from `.claude/docs/` before modifying related systems.
-| File | Domain |
-|------|--------|
-| architecture/checkout-flow | Payment & checkout flow |
-| architecture/auth-system | Authentication & RBAC |
-| issues/open | Known bugs — check before non-trivial work |
+# Checkout domain
+Before modifying checkout: read `.claude/docs/systems/checkout-flow.md`. Cart pitfalls auto-load.
 ```
 
 ## Structure Template

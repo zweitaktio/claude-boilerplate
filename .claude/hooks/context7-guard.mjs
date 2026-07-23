@@ -14,9 +14,12 @@ if (tool_name === 'mcp__context7__resolve-library-id') {
 // PreToolUse: query-docs, check if resolve was called recently
 if (tool_name === 'mcp__context7__query-docs') {
   if (ageSeconds('c7-resolved') > 600) {
-    inject('PreToolUse', `ALWAYS call resolve-library-id before query-docs — you need the exact library ID.
+    inject(
+      'PreToolUse',
+      `ALWAYS call resolve-library-id before query-docs — you need the exact library ID.
 Do not guess or reuse IDs from previous sessions.
-(core/process/mcp-tools.md § Context7 tool rules)`)
+(core/process/mcp-tools.md § Context7 tool rules)`,
+    )
   }
 }
 

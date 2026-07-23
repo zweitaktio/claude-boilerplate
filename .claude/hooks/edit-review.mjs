@@ -20,10 +20,12 @@ const key = 'editreview-' + file.replace(/[^a-zA-Z0-9]/g, '_')
 if (ageSeconds(key) < 45) pass()
 write(key, '1')
 
-inject('PostToolUse',
+inject(
+  'PostToolUse',
   'Self-review this change before moving on:\n' +
-  '- Bug just introduced — off-by-one, null/undefined path, wrong operator, a missing await?\n' +
-  '- An input or edge case it does not handle — empty, boundary, error return, concurrent call?\n' +
-  '- A caller, import site, or integration this breaks — check consumers at the module boundary?\n' +
-  '- Reinvention — is there an existing util or pattern that already does this?\n' +
-  'Fix inline if you find something; otherwise continue. (code-review.md)')
+    '- Bug just introduced — off-by-one, null/undefined path, wrong operator, a missing await?\n' +
+    '- An input or edge case it does not handle — empty, boundary, error return, concurrent call?\n' +
+    '- A caller, import site, or integration this breaks — check consumers at the module boundary?\n' +
+    '- Reinvention — is there an existing util or pattern that already does this?\n' +
+    'Fix inline if you find something; otherwise continue. (code-review.md)',
+)

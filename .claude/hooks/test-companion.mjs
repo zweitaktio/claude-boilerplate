@@ -31,7 +31,10 @@ if (hasLine('test-companion-reminded', file)) pass()
 
 if (!existsSync(testPath)) {
   append('test-companion-reminded', file)
-  inject('PostToolUse', `No unit test found for ${file}. Expected: ${testPath}. Every pure function requires a unit test — tests must be .test.ts (never .test.tsx). (unit-testing.md)`)
+  inject(
+    'PostToolUse',
+    `No unit test found for ${file}. Expected: ${testPath}. Every pure function requires a unit test — tests must be .test.ts (never .test.tsx). (unit-testing.md)`,
+  )
 }
 
 pass()

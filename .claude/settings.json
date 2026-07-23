@@ -72,6 +72,15 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh migration-guard"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh rules-guard"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -89,7 +98,7 @@
           },
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh kg-discipline"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh wiki-discipline"
           },
           {
             "type": "command",
@@ -107,24 +116,6 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh dep-change-reminder"
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__memory__search_nodes",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh kg-gate"
-          }
-        ]
-      },
-      {
-        "matcher": "mcp__memory__create_entities|mcp__memory__add_observations",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh kg-discipline"
           }
         ]
       },

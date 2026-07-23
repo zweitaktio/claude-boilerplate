@@ -7,15 +7,19 @@ const msg = input.last_assistant_message ?? ''
 const agentType = input.agent_type ?? 'unknown'
 
 if (!msg) {
-  inject('SubagentStop',
+  inject(
+    'SubagentStop',
     `${agentType} subagent returned an empty response. ` +
-    `Re-run with a more specific prompt or investigate why it produced no output.`)
+      `Re-run with a more specific prompt or investigate why it produced no output.`,
+  )
 }
 
 if (msg.length < 50) {
-  inject('SubagentStop',
+  inject(
+    'SubagentStop',
     `${agentType} subagent returned minimal output (${msg.length} chars). ` +
-    `Verify the result is sufficient — re-run with a more specific prompt if needed.`)
+      `Verify the result is sufficient — re-run with a more specific prompt if needed.`,
+  )
 }
 
 const errorPatterns = [
@@ -28,11 +32,13 @@ const errorPatterns = [
   /\bdoes not exist\b/i,
 ]
 
-const hasErrors = errorPatterns.some(p => p.test(msg))
+const hasErrors = errorPatterns.some((p) => p.test(msg))
 if (hasErrors) {
-  inject('SubagentStop',
+  inject(
+    'SubagentStop',
     `${agentType} subagent reported potential issues in its response. ` +
-    `Review the output carefully before relying on it — the subagent may not have found what you needed.`)
+      `Review the output carefully before relying on it — the subagent may not have found what you needed.`,
+  )
 }
 
 pass()

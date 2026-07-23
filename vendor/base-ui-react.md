@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: "@base-ui/react@1"
 target: rules
 domain: styling
@@ -310,3 +310,23 @@ export const Modal = ({ size, title, children, className, ...props }: ModalProps
   </Dialog.Root>
 )
 ```
+
+## Pitfalls
+
+### Select (or any floating component) inside a Dialog renders behind the overlay
+
+**Symptom:** a Base UI `Select` dropdown opened inside a `Dialog` is invisible / behind the backdrop.
+Adding `z-index` to `Select.Popup` does nothing.
+
+**Cause:** `Select.Positioner` creates the document-level stacking context (portal/`position: fixed`);
+`Select.Popup` only stacks *within* the Positioner, so its `z-index` can't beat the Dialog overlay (`z-50`).
+
+**Fix:** put the z-index on the **Positioner**, not the Popup:
+
+```tsx
+<Select.Positioner sideOffset={4} className="z-[100]">
+  <Select.Popup className="bg-base-100 rounded-box p-2 shadow-lg">{/* items */}</Select.Popup>
+</Select.Positioner>
+```
+
+Applies to any floating Base UI component (Select, Menu, Popover, Combobox) rendered inside a Dialog.

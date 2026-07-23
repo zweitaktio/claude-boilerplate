@@ -1,48 +1,57 @@
 ---
-version: 1.2.0
+version: 2.0.0
 applies: Always
 target: rules
-tags: [backport, knowledge-graph, vendor, maintenance]
+tags: [backport, knowledge-base, vendor, maintenance]
 paths:
-  - ".memory/**"
-  - ".claude/**"
+  - ".claude/rules/project/**"
+  - ".claude/docs/**"
   - "CLAUDE.md"
 ---
 
 # Backporting to the Webstack Skill
 
-When you record a finding in the Knowledge Graph, decide whether it's **project-specific** or **generalizable**. Generalizable findings belong in the boilerplate skill so all projects benefit — `/webstack update` and `/webstack maintenance` scan for these.
+When you record a knowledge page, decide whether it's **project-specific** or **generalizable**.
+Generalizable findings belong in the boilerplate skill so all projects benefit — `/webstack update`
+and `/webstack maintenance` scan for these.
 
 ## Mark generalizable findings for backport
 
-Add a `"Backport: <reason>"` observation alongside the finding itself. This is the tag that update/maintenance scans detect.
+Add `backport: true` to the page's frontmatter. This is the flag that update/maintenance scans detect.
 
-```
+```yaml
 # Generalizable — library quirk, affects any project using this library
-create_entities:
-  name: ClientLoaderSSRBug, type: bug_resolution
-  "Pitfall: clientLoader doesn't run on initial SSR — only on client navigations"
-  "Backport: library behavior, not project-specific"
-create_relations: ClientLoaderSSRBug -> depends_on -> VendorReactRouter8Routing
+---
+schema: 1
+title: clientLoader doesn't run on initial SSR — only on client navigations
+type: pitfall
+status: active
+paths: ["**/routes/**"]
+tags: [react-router, ssr]
+links: [vendor/react-router-8/routing]
+backport: true          # ← library behavior, not project-specific
+---
+```
 
-# Generalizable — reusable pattern
-create_entities:
-  name: FormResetAfterSubmit, type: convention
-  "Pattern: call form.reset() in the action's redirect, not in the component"
-  "Backport: applies to any Conform + RR8 project"
-
-# Project-specific — do NOT mark for backport
-create_entities:
-  name: SyncEndpointHeader, type: bug_resolution
-  "Pitfall: our custom /api/sync endpoint requires X-Org-Id header"
-  (no Backport tag — this is specific to our API wrapper)
+```yaml
+# Project-specific — no backport flag
+---
+schema: 1
+title: our /api/sync endpoint requires an X-Org-Id header
+type: pitfall
+status: active
+paths: ["**/services/sync/**"]
+tags: [sync, api]
+# no backport: — specific to our API wrapper
+---
 ```
 
 ## Decision rule: backport or not?
 
-If the finding applies to **any project using this library version or framework combination**, mark it for backport. If it depends on this project's domain model, config, or business logic, do not tag.
+If the finding applies to **any project using this library version or framework combination**, set
+`backport: true`. If it depends on this project's domain model, config, or business logic, do not.
 
-| Backport (library/version scope) | No tag (project scope) |
+| Backport (library/version scope) | No flag (project scope) |
 |----------------------------------|------------------------|
 | Library bug or undocumented behavior | Business logic bug |
 | Version upgrade gotcha (API changed, config format) | Project-specific config values |
@@ -52,7 +61,7 @@ If the finding applies to **any project using this library version or framework 
 
 ## What happens downstream
 
-- `/webstack update` step 14 scans for `Backport:` observations → proposes adding them to skill templates
-- `/webstack maintenance` step 4c finds orphan entities and checks for backport tags → proposes relating them to vendor entities
-- Approved backports get added to `~/.claude/skills/webstack/vendor/` templates with a version bump
+- `/webstack update` scans project pages for `backport: true` → proposes adding them to skill templates
+- `/webstack maintenance` audits the wiki (staleness, orphans, collisions) and surfaces backport candidates
+- Approved backports get added to `~/.claude/skills/webstack/vendor/` or `core/` templates with a version bump
 - Subsequent `/webstack update` on other projects picks up the change

@@ -1,12 +1,10 @@
 #!/bin/bash
-# version: 1.0.0
-# Runs CLAUDE.md drift checks (S1, S2, C1-C5) against a target project.
+# version: 2.0.0
+# Runs CLAUDE.md drift checks (S-series structural + C-series content) against a target project.
 # Outputs JSON array of check results.
 #
 # Usage:
 #   drift-check.sh <project-path>
-#   drift-check.sh <project-path> --entities entities.json
-#   sync.sh compare <project> | drift-check.sh <project-path> --entities -
 #
 # Compatible with Bash 3.2+ (macOS and Linux). Requires jq.
 
@@ -14,21 +12,16 @@ set -euo pipefail
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
-Usage: drift-check.sh <project-path> [--entities <file|-|json-array>]
+Usage: drift-check.sh <project-path>
 
 Checks:
   S1  Required headings exist (## Commands, ## Architecture, ## Rules,
       ## Vendor Knowledge or alias, ### Knowledge accumulation)
   S2  No legacy section names (## Vendor Memory Loading, ## MCP Tools:)
   C1  Rules intro references .claude/rules/core/
-  C2  Vendor Knowledge has domain table with search_nodes
-  C3  Domain table entity names match deployed entities (requires --entities)
-  C4  Knowledge accumulation has format strings (Pitfall:, GitHub:, Docs:)
+  C2  Vendor Knowledge has a domain table
+  C4  Knowledge accumulation references the project wiki (wiki.sh / pitfall)
   C5  No inlined MCP tool instructions (no ## MCP Tools section)
-
---entities: JSON array of deployed entity names, or sync.sh output
-            (CHECK_KG entries are extracted automatically).
-            Pass "-" to read from stdin.
 
 Output: JSON array of {id, status, severity, detail}
 
@@ -49,39 +42,6 @@ CLAUDE_MD="$PROJECT/CLAUDE.md"
 if [ ! -f "$CLAUDE_MD" ]; then
   echo '[{"id":"S0","status":"FAIL","severity":"MISSING","detail":"CLAUDE.md not found"}]'
   exit 0
-fi
-
-# Parse --entities
-ENTITIES_JSON=""
-while [ $# -gt 0 ]; do
-  case "$1" in
-    --entities)
-      shift
-      if [ "${1:-}" = "-" ]; then
-        ENTITIES_JSON=$(cat)
-      elif [ -f "${1:-}" ]; then
-        ENTITIES_JSON=$(cat "$1")
-      else
-        ENTITIES_JSON="$1"
-      fi
-      shift
-      ;;
-    *) shift ;;
-  esac
-done
-
-# Extract entity names from sync.sh output if needed
-if [ -n "$ENTITIES_JSON" ]; then
-  # If it looks like sync.sh output (has "action" field), extract CHECK_KG entity names
-  DEPLOYED_ENTITIES=$(echo "$ENTITIES_JSON" | jq -c '
-    if (type == "array" and length > 0 and (.[0] | has("action"))) then
-      [.[] | select(.action == "CHECK_KG") | .entity]
-    else
-      .
-    end
-  ' 2>/dev/null || echo '[]')
-else
-  DEPLOYED_ENTITIES=""
 fi
 
 CONTENT=$(cat "$CLAUDE_MD")
@@ -194,67 +154,19 @@ if [ -n "$vk_found" ]; then
   done
 fi
 
-if [ -n "$vk_section" ] && echo "$vk_section" | grep -q 'search_nodes'; then
-  add_result "C2" "PASS" "OK" "Vendor Knowledge section has domain table with search_nodes"
+# The Vendor Knowledge section should contain a domain table (a markdown table row).
+if [ -n "$vk_section" ] && echo "$vk_section" | grep -qE '^\|.*\|'; then
+  add_result "C2" "PASS" "OK" "Vendor Knowledge section has a domain table"
 else
-  add_result "C2" "FAIL" "WARN" "Vendor Knowledge section missing domain table or search_nodes references"
+  add_result "C2" "FAIL" "WARN" "Vendor Knowledge section missing its domain table"
 fi
 
-# ─── C3: Domain table matches deployed entities ──
-if [ -z "$DEPLOYED_ENTITIES" ]; then
-  add_result "C3" "SKIPPED" "INFO" "No --entities provided, skipping entity match check"
-else
-  # Extract entity names from the Vendor Knowledge table (backtick-wrapped)
-  table_entities=$(echo "$vk_section" | grep -oE '`Vendor[A-Za-z0-9]+`' | tr -d '`' | sort -u)
-  deployed_list=$(echo "$DEPLOYED_ENTITIES" | jq -r '.[]' | sort -u)
-
-  in_table_not_deployed=""
-  in_deployed_not_table=""
-
-  while IFS= read -r e; do
-    [ -z "$e" ] && continue
-    if ! echo "$deployed_list" | grep -qx "$e"; then
-      in_table_not_deployed="${in_table_not_deployed:+$in_table_not_deployed, }$e"
-    fi
-  done <<EOF
-$table_entities
-EOF
-
-  while IFS= read -r e; do
-    [ -z "$e" ] && continue
-    if ! echo "$table_entities" | grep -qx "$e"; then
-      in_deployed_not_table="${in_deployed_not_table:+$in_deployed_not_table, }$e"
-    fi
-  done <<EOF
-$deployed_list
-EOF
-
-  if [ -z "$in_table_not_deployed" ] && [ -z "$in_deployed_not_table" ]; then
-    add_result "C3" "PASS" "OK" "Domain table matches deployed entities"
-  else
-    detail=""
-    if [ -n "$in_table_not_deployed" ]; then
-      detail="In table but not deployed: $in_table_not_deployed"
-    fi
-    if [ -n "$in_deployed_not_table" ]; then
-      detail="${detail:+$detail; }Deployed but not in table: $in_deployed_not_table"
-    fi
-    add_result "C3" "FAIL" "WARN" "$detail"
-  fi
-fi
-
-# ─── C4: Knowledge accumulation has formats ──
+# ─── C4: Knowledge accumulation references the project wiki ──
 ka_section=$(section_content "^### Knowledge accumulation" 3)
-formats_found=""
-for fmt in "Pitfall:" "GitHub:" "Docs:"; do
-  if echo "$ka_section" | grep -q "$fmt"; then
-    formats_found="${formats_found:+$formats_found, }$fmt"
-  fi
-done
-if [ -n "$formats_found" ]; then
-  add_result "C4" "PASS" "OK" "Knowledge accumulation has formats: $formats_found"
+if echo "$ka_section" | grep -qE 'wiki\.sh|rules/project|pitfall'; then
+  add_result "C4" "PASS" "OK" "Knowledge accumulation references the project wiki"
 else
-  add_result "C4" "FAIL" "WARN" "Knowledge accumulation section missing format strings (Pitfall:, GitHub:, Docs:)"
+  add_result "C4" "FAIL" "WARN" "Knowledge accumulation section should reference the wiki (wiki.sh / .claude/rules/project / pitfall)"
 fi
 
 # ─── C5: No inlined MCP tool instructions ──

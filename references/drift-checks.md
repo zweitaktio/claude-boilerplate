@@ -10,8 +10,8 @@ On `/webstack update`, step 1 runs drift detection against the bootstrap templat
 | `## Commands` | Project-specific | Heading exists (content is user-owned) |
 | `## Architecture` | Project-specific | Heading exists (content is user-owned) |
 | `## Rules` | Mixed | Heading exists; intro references `.claude/rules/core/` |
-| `## Vendor Knowledge` | Managed | Heading exists; contains domain table; references `search_nodes` |
-| `### Knowledge accumulation` | Managed | Heading exists; contains observation format strings |
+| `## Vendor Knowledge` | Managed | Heading exists; contains a domain table |
+| `### Knowledge accumulation` | Managed | Heading exists; references the project wiki (`wiki.sh` / `.claude/rules/project` / `pitfall`) |
 
 ## Vendor Knowledge Heading Aliases
 
@@ -29,9 +29,8 @@ If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
 | S1 | Required headings exist | MISSING | Check for: `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
 | S2 | Legacy section names | WARN | Flag: `## Vendor Memory Loading`, `## MCP Tools:` |
 | C1 | Rules intro references core rules | WARN | Text between `## Rules` and next `##` heading contains `.claude/rules/core/` |
-| C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table with `search_nodes` |
-| C3 | Domain table matches deployed entities | WARN | Entity names in table vs entities actually deployed in this update (run after step 8) |
-| C4 | Knowledge accumulation has formats | WARN | Section contains at least one of: `Pitfall:`, `GitHub:`, `Docs:` |
+| C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table row (`\| … \|`) |
+| C4 | Knowledge accumulation references the wiki | WARN | Section contains `wiki.sh`, `rules/project`, or `pitfall` |
 | C5 | No inlined MCP tool instructions | INFO | No `## MCP Tools` section with tool names (belongs in `.claude/rules/core/mcp-tools.md`) |
 
 **Not checked (intentionally):** exact wording of managed sections, empty project-specific sections, section ordering, HTML comment placeholders.

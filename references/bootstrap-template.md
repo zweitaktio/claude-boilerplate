@@ -1,6 +1,6 @@
 # CLAUDE.md Bootstrap Template
 
-Deploy this template when creating or updating CLAUDE.md in target projects. The vendor knowledge section in CLAUDE.md provides a domain-to-KG-entity mapping for discoverability via `search_nodes`. Vendor docs themselves auto-load via path-scoped rules in `.claude/rules/vendor/` regardless of CLAUDE.md content. MCP tool usage rules are in `.claude/rules/core/mcp-tools.md` (auto-loaded).
+Deploy this template when creating or updating CLAUDE.md in target projects. Vendor docs auto-load via path-scoped rules in `.claude/rules/vendor/` regardless of CLAUDE.md content. The knowledge model (where pitfalls/decisions live, how to record them) is in `.claude/rules/core/knowledge-base.md` (auto-loaded); MCP tool usage rules are in `.claude/rules/core/mcp-tools.md` (auto-loaded).
 
 ## Template
 
@@ -27,12 +27,12 @@ See `.claude/rules/core/tooling.md` for full workflow rules.
 
 These are enforced by auto-loaded rules in `.claude/rules/core/`. Summary for quick reference:
 
-- **CRITICAL:** Look up library docs (package.json → KG pitfalls → Context7) before writing any library code. Every time, no exceptions.
-- **CRITICAL:** Query the Knowledge Graph for pitfalls and architecture decisions before finalizing any plan.
+- **CRITICAL:** Look up library docs (package.json version → Context7 + web search) before writing any library code. Every time, no exceptions.
+- **CRITICAL:** When you fix a non-trivial bug or make an architectural decision, record it as a path-scoped page with `.claude/scripts/wiki.sh new` — project knowledge auto-loads from `.claude/rules/project/`, so there is nothing to query, but nothing records itself either.
 - **IMPORTANT:** Default to plan mode for anything beyond trivial fixes.
 - **IMPORTANT:** Research established domain patterns before implementing features — don't reinvent what the industry already solved.
 
-Full rules are in `core/process/engineering-discipline` and `core/process/mcp-tools` (auto-loaded).
+Full rules are in `core/process/engineering-discipline`, `core/process/mcp-tools`, and `core/process/knowledge-base` (auto-loaded).
 
 ## Architecture
 
@@ -41,33 +41,33 @@ Full rules are in `core/process/engineering-discipline` and `core/process/mcp-to
 ## Rules
 
 Core conventions are in `.claude/rules/core/` (auto-loaded, managed by the webstack skill — **do not edit**).
-Add project-specific rules in `.claude/rules/project/` to keep them separate from skill-managed rules.
+Add project-specific knowledge in `.claude/rules/project/` (pitfalls, decisions, conventions, domain maps)
+and heavy reference in `.claude/docs/`. Both are yours and survive `/webstack update`.
 
 Run `/webstack update` regularly to pull the latest rule and vendor doc improvements. The skill tracks versions — only changed templates are updated.
 
 ## Vendor Knowledge
 
-Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` and auto-load when you edit files in their scope — no manual loading required.
+Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` and auto-load when you read files in their scope — no manual loading required. There is no Knowledge Graph.
 
-The Knowledge Graph holds lightweight references for discoverability. Use `search_nodes` when looking up bug resolutions or pitfalls, not to load vendor docs.
-
-<!-- GENERATED: The skill populates this table based on which vendor entities were deployed. -->
-| Task domain | Vendor rules (auto-loaded) | KG entities |
-|-------------|---------------------------|-------------|
+<!-- GENERATED: the skill fills this table from which vendor rules were deployed. -->
+| Task domain | Vendor rules (auto-load on) |
+|-------------|-----------------------------|
 <!-- Add rows here for each deployed domain. Example:
-| Routing | auto-loads on route files | VendorReactRouter8* |
-| Styling | auto-loads on *.tsx / *.css | VendorDaisyui5, VendorTailwind4 |
+| Routing | route files (**/routes/**) |
+| Styling | *.tsx / *.css |
 -->
 
 ### Knowledge accumulation
 
-Write triggers are defined in `core/process/mcp-tools` (auto-loaded). Key observation formats:
-- Pitfalls: `"Pitfall: {what} — {why}"`
-- GitHub issues: `"GitHub: {url} — {summary}"`
-- Doc findings: `"Docs: {key finding} (source: {url})"`
+Project knowledge lives in `.claude/rules/project/` as path-scoped Markdown — see `core/process/knowledge-base` (auto-loaded). Record findings with `.claude/scripts/wiki.sh new <type> <slug>`:
+- **pitfall** — a bug's Symptom / Root cause / Fix, scoped to the code it concerns
+- **decision** — Decision / Why / Rejected alternatives
+- **convention** — a pattern others must follow
 
-Session progress → Claude Code auto memory (`MEMORY.md`).
-New project rules → add to CLAUDE.md, not the Knowledge Graph.
+One fact per page. Scope each to the narrowest `paths:` glob that fires. Run `.claude/scripts/wiki.sh sync` after adding pages.
+
+Session progress → Claude Code auto memory (`MEMORY.md`), separate from the project wiki.
 ```
 
 ## Init: Create CLAUDE.md

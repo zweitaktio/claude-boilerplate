@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.1.0
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -196,6 +196,23 @@ Fill in the `app/locales/fr/*.json` strings, then run `yarn i18n:types`.
 | `app/locales/fr.ts` | New barrel importing each namespace |
 | `i18next.config.ts` | Add to `locales` |
 | `app/locales/fr/*.json` | Created by extraction, then translated |
+
+### If the backend is Payload CMS — content locales
+
+A UI locale (above) and a Payload **content** locale are separate things. When the backend is Payload with `localization.locales`, adding a language means editing **two** sources of truth — the backend locale constant that feeds `localization.locales`, and the frontend i18n constant — and the order of operations matters.
+
+**1. Regenerate types before touching any hardcoded locale union.** `payload-types.ts` encodes the locale union, and every `payload.create/update({ locale })` call site validates against it. Add the locale to the backend constant, then run type generation and the type-copy step *first*. Editing `z.enum` schemas or locale casts before regenerating produces a flood of `TS2322: '<locale>' is not assignable` errors that only clear after regen — they are noise, not real failures.
+
+**2. Let `tsc` find the localized dictionaries.** Any typed `Record<Locale, …>` dictionary becomes a compile error until the new locale is added. `tsc` is the completeness oracle here — run it and work the list. Expect hits well beyond translation files: transactional email copy, PDF/document text and label maps, seeded CMS content, `date-fns` locale maps (which need a locale *import*, not a translation), and inline message maps inside endpoints.
+
+**3. Grep for casts — `tsc` cannot see them.** A cast like `as 'de' | 'en' | 'fr'` silently narrows the new locale away and is *not* flagged, because a cast defines its own type. These must be found by grep, not the compiler.
+
+**4. Migrations — the enum add.** Adding a content locale emits `ALTER TYPE … ADD VALUE` for **every** `_locales` enum in the schema (one per localized collection and version table).
+
+- **Idempotency:** add `IF NOT EXISTS` to every `ADD VALUE`/`ADD COLUMN` in `up()`. On PG12+, `ALTER TYPE … ADD VALUE IF NOT EXISTS` runs fine inside a migration transaction *as long as the new value is not USED in the same transaction* — a locale-add only adds, so this is safe. `down()` needs no guards.
+- **`migrate:create` captures all pending drift, not just your change.** It diffs the latest migration snapshot against the *current* config, so it sweeps in any committed-but-unmigrated schema change from a teammate. Do not hand-edit the generated snapshot `.json` to strip foreign columns — that breaks the migration chain. Sequence the commit with the other change instead.
+- **Shared-branch gotcha:** `migrate:create` rewrites `migrations/index.ts` to import every migration file present on disk, including a teammate's uncommitted one — which commit-couples your migration to their unfinished work.
+- Do **not** run the migrate command in local dev; dev auto-applies schema changes. The migration first truly runs on staging/production.
 
 ## Removing a Language
 

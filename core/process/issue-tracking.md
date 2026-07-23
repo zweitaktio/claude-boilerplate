@@ -9,7 +9,7 @@ tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
 
 Applies when the project has an issue tracker — almost always GitHub Issues, driven by the `gh` CLI. Confirm once per project with `gh issue list`; if the repo has no tracker, skip this file. Commands below assume GitHub + `gh`; adapt them to another tracker's CLI if that's what the project uses.
 
-This governs the **external tracker** (GitHub Issues), not the Knowledge Graph. KG `bug_resolution` entities and the `issues/` templates are a separate system (see `core/backporting`). "Open an issue" here means `gh issue create`, never a KG node.
+This governs the **external tracker** (GitHub Issues), not the project knowledge wiki. Wiki pitfall/decision pages under `.claude/rules/project/` are a separate system (see `core/process/knowledge-base`). "Open an issue" here means `gh issue create`, never a wiki page.
 
 ## When to create an issue
 
