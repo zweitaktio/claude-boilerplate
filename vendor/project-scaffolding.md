@@ -1,8 +1,18 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: Always
 target: rules
 domain: tooling
+paths:
+  - "Dockerfile*"
+  - "**/Dockerfile*"
+  - "docker-compose*"
+  - "**/docker-compose*"
+  - "dev.sh"
+  - "install.sh"
+  - ".github/workflows/**"
+  - "services/**"
+  - "**/*.env.example"
 tags: [scaffolding, monorepo, docker, dev-scripts, lifecycle, migration, sync, oauth]
 ---
 

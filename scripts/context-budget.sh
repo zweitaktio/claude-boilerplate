@@ -96,8 +96,28 @@ extract_paths() {
     return
   fi
 
-  # Extract paths values (lines starting with - after paths:)
+  # YAML allows both forms and this repo uses both — core templates write a block list,
+  # most vendor rules write an inline array. Parsing only the block form silently reports
+  # every inline-array rule as always-loaded, which inflates the budget by the entire
+  # vendor tree.
+  #
+  #   paths:                          paths: ["**/routes/**", "**/routes.ts"]
+  #     - "**/routes/**"
+  #
   local paths_values
+
+  # Inline array on the paths: line itself
+  if echo "$frontmatter" | grep -q '^paths:[[:space:]]*\['; then
+    paths_values=$(echo "$frontmatter" | sed -n 's/^paths:[[:space:]]*\[\(.*\)\].*/\1/p' \
+      | tr ',' '\n' \
+      | sed 's/^[[:space:]]*//; s/[[:space:]]*$//; s/^["'\'']//; s/["'\'']$//' \
+      | grep -v '^$' \
+      | tr '\n' ' ')
+    echo "$paths_values"
+    return
+  fi
+
+  # Block list: lines starting with - after paths:
   paths_values=$(echo "$frontmatter" | awk '
     /^paths:/ { in_paths=1; next }
     in_paths && /^[[:space:]]*-[[:space:]]/ {
