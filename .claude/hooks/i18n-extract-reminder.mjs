@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

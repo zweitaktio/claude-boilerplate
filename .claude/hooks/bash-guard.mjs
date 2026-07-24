@@ -1,4 +1,5 @@
 // version: 1.2.0
+// Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 

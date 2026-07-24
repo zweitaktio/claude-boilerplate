@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

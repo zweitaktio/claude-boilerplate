@@ -1,4 +1,5 @@
 // version: 1.2.1
+// Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat); tracks session-edited files for completion-gate.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 import { append, hasLine, read, write } from './core/state.mjs'

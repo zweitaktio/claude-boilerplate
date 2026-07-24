@@ -22,9 +22,15 @@ Templates deploy as rule files based on their `target` frontmatter field:
 |-----------|--------|------------|-----------|
 | `core/{subdir}/` | `rules` | `.claude/rules/core/{name}.md` in target project (subdir stripped) | Auto-loaded by Claude Code (always or path-scoped) |
 | `vendor/` | `rules` | `.claude/rules/vendor/{path}.md` in target project (path preserved) | Path-scoped, auto-loaded when editing matching files |
-| `issues/` | `graph` | Knowledge Graph entities (`bug_resolution` type) | Templates only — not deployed directly |
+| `agents/` | — | `.claude/agents/` in target project | Available as subagent types |
 
-Core rules are auto-loaded each turn (some are path-scoped to reduce context). Vendor docs are path-scoped reference material that auto-load when editing files in their domain. Lightweight KG references (`vendor_doc` type) point to the rule files for discoverability via `search_nodes("domain: ...")`.
+A rule with no `paths:` frontmatter is auto-loaded every turn; a rule with `paths:` loads only when you
+touch a matching file. That one key is the whole mechanism. There is no Knowledge Graph — project
+knowledge is Markdown under `.claude/rules/project/`, found by auto-load or `wiki.sh find`.
+
+`manifest.json` is the authority on what deploys where. The inventories in SKILL.md are generated from
+disk by `scripts/gen-inventory.sh` — edit the templates, then run `gen-inventory.sh --write`, never
+hand-edit the tables between `<!-- generated:… -->` markers.
 
 ### Frontmatter Schema
 
@@ -34,9 +40,9 @@ Every `.md` template (except SKILL.md and README.md) has this frontmatter:
 ---
 version: 1.0.0          # semver — bump on every content change
 applies: daisyui@5      # condition for when this template applies
-target: rules            # deployment target: rules | graph (graph only for issues/)
+target: rules            # deployment target — always `rules`
 priority: high           # optional — high = load/process first
-paths:                   # optional — path-scoped rules (core/ and vendor/ templates)
+paths:                   # optional — omit and the rule loads every turn
   - "**/*.tsx"
 tags: [daisyui, ui]      # searchable keywords
 ---
@@ -49,15 +55,16 @@ The `applies` field uses these patterns:
 - `react-router@8.1.0+` — version >= 8.1.0
 - `playwright | "@playwright/test"` — either package present
 
-### Vendor KG References
+### Vendor Docs
 
-Vendor docs deploy as path-scoped rule files. Lightweight KG entities (`vendor_doc` type) reference the deployed rule files for discoverability:
+Vendor docs deploy as path-scoped rule files, path preserved, one file per topic. The file is the source
+of truth — there is nothing to register anywhere:
 
-- `vendor/daisyui-5.md` → rule: `.claude/rules/vendor/daisyui-5.md`, KG: `VendorDaisyui5`
-- `vendor/react-router-8/routing.md` → rule: `.claude/rules/vendor/react-router-8/routing.md`, KG: `VendorReactRouter8Routing`
-- `vendor/playwright.md` → rule: `.claude/rules/vendor/playwright.md`, KG: `VendorPlaywright` (domain: testing; scoped to `**/e2e/**`, `**/*.spec.ts`, `**/playwright.config.ts`)
+- `vendor/daisyui-5.md` → `.claude/rules/vendor/daisyui-5.md`
+- `vendor/react-router-8/routing.md` → `.claude/rules/vendor/react-router-8/routing.md`
+- `vendor/playwright.md` → `.claude/rules/vendor/playwright.md` (domain: testing; scoped to `**/e2e/**`, `**/*.spec.ts`, `**/playwright.config.ts`)
 
-KG entities store only: `domain`, `rule` (path to deployed file), and `source` (path in boilerplate). Full content is in the rule file.
+Each declares `domain:` and `paths:` frontmatter and auto-loads when you open a file in its domain.
 
 ## Editing Templates
 
@@ -73,8 +80,11 @@ When adding a new template:
 
 1. Create the `.md` file in `core/` or `vendor/` with the required frontmatter fields
 2. Set the correct `applies` condition and `target`
-3. For vendor templates: add the entity name and domain to the naming/mapping tables in SKILL.md
-4. For core templates: decide if always-loaded or path-scoped (add `paths` frontmatter if scoped)
+3. Decide always-loaded or path-scoped — add `paths:` if scoped. Prefer scoped; always-loaded rules are
+   already over the byte budget
+4. Run `scripts/gen-inventory.sh --write` so SKILL.md's tables pick it up
+5. Verify the `applies` condition resolves: `scripts/evaluate-applies.sh <a-real-project>`. A condition
+   that matches nothing deploys nothing, silently
 
 ## Scripts
 
@@ -82,7 +92,10 @@ Scripts in `scripts/` are part of the skill and run on developer machines. They 
 
 ## Key Files
 
-- **SKILL.md** — Source of truth for skill operation: invocation logic, naming tables, domain mapping, CLAUDE.md bootstrap template
+- **SKILL.md** — Source of truth for skill operation: invocation logic, init/update flows, layout, CLAUDE.md bootstrap template
+- **manifest.json** — What deploys where, and how updates are compared. Authority for the layout table
+- **scripts/gen-inventory.sh** — Regenerates SKILL.md's rule/budget/hook tables from disk
+- **references/maintenance.md** — The 13-step `/webstack maintenance` specification
 - **core/process/tooling.md** — Core always-loaded template (commands, verification, tool discipline, agent behavior)
 - **core/process/scripting.md** — Script requirements and shell compatibility (path-scoped to `scripts/**`, `**/*.sh`)
 - **core/claude-config/claude-md.md** — Conventions for CLAUDE.md files deployed to target projects

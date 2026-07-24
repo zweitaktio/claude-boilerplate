@@ -1,4 +1,5 @@
 // version: 1.0.0
+// After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { read, write, ageSeconds } from './core/state.mjs'

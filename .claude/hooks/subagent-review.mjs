@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

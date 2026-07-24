@@ -1,5 +1,5 @@
 ---
-version: 4.2.1
+version: 4.3.0
 applies: Always
 target: rules
 paths:
@@ -25,9 +25,6 @@ For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/
 ## Setup Commands
 
 ```bash
-# Knowledge Graph — user-scoped (one-time setup)
-claude mcp add memory --scope user -- npx -y @modelcontextprotocol/server-memory
-
 # Context7 — project-scoped
 # API key optional but recommended for higher rate limits (get at context7.com/dashboard)
 claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
@@ -133,4 +130,6 @@ claude mcp list
 claude plugin list
 ```
 
-MCP servers show with mixed scopes: `memory` at user scope, `context7` and `playwright` (and optionally `payload`) at project scope. The context-mode plugin should show as installed.
+`context7` and `playwright` (and optionally `payload`) show at project scope. The context-mode plugin should show as installed.
+
+A `memory` server may appear at user scope on older machines. It is a general-purpose Knowledge Graph server that webstack no longer uses — project knowledge is Markdown under `.claude/rules/project/`. Leaving it installed is harmless; nothing here depends on it.

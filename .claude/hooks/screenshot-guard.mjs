@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Forces JPEG for browser screenshots — PNG screenshots blow up the context window.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

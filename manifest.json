@@ -17,6 +17,14 @@
       "chmod": true
     },
     {
+      "name": "agents",
+      "src": "agents",
+      "dest": ".claude/agents",
+      "include": ["*.md"],
+      "versioning": "checksum",
+      "_comment": "Claude Code agent frontmatter is name/description/model/tools — no version: field, so compare by checksum rather than frontmatter."
+    },
+    {
       "name": "wiki-scripts",
       "src": "scripts",
       "dest": ".claude/scripts",

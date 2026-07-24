@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: payload@3
 target: rules
 domain: full-stack
@@ -413,13 +413,14 @@ Walk through these in a real browser when wiring up live preview on a new projec
 
 ## Backport
 
-Mark KG entries with `Backport: <reason>` so `/webstack update` can lift these to other Payload+RR8 projects:
+Set `backport: true` in a project pitfall page's frontmatter so `/webstack update` surfaces it as a
+candidate to lift into other Payload+RR8 projects. The findings below are already generalizable:
 
-- `RouterDataNotInstanceofResponse` — RR8 framework behavior, applies anywhere
-- `FrontendApiUrlInternalVsPublic` — applies to any Payload + Docker-deployed frontend
-- `CaddyVolumeMountedConfigNeedsRestart` — applies to any Caddy + compose deployment
-- `PayloadFindDraftSlugReturnsEmpty` — Payload v3 quirk, applies to any project using `find?draft=true&where[slug]`
-- `PayloadLivePreviewMissingId` — applies to any project using `@payloadcms/live-preview-react` with empty-shell preview fallback
+- Router data not `instanceof Response` — RR8 framework behavior, applies anywhere
+- Frontend API URL, internal vs public — applies to any Payload + Docker-deployed frontend
+- Caddy volume-mounted config needs a restart — applies to any Caddy + compose deployment
+- `find?draft=true&where[slug]` returns empty — Payload v3 quirk, applies to any project using it
+- Live preview missing `id` — applies to any project using `@payloadcms/live-preview-react` with empty-shell preview fallback
 
 ## See Also
 

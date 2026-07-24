@@ -1,4 +1,5 @@
 // version: 1.2.0
+// Runs `yarn check` after a code edit, resolving the nearest workspace in a monorepo.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { write } from './core/state.mjs'

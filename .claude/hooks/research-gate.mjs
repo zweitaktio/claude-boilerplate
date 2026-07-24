@@ -1,4 +1,5 @@
 // version: 8.0.0
+// Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

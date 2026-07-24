@@ -1,7 +1,7 @@
 // version: 1.0.0
-// Non-blocking self-review nudge after each code edit. Forms a review loop:
-// review the change → fix inline → the fix re-triggers this hook.
-// Debounced per file so a burst of edits to one file reviews once, not per keystroke.
+// Non-blocking self-review nudge after each code edit, debounced per file.
+// Forms a review loop: review the change → fix inline → the fix re-triggers this hook.
+// Debouncing means a burst of edits to one file reviews once, not per keystroke.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { write, ageSeconds } from './core/state.mjs'

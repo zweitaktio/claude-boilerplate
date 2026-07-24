@@ -164,15 +164,32 @@ eval_condition() {
     return 0
   fi
 
-  # Directory check (starts with .)
+  # Path check (starts with .) — matches a file or a directory, and supports globs.
+  # A literal [ -d ] test silently failed every glob condition: a template scoped to
+  # .github/workflows/*deploy* could never deploy, however many deploy workflows existed.
   if echo "$cond" | grep -q '^\.' ; then
-    if [ -d "$PROJECT_PATH/$cond" ]; then
-      REASON="Directory $cond exists"
-      return 0
-    else
-      REASON="Directory $cond not found"
+    if echo "$cond" | grep -q '[*?]'; then
+      # Unquoted expansion in a subshell so nullglob does not leak into the caller.
+      # Note: Bash 3.2 has no globstar, so ** behaves as a single *.
+      if (
+        cd "$PROJECT_PATH" 2>/dev/null || exit 1
+        shopt -s nullglob 2>/dev/null || true
+        set -- $cond
+        [ "$#" -gt 0 ]
+      ); then
+        REASON="Path $cond matched"
+        return 0
+      fi
+      REASON="Path $cond matched nothing"
       return 1
     fi
+
+    if [ -e "$PROJECT_PATH/$cond" ]; then
+      REASON="Path $cond exists"
+      return 0
+    fi
+    REASON="Path $cond not found"
+    return 1
   fi
 
   # Split into package name and version spec (handles @scope/pkg@ver)

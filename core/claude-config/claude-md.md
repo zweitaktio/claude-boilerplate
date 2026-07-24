@@ -1,5 +1,5 @@
 ---
-version: 1.5.1
+version: 1.5.2
 applies: Always
 target: rules
 paths:
@@ -204,7 +204,7 @@ Not all enforcement mechanisms are equal. Use the strongest tool that fits:
 
 | Mechanism | Reliability | When to use |
 |-----------|-------------|-------------|
-| **Hooks (deny)** | Highest — hard block | Rules with 0% voluntary compliance (KG reads, tool ordering) |
+| **Hooks (deny)** | Highest — hard block | Rules with 0% voluntary compliance (tool ordering, unsafe Bash) |
 | **Hooks (inject)** | High — timed reminder | Rules that need reinforcement at specific moments |
 | **Forced artifact (required output line)** | High — makes compliance checkable, and hook-enforceable | Unverifiable "did you consider X" rules: demand a literal line (e.g. `INTENT:`, `TWINS:`, `AUTH:`) and grep for it |
 | **Position (top of file)** | High — primacy effect | The most important rules in each file |

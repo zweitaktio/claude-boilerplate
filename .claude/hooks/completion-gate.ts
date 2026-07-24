@@ -1,4 +1,5 @@
 // version: 3.2.0
+// Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files.
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
 import { read, write, readLines } from './core/state.mjs'

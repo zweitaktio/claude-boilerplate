@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Enforces resolve-library-id before query-docs, so docs are fetched for a real library ID.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { write, ageSeconds } from './core/state.mjs'

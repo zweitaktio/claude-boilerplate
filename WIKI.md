@@ -7,6 +7,8 @@
 
 - [Variables incremented inside a "cmd | while" loop are lost in Bash 3.2](.claude/rules/project/pitfalls/bash-subshell-counter-loss.md)
   `scripts/** **/*.sh `
+- [A grep that matches nothing inside $(...) aborts the script under set -e](.claude/rules/project/pitfalls/grep-in-command-substitution-aborts.md)
+  `scripts/** **/*.sh `
 - [bash-guard blocks inline "echo JSON | run.sh hook" test commands](.claude/rules/project/pitfalls/hook-testing-inline-json-pipes.md)
   `.claude/hooks/** `
 

@@ -26,12 +26,17 @@ If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
 
 | ID | Check | Severity | How |
 |----|-------|----------|-----|
+| S0 | CLAUDE.md exists at project root | FAIL | If absent, everything below is moot — suggest `/webstack init` and skip S1–C5 |
 | S1 | Required headings exist | MISSING | Check for: `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
 | S2 | Legacy section names | WARN | Flag: `## Vendor Memory Loading`, `## MCP Tools:` |
 | C1 | Rules intro references core rules | WARN | Text between `## Rules` and next `##` heading contains `.claude/rules/core/` |
 | C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table row (`\| … \|`) |
 | C4 | Knowledge accumulation references the wiki | WARN | Section contains `wiki.sh`, `rules/project`, or `pitfall` |
 | C5 | No inlined MCP tool instructions | INFO | No `## MCP Tools` section with tool names (belongs in `.claude/rules/core/mcp-tools.md`) |
+
+**C3 is retired.** It checked that each vendor entry matched a Knowledge Graph entity; the KG → wiki
+migration removed the entities, so the check had nothing to compare. The ID is not reused — see
+`KNOWN-ISSUES.md` § 1.
 
 **Not checked (intentionally):** exact wording of managed sections, empty project-specific sections, section ordering, HTML comment placeholders.
 
@@ -44,7 +49,7 @@ If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
 |-------|--------|---------|
 | Required headings | MISSING | `### Knowledge accumulation` not found |
 | Legacy sections | WARN | `## MCP Tools:` found — remove (now in rules) |
-| Vendor table freshness | WARN | Table lists VendorReactHookFormZod (deleted) |
+| Vendor table freshness | WARN | Table lists a domain with no deployed vendor rule |
 | Rules intro | PASS | — |
 ```
 

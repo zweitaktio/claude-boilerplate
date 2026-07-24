@@ -1,4 +1,5 @@
 // version: 2.0.0
+// Injects branch, recent commits, uncommitted changes and wiki counts at session start.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { execSync } from 'child_process'

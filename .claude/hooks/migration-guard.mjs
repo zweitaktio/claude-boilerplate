@@ -1,4 +1,5 @@
 // version: 1.0.0
+// On writes to migration or schema files, injects the reversibility and data-loss checks to run first.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

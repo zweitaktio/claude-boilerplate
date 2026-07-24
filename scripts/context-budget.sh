@@ -16,11 +16,11 @@ Usage: context-budget.sh <project-path>
 
 Measures per-turn context cost of always-loaded content:
 
-  a) Always-loaded rules — files in .claude/rules/core/ or .claude/rules/project/
-     WITHOUT paths: in YAML frontmatter. These load every turn (a project wiki page
-     without paths: is a bug — it should be scoped).
-  b) Path-scoped rules — files in .claude/rules/core/ or .claude/rules/project/ WITH
-     paths: frontmatter. Flags overly broad patterns as INFO.
+  a) Always-loaded rules — any .md under .claude/rules/ (core/, vendor/, project/, or
+     the directory itself) WITHOUT paths: in YAML frontmatter. These load every turn
+     (a project wiki page without paths: is a bug — it should be scoped).
+  b) Path-scoped rules — any .md under .claude/rules/ WITH paths: frontmatter.
+     Flags overly broad patterns as INFO.
   c) CLAUDE.md size — flags if over 100 lines.
   d) Totals — compares always-loaded + CLAUDE.md against budget
      (850 lines / 20480 bytes). Flags WARN if exceeded.
@@ -127,17 +127,19 @@ is_broad() {
   echo "false"
 }
 
-# ─── Scan .claude/rules/core/ and .claude/rules/project/ (the wiki) ──
-# Both auto-load: a page with no paths: always-loads (taxes every turn); a page with paths: is
-# path-scoped. Scanning project/ too means an unscoped wiki page can't hide from the budget.
-CORE_DIR="$PROJECT/.claude/rules/core"
-PROJECT_RULES_DIR="$PROJECT/.claude/rules/project"
-if [ -d "$CORE_DIR" ] || [ -d "$PROJECT_RULES_DIR" ]; then
+# ─── Scan every rule under .claude/rules/ ──
+# Claude Code loads the whole tree, so the budget has to see the whole tree. Scanning only
+# core/ and project/ made rules in .claude/rules/ itself — the native location — invisible:
+# this repo reported 0 always-loaded lines while injecting four such files every turn.
+# vendor/ counts too; a vendor rule with a broad glob is a real per-turn cost.
+RULES_DIR="$PROJECT/.claude/rules"
+if [ -d "$RULES_DIR" ]; then
   while IFS= read -r filepath; do
     [ -z "$filepath" ] && continue
     [ ! -f "$filepath" ] && continue
 
-    local_name=$(basename "$filepath")
+    # Path relative to .claude/rules/, so core/x.md and vendor/x.md stay distinguishable
+    local_name="${filepath#$RULES_DIR/}"
     lines=$(file_lines "$filepath")
     bytes=$(file_bytes "$filepath")
     paths=$(extract_paths "$filepath")
@@ -169,7 +171,7 @@ if [ -d "$CORE_DIR" ] || [ -d "$PROJECT_RULES_DIR" ]; then
     fi
 
   done <<EOF
-$({ [ -d "$CORE_DIR" ] && find "$CORE_DIR" -name '*.md' -type f; [ -d "$PROJECT_RULES_DIR" ] && find "$PROJECT_RULES_DIR" -name '*.md' -type f; } 2>/dev/null || true)
+$(find "$RULES_DIR" -name '*.md' -type f 2>/dev/null || true)
 EOF
 fi
 

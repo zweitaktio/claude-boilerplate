@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering).
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

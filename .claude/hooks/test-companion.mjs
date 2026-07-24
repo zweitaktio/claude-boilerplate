@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Reminds you once per source file to add its companion .test.ts.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { hasLine, append } from './core/state.mjs'

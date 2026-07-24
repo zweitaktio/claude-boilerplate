@@ -1,6 +1,7 @@
 // version: 1.0.0
-// Write-time quality gate for .claude/rules/**. Mirrors code-guard's inline approach so it needs
-// no deployed script. Full lint (collisions, orphans, links) runs via scripts/wiki.sh in CI/maintenance.
+// Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat.
+// Mirrors code-guard's inline approach so it needs no deployed script. Full lint
+// (collisions, orphans, links) runs via scripts/wiki.sh in CI/maintenance.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 import type { HookInput } from './core/hook-types.ts'

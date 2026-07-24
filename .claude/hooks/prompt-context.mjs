@@ -1,4 +1,5 @@
 // version: 2.0.0
+// On a review request, injects the code files edited this session (session state ∩ git diff) to scope it.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { readLines } from './core/state.mjs'

@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 

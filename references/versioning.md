@@ -35,6 +35,8 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 | `playwright \| "@playwright/test"` | Either package in dependencies or devDependencies (OR) |
 | `react-router \| next \| remix` | Any of these packages in dependencies or devDependencies (OR) |
 | `remix-i18next@8 & react-router@8` | Both conditions must match (AND) |
+| `.github/workflows` | That path exists in the project root (file or directory) |
+| `.github/workflows/*deploy*` | At least one path matches the glob |
 
 ### Operators
 
@@ -44,6 +46,13 @@ Check both `dependencies` and `devDependencies` in `package.json`. Strip version
 | `&` (AND) | `a & b` | All conditions must match |
 | `@N` | `pkg@5` | Package version starts with `N.` (major match) |
 | `@X.Y.Z+` | `pkg@7.9.0+` | Package version >= X.Y.Z within same major (numeric semver, not string comparison) |
+| path | `.some/path` | Leading `.` marks a path test: file or directory exists, relative to project root |
+
+**Path conditions** accept `*` and `?` globs. They do **not** support `**` recursion — the evaluator runs
+on Bash 3.2 (macOS), which has no `globstar`. Write `.github/workflows/*deploy*`, not
+`.github/**/deploy*`. A glob that matches nothing makes the condition false, so a template scoped to a
+glob that can never match will silently never deploy — test a new path condition against a real project
+with `evaluate-applies.sh`.
 
 **If version cannot be parsed**, skip the template and warn the user.
 

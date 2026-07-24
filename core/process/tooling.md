@@ -1,5 +1,5 @@
 ---
-version: 2.14.0
+version: 2.14.1
 applies: Always
 target: rules
 priority: high
@@ -199,5 +199,7 @@ Core conventions are auto-loaded from `.claude/rules/core/` — no manual loadin
 
 **On conversation start, context compaction, or "remember":**
 1. Re-read `CLAUDE.md` for project-specific overrides
-2. Load KG entities for the task's domain — see `core/mcp-tools` and domain-specific rules for exact queries
+2. Nothing to load for project knowledge — pitfalls, decisions and conventions live in
+   `.claude/rules/project/` and auto-load when you open a file they scope to. For an area you
+   won't open, run `.claude/scripts/wiki.sh find "<topic>"`. See `core/knowledge-base`.
 3. If `.editorconfig` exists at project root, read it — indentation style affects tool selection (see Edit Tool — Indentation Awareness above)

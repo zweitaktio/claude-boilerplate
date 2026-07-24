@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.2.0
 applies: react-router@8
 target: rules
 domain: routing
@@ -34,20 +34,23 @@ Apply this framework when:
 
 ## Essential References
 
-| Topic | KG Entity | Purpose |
-|-------|-----------|---------|
-| Routing | `VendorReactRouter8Routing` | File-based route configuration and nesting |
-| Route Modules | `VendorReactRouter8RouteModules` | Understanding available exports |
-| Special Files | `VendorReactRouter8SpecialFiles` | Customizing `root.tsx` and global elements |
-| Data Loading | `VendorReactRouter8DataLoading` | Implementing loaders with streaming support |
-| Actions | `VendorReactRouter8Actions` | Form handling and data mutations |
-| Navigation | `VendorReactRouter8Navigation` | Link components and programmatic routing |
-| Pending UI | `VendorReactRouter8PendingUi` | Loading indicators and optimistic updates |
-| Error Handling | `VendorReactRouter8ErrorHandling` | Error boundaries and recovery |
-| Type Safety | `VendorReactRouter8TypeSafety` | Route module types and `href` utility |
-| Rendering Strategies | `VendorReactRouter8RenderingStrategies` | SSR, SPA, and static pre-rendering |
-| Sessions | `VendorReactRouter8Sessions` | Authentication and cookie management |
-| Middleware | `VendorReactRouter8Middleware` | Request preprocessing (built in) |
+Each topic is its own path-scoped rule in `.claude/rules/vendor/react-router-8/`. They auto-load when you
+open a file matching their `paths:` — you do not need to fetch them.
+
+| Topic | Rule | Purpose |
+|-------|------|---------|
+| Routing | `react-router-8/routing.md` | File-based route configuration and nesting |
+| Route Modules | `react-router-8/route-modules.md` | Understanding available exports |
+| Special Files | `react-router-8/special-files.md` | Customizing `root.tsx` and global elements |
+| Data Loading | `react-router-8/data-loading.md` | Implementing loaders with streaming support |
+| Actions | `react-router-8/actions.md` | Form handling and data mutations |
+| Navigation | `react-router-8/navigation.md` | Link components and programmatic routing |
+| Pending UI | `react-router-8/pending-ui.md` | Loading indicators and optimistic updates |
+| Error Handling | `react-router-8/error-handling.md` | Error boundaries and recovery |
+| Type Safety | `react-router-8/type-safety.md` | Route module types and `href` utility |
+| Rendering Strategies | `react-router-8/rendering-strategies.md` | SSR, SPA, and static pre-rendering |
+| Sessions | `react-router-8/sessions.md` | Authentication and cookie management |
+| Middleware | `react-router-8/middleware.md` | Request preprocessing (built in) |
 
 ## Version Requirements
 

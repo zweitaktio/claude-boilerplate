@@ -1,4 +1,5 @@
 // version: 1.0.0
+// Tells the compaction summary what to keep: requirements, decisions and rationale, risks.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 
