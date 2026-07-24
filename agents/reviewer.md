@@ -20,7 +20,7 @@ You are a **report generator only**. You MUST:
 ## Review Process
 
 1. Read the code under review — understand purpose, architecture, and data flow
-2. Vendor docs auto-load as path-scoped rules — use `search_nodes` only for bug resolutions or pitfall lookups in the Knowledge Graph
+2. Vendor docs and project pitfalls auto-load as path-scoped rules — run `.claude/scripts/wiki.sh find "<topic>"` only for an area the diff doesn't touch
 3. Check against auto-loaded core rules (component patterns, security, SSR safety)
 4. Produce the report in the format below
 

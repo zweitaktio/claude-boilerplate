@@ -256,16 +256,21 @@ cmd_lint() {
       done
     fi
 
-    # line budget
-    lines="$(wc -l < "$f" | tr -d ' ')"
+    # line budget — body only. Counting frontmatter penalised a domain map for the
+    # thing it exists to do: a map routing to 15 docs needs 15 links: entries, and
+    # billing those against a 25-line budget made a correct map look bloated.
+    lines="$(awk 'NR==1 && $0=="---"{f=1;next} f && $0=="---"{f=0;next} !f{n++} END{print n+0}' "$f")"
     budget=45; [ "$type" = "domain-map" ] && budget=25
-    [ "$lines" -gt "$budget" ] && wrn "$r: $lines lines (>$budget for ${type:-untyped}) — trim or move detail to a .claude/docs/ system doc"
+    [ "$lines" -gt "$budget" ] && wrn "$r: $lines body lines (>$budget for ${type:-untyped}) — trim or move detail to a .claude/docs/ system doc"
 
-    # links resolve (lenient: boilerplate and deployed layouts both accepted)
+    # links resolve (lenient: boilerplate and deployed layouts both accepted).
+    # .claude/docs/ is included because linking a tier-3 doc from a domain map is how
+    # that doc becomes reachable at all — the reachability check above depends on it.
     fm_list "$f" links | while IFS= read -r lnk; do
       [ -n "$lnk" ] || continue
-      if [ ! -f "$ROOT/.claude/rules/$lnk.md" ] && [ ! -f "$ROOT/$lnk.md" ] && [ ! -f "$ROOT/.claude/rules/project/$lnk.md" ]; then
-        wrn "$r: link '$lnk' resolves to no known rule (ok if the upstream rule isn't deployed here)"
+      if [ ! -f "$ROOT/.claude/rules/$lnk.md" ] && [ ! -f "$ROOT/$lnk.md" ] \
+         && [ ! -f "$ROOT/.claude/rules/project/$lnk.md" ] && [ ! -f "$ROOT/.claude/docs/$lnk.md" ]; then
+        wrn "$r: link '$lnk' resolves to no known rule or doc (ok if the upstream rule isn't deployed here)"
       fi
     done
   done

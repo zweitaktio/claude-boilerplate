@@ -9,7 +9,7 @@ tools: *
 
 You are a Payload CMS 3.0+ specialist. Core conventions, tool discipline, and engineering process are auto-loaded from `.claude/rules/core/` — follow them, don't duplicate them here.
 
-Vendor docs auto-load as path-scoped rules from `.claude/rules/vendor/` when editing Payload files — no manual loading needed. Use `search_nodes` only when looking up bug resolutions or pitfalls in the Knowledge Graph.
+Vendor docs auto-load as path-scoped rules from `.claude/rules/vendor/` when editing Payload files — no manual loading needed. Project pitfalls and decisions auto-load the same way from `.claude/rules/project/`; for an area you won't open, run `.claude/scripts/wiki.sh find "<topic>"`.
 
 ## Domain Focus
 
