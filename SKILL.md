@@ -41,7 +41,7 @@ hand. Regenerate after adding or rescoping a template:
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
 | `process/code-review` | 99 | 5564 | code-review, review, security, quality, validation, smells, comments, best-practices |
-| `process/engineering-discipline` | 223 | 13957 | engineering, process, planning, verification, discipline, workflow |
+| `process/engineering-discipline` | 243 | 14979 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 45 | 2593 | interaction, questions, wizard, density, conciseness |
 | `process/issue-tracking` | 84 | 6907 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
@@ -49,10 +49,10 @@ hand. Regenerate after adding or rescoping a template:
 | `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 205 | 10298 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **972** | **53516** (~52 KB) | per-turn baseline |
+| **Total** | **992** | **54538** (~53 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 33036 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 34058 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -211,9 +211,9 @@ one-sentence description, which is where the Purpose column below comes from.
 | payload-guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
 | prompt-context | `prompt-context.mjs` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
 | requirements-gate | `requirements-gate.mjs` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
-| research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
+| research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
-| screenshot-guard | `screenshot-guard.mjs` | PreToolUse / `mcp__playwright__browser_take_screenshot` | Forces JPEG for browser screenshots — PNG screenshots blow up the context window. |
+| screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
 | session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes and wiki counts at session start. |
 | subagent-review | `subagent-review.mjs` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
 | test-companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
@@ -363,6 +363,16 @@ In addition to per-template version comparison, the skill records the boilerplat
    ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project
    ```
    Show results to user. If S0 FAIL (missing), suggest `/webstack init`. If S1 MISSING, fix with `bootstrap-claude-md.sh`. Continue — informational, not blocking.
+
+1a. **Check MCP wiring:**
+   ```bash
+   ~/.claude/skills/webstack/scripts/check-mcp-wiring.sh /path/to/project
+   ```
+   Deploying `.claude/playwright-mcp.config.json` does **not** make it take effect — nothing reads it
+   unless `.mcp.json` passes `--config`, and a relative `outputDir`/`--output-dir` resolves against the
+   MCP server's cwd rather than the project, so artifacts land wherever Claude Code was launched from.
+   The skill does not manage `.mcp.json`, so this must be verified rather than assumed. Report any
+   `ERROR` findings and offer the exact `.mcp.json` fix; they are one-line edits.
 
 2. **Run deployment comparison:**
    ```bash

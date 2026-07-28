@@ -1,8 +1,7 @@
 ---
 name: payload-cms-expert
 description: Payload CMS 3 specialist for collections, hooks, API endpoints, auth, and admin UI
-model: opus
-tools: *
+model: inherit
 ---
 
 # Payload CMS Expert

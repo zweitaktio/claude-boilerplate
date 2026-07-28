@@ -546,17 +546,35 @@ done
 # one group aren't mistakenly deleted by another (e.g. hooks + hook-infra).
 # Only prunes within each group's dest dir — .claude/rules/project/ is never touched.
 # Scaffold and settings are excluded (different versioning strategy).
+#
+# --group narrows what is DEPLOYED, never what is OWNED. Two groups can share one
+# dest (hooks + hook-infra both land in .claude/hooks), so a dest's expected-file
+# list must be built from every group targeting it, including groups the filter
+# excluded. Building it from the filtered set alone deletes the other group's
+# files: `--group hooks` would prune run.sh and core/*.mjs, breaking every hook.
 if [ "$COMMAND" = "apply" ]; then
-  # Collect all dest dirs that need pruning, merging groups with same dest
   PRUNE_DESTS=""
   PRUNE_GROUPS="hooks hook-infra rules vendor"
 
-  # Build combined expected file list per unique dest dir
+  # Pass 1 — eligible dest dirs: only those a filtered-in group actually targets.
   for pg in $PRUNE_GROUPS; do
-    if [ -n "$GROUP_FILTER" ] && ! echo ",$GROUP_FILTER," | grep -q ",$pg," 2>/dev/null; then
-      continue
-    fi
+    group_included "$pg" || continue
 
+    PG_JSON=$(jq -c --arg n "$pg" '.groups[] | select(.name == $n)' "$MANIFEST")
+    [ -z "$PG_JSON" ] && continue
+
+    PG_DEST=$(echo "$PG_JSON" | jq -r '.dest // empty')
+    [ -z "$PG_DEST" ] && continue
+    [ -d "$TARGET_PATH/$PG_DEST" ] || continue
+
+    if ! echo "$PRUNE_DESTS" | grep -qF "$PG_DEST" 2>/dev/null; then
+      PRUNE_DESTS="$PRUNE_DESTS $PG_DEST"
+      : > "/tmp/webstack-prune-$(echo "$PG_DEST" | tr '/' '-')"
+    fi
+  done
+
+  # Pass 2 — expectations for those dests, from ALL groups sharing them (unfiltered).
+  for pg in $PRUNE_GROUPS; do
     PG_JSON=$(jq -c --arg n "$pg" '.groups[] | select(.name == $n)' "$MANIFEST")
     [ -z "$PG_JSON" ] && continue
 
@@ -566,19 +584,11 @@ if [ "$COMMAND" = "apply" ]; then
     PG_SRC=$(echo "$PG_JSON" | jq -r '.src // empty')
     [ -z "$PG_SRC" ] && continue
 
+    # Skip dests that pass 1 did not mark eligible
+    echo "$PRUNE_DESTS" | grep -qF "$PG_DEST" 2>/dev/null || continue
+
     PG_FLATTEN=$(echo "$PG_JSON" | jq -r '.flatten // "false"')
-    PG_TGT_DIR="$TARGET_PATH/$PG_DEST"
-
-    [ -d "$PG_TGT_DIR" ] || continue
-
-    # Use a stable expected-files list per dest dir
     EXPECTED_FILE="/tmp/webstack-prune-$(echo "$PG_DEST" | tr '/' '-')"
-
-    # Track unique dest dirs for the prune pass
-    if ! echo "$PRUNE_DESTS" | grep -qF "$PG_DEST" 2>/dev/null; then
-      PRUNE_DESTS="$PRUNE_DESTS $PG_DEST"
-      : > "$EXPECTED_FILE"
-    fi
 
     enumerate_files "$SKILL_DIR/$PG_SRC" "$PG_JSON" | while IFS= read -r ef; do
       [ -z "$ef" ] && continue

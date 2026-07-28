@@ -1,8 +1,7 @@
 ---
 name: vitest-testing-expert
 description: Vitest test engineer for unit tests, integration tests, type-safe mocks, and test data factories
-model: opus
-tools: *
+model: inherit
 ---
 
 # Vitest Testing Expert

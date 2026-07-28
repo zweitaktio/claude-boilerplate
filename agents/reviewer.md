@@ -1,8 +1,8 @@
 ---
 name: code-reviewer
 description: Code reviewer producing prioritized reports — never writes or modifies code
-model: opus
-tools: *
+model: inherit
+disallowedTools: Edit, Write, NotebookEdit
 ---
 
 # Code Reviewer

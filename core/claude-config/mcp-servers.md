@@ -1,5 +1,5 @@
 ---
-version: 4.3.0
+version: 5.0.0
 applies: Always
 target: rules
 paths:
@@ -29,8 +29,11 @@ For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/
 # API key optional but recommended for higher rate limits (get at context7.com/dashboard)
 claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
 
-# Playwright — PROJECT-SCOPED (uses project-local config file)
-claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config .claude/playwright-mcp.config.json
+# Playwright — PROJECT-SCOPED. Both paths MUST be absolute, and the version MUST be pinned.
+# See "The output directory must be absolute" below for why relative paths silently misroute.
+claude mcp add playwright --scope project -- npx @playwright/mcp@0.0.78 \
+  --config "$PWD/.claude/playwright-mcp.config.json" \
+  --output-dir "$PWD/.claude/screenshots"
 ```
 
 ## Plugin Setup
@@ -65,13 +68,35 @@ User-scoped tools are installed once per developer. Project-scoped tools use pro
 
 **This config replaces any existing Playwright MCP config** in the project. On `/webstack init` or `/webstack update`, the skill copies its config to `.claude/playwright-mcp.config.json`, overwriting what's there. Project-specific tweaks should be made after deployment.
 
-If the project already has a Playwright MCP server configured with a different `--config` path, update the MCP server command to point to `.claude/playwright-mcp.config.json`:
+### The output directory must be absolute, and must live in `.mcp.json`
+
+**Never set `outputDir` in the config file.** playwright-mcp resolves it with
+`path.resolve(config.outputDir)` — against the **server process's cwd**, not against the config
+file's directory (`resolveConfigPaths()` only rewrites `initPage`/`initScript`). A relative value
+therefore lands wherever Claude Code happened to be launched from. The *default* is anchored to the
+client workspace root, so a relative `outputDir` is **less** reliable than setting none at all.
+
+Set it per project as an **absolute** `--output-dir` in `.mcp.json`. CLI beats the config file (merge
+order is `defaults → file → env → CLI`), and `.mcp.json` is not skill-managed, so it survives the
+`/webstack update` that overwrites `.claude/playwright-mcp.config.json`.
+
 ```bash
 claude mcp remove playwright
-claude mcp add playwright --scope project -- npx @playwright/mcp@latest --config .claude/playwright-mcp.config.json
+claude mcp add playwright --scope project -- npx @playwright/mcp@0.0.78 \
+  --config /abs/path/to/project/.claude/playwright-mcp.config.json \
+  --output-dir /abs/path/to/project/.claude/screenshots
 ```
 
-Screenshots are saved to `.claude/screenshots/` (add to `.gitignore`).
+**Pin the version.** With `@latest`, output-path behaviour changes under you between sessions.
+
+Screenshots land in `.claude/screenshots/` — add it to `.gitignore`.
+
+**A per-call `filename` overrides all of this.** `outputFile()` is
+`path.resolve(outputDir, filename)`, so an absolute `filename` discards `outputDir` and `../` climbs
+out of it. `screenshot-guard` denies both; never pass a path as `filename`, only a bare basename.
+
+**A malformed config file is silently ignored** — `loadConfig` falls back to INI parsing and then to
+defaults without raising. Validate with `jq -e . .claude/playwright-mcp.config.json` after editing.
 
 ```json
 {
@@ -95,7 +120,6 @@ Screenshots are saved to `.claude/screenshots/` (add to `.gitignore`).
       "permissions": ["clipboard-read", "clipboard-write"]
     }
   },
-  "outputDir": ".claude/screenshots",
   "outputMode": "file",
   "blockServiceWorkers": true,
   "timeout": {
@@ -117,7 +141,8 @@ claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp --api-ke
 
 | Option | Example | Purpose |
 |--------|---------|---------|
-| `--config` | `--config .claude/playwright-mcp.config.json` | Load config file |
+| `--config` | `--config /abs/…/.claude/playwright-mcp.config.json` | Load config file |
+| `--output-dir` | `--output-dir /abs/…/.claude/screenshots` | Where artifacts are written. **Must be absolute** — see above |
 | `--headless` | `--headless` | No visible browser (CI/testing) |
 | `--browser` | `--browser firefox` | Browser: chrome, firefox, webkit, msedge |
 | `--caps` | `--caps vision,pdf` | Enable: vision, pdf, testing, tracing |

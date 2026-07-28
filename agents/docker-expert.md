@@ -1,8 +1,7 @@
 ---
 name: docker-expert
 description: Docker and Docker Compose specialist for containerization, multi-stage builds, and orchestration
-model: opus
-tools: *
+model: inherit
 ---
 
 # Docker Expert

@@ -20,7 +20,7 @@
       "permissions": ["clipboard-read", "clipboard-write"]
     }
   },
-  "outputDir": ".claude/screenshots",
+  "_outputDir": "DELIBERATELY UNSET — see core/claude-config/mcp-servers.md. playwright-mcp resolves a relative outputDir with path.resolve() against the SERVER's cwd, not against this file's directory, so a relative value here lands wherever Claude Code was launched from. Set it per project with an absolute --output-dir in .mcp.json instead; CLI beats this file, and this file is overwritten on every /webstack update.",
   "outputMode": "file",
   "blockServiceWorkers": true,
   "timeout": {

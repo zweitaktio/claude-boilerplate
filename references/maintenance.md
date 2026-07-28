@@ -133,6 +133,21 @@ user approved.
    Watch for pinned tool names. A wildcard (`mcp__server__*`) survives an upstream tool rename; an entry
    naming one tool silently stops matching when that tool is renamed.
 
+   Then verify the Playwright MCP wiring in `.mcp.json`:
+   ```bash
+   ~/.claude/skills/webstack/scripts/check-mcp-wiring.sh /path/to/project
+   ```
+   `.mcp.json` is **not** skill-managed, so deploying `.claude/playwright-mcp.config.json` proves
+   nothing about whether it is used. Findings worth acting on:
+   - `PW3`/`PW4` ERROR — `--config` or `--output-dir` missing. The deployed config is inert, or
+     artifacts are written relative to the MCP server's cwd and follow wherever Claude Code was
+     launched from. Both are one-line `.mcp.json` edits.
+   - `PW6` ERROR — a relative `outputDir` in the config file. `path.resolve()` anchors it to the
+     server's cwd, not the config file's directory. Remove it; the CLI flag is the only reliable place.
+   - `PW7` WARN — `@latest` lets output-path behaviour change between sessions. Pin the version.
+   - `PW9` INFO — `.playwright-mcp/` residue predating the fix. Check the file dates before deleting;
+     it is also the tell that the wiring was broken at some point.
+
 9. **Context budget analysis:**
    ```bash
    ~/.claude/skills/webstack/scripts/context-budget.sh /path/to/project

@@ -20,7 +20,7 @@
         ]
       },
       {
-        "matcher": "EnterPlanMode|ExitPlanMode|Task",
+        "matcher": "EnterPlanMode|ExitPlanMode|Agent|Task",
         "hooks": [
           {
             "type": "command",
@@ -47,7 +47,7 @@
         ]
       },
       {
-        "matcher": "mcp__playwright__browser_take_screenshot",
+        "matcher": "mcp__playwright__browser_(take_screenshot|pdf_save|storage_state)",
         "hooks": [
           {
             "type": "command",

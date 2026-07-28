@@ -1,5 +1,5 @@
 ---
-version: 2.9.0
+version: 2.10.0
 applies: Always
 target: rules
 priority: high
@@ -163,6 +163,26 @@ This is a forced artifact: writing the line forces you to find the authorizing q
    git add -A && git commit -m "checkpoint: before refactoring auth middleware"
    ```
    If the change fails, `git diff HEAD~1` shows exactly what broke.
+
+## Review Gate — before reporting a code change complete
+
+After `yarn check` passes and before you tell the user the work is done, delegate to the
+`code-reviewer` subagent when the change meets **any** of these:
+
+- It touches auth, payments, user data, or an API boundary
+- It spans 3+ files, or adds a new module, route, or collection
+- It changes a symbol exported across a module boundary
+
+Skip it for single-file fixes, typos, copy changes, and test-only edits — the review costs more than
+it returns there.
+
+`code-reviewer` runs read-only (`disallowedTools: Edit, Write, NotebookEdit`) and returns a
+prioritized report. Fix everything it marks CRITICAL or HIGH before reporting done; list MEDIUM and
+LOW in your summary so the user decides. Do not treat "the reviewer found nothing" as a pass without
+reading its report — an empty return is a failure, not a clean bill.
+
+The user's own `/code-review` is a separate, heavier pass they trigger. It does not replace this gate,
+and this gate does not replace it.
 
 ## Decision-Making
 

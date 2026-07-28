@@ -1,8 +1,7 @@
 ---
 name: react-router-ssr-expert
 description: React Router 8 SSR specialist for loaders, actions, streaming, hydration, and performance
-model: opus
-tools: *
+model: inherit
 ---
 
 # React Router 8 SSR Expert
