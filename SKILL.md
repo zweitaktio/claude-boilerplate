@@ -179,7 +179,8 @@ how updates are compared. That mapping is the thing worth knowing; the file list
 | `agents/` | `.claude/agents/` | checksum | Subagent definitions |
 | `.claude/hooks/` | `.claude/hooks/` | `// version:` comment | Dispatched via `run.sh`; see Hooks below |
 | `scripts/wiki.sh`, `kg-to-wiki.sh` | `.claude/scripts/` | checksum | The wiki tooling the project itself runs |
-| `scaffold/` | project root | no-clobber | Optional; never overwrites |
+| `scaffold/.editorconfig` | project root | no-clobber | Always deployed — every project gets one |
+| `scaffold/` (rest) | project root | no-clobber | Optional; needs `--group scaffold`; never overwrites |
 | `core/playwright-mcp.config.json` | `.claude/` | overwrite | |
 
 `scripts/` (other than the two above) stays in the skill — it is the deployment machinery, not payload:

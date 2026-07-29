@@ -11,6 +11,8 @@
   `scripts/** **/*.sh `
 - [bash-guard blocks inline "echo JSON | run.sh hook" test commands](.claude/rules/project/pitfalls/hook-testing-inline-json-pipes.md)
   `.claude/hooks/** `
+- [manifest include globs match dotfiles, so config files ship as payload](.claude/rules/project/pitfalls/manifest-glob-matches-dotfiles.md)
+  `manifest.json scripts/sync.sh .claude/hooks/** `
 
 ## Backlinks (upstream ← project)
 

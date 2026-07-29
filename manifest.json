@@ -5,8 +5,10 @@
       "src": ".claude/hooks",
       "dest": ".claude/hooks",
       "include": ["*.mjs", "*.ts"],
+      "exclude": [".prettierrc.mjs"],
       "versioning": "comment",
-      "chmod": true
+      "chmod": true,
+      "_comment": "`find -name '*.mjs'` matches dotfiles, so .prettierrc.mjs was shipping as a hook. It configures this repo's own hook toolchain (see .claude/hooks/package.json, which is NOT deployed), so in a target project it is an orphan no prettier ever reads."
     },
     {
       "name": "hook-infra",
@@ -62,6 +64,14 @@
         "core/playwright-mcp.config.json": ".claude/playwright-mcp.config.json"
       },
       "versioning": "overwrite"
+    },
+    {
+      "name": "editorconfig",
+      "src": "scaffold",
+      "dest": ".",
+      "include": [".editorconfig"],
+      "versioning": "no-clobber",
+      "_comment": "Editor settings are universal, unlike the rest of scaffold/ which is project-shape-specific (compose files, hydra, CI). So this one file deploys unconditionally instead of waiting for --group scaffold. no-clobber: a project that already has an .editorconfig keeps it."
     },
     {
       "name": "scaffold",
