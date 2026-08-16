@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.1.0
 applies: react-hook-form | remix-hook-form
 target: rules
 domain: forms
@@ -197,11 +197,54 @@ cannot call a real `t`, so teams commonly feed it translation *keys* via a dummy
 `FormMessage` renders `String(error.message)` raw and every validation error shows as a bare key. Use
 `t(message, message)` — key as its own default.
 
-**Version drift between `remix-hook-form` and `react-hook-form`.** `remix-hook-form@7.1.1` types
-`RemixFormProviderProps` with a required `setValues` that `useRemixForm`'s return type (from
-`react-hook-form@7.76`) does not expose, so every `<RemixFormProvider {...form}>` spread fails TS2741.
-Its declared peer range (`^7.55.0`) is looser than what actually type-checks. Pin `react-hook-form` to
-`7.71.1` until a compatible `remix-hook-form` ships.
+**`react-hook-form` must be pinned exactly when using `remix-hook-form`.** `RemixFormProviderProps` is
+`Omit<UseFormReturn, 'handleSubmit' | 'reset'>`, so it inherits whatever RHF adds to `UseFormReturn` —
+but `useRemixForm`'s return type is hand-enumerated and does not track those additions. Every
+`<RemixFormProvider {...form}>` spread then fails TS2741 at once, across every form file, naming
+whichever property RHF just added (`setValues`, then `resetDefaultValues`). This is structural, and it
+recurs on **every RHF minor**; the declared peer range is looser than what actually type-checks.
+
+Pin exactly, no caret, and **do not bump it in a dependency sweep** — it breaks the build with no code
+change on your side. The compatible window is bounded below by `remix-hook-form`'s peer floor and above
+by the next added member, so a pin that was correct once can fall *below* the floor later. Vet a
+candidate before installing, and diff the whole type block rather than checking one member name — any
+added line is a new required prop:
+
+```bash
+U=https://unpkg.com/react-hook-form
+curl -s -o /tmp/a.d.ts $U@<pinned>/dist/types/form.d.ts
+curl -s -o /tmp/b.d.ts $U@<candidate>/dist/types/form.d.ts
+diff <(sed -n '/^export type UseFormReturn/,/^};/p' /tmp/a.d.ts) \
+     <(sed -n '/^export type UseFormReturn/,/^};/p' /tmp/b.d.ts)
+```
+
+**`Control<Specific>` no longer assigns to `Control<any>` (RHF 7.72+).** RHF added
+`validate: ValidateForm<TFieldValues>` to `UseFormProps`, reachable from `Control` via `_options`;
+`ValidateForm`'s `name` parameter is the field-path union, which makes `Control` **invariant** in
+`TFieldValues`. Every call site of a shared field component fails TS2322. The history is
+non-monotonic — shipped in 7.72.0, reverted in 7.73.0, back for good from 7.74.0 — so don't infer the
+boundary from a single grep.
+
+Make the shared component generic rather than casting to `Control<any>`, which silences it but throws
+away path checking on `name`. The conversion is purely type-level:
+
+```tsx
+// ❌ was
+type Props = { control: Control<any>; name: string }
+
+// ✅ now
+type Props<TFieldValues extends FieldValues> = {
+  control: Control<TFieldValues>
+  name: FieldPath<TFieldValues>
+}
+export const FormItemCheckbox = <TFieldValues extends FieldValues>({
+  control,
+  name,
+}: Props<TFieldValues>) => …
+```
+
+A shadcn-style `FormField` wrapper is already generic over `TFieldValues`/`TName`, so it accepts the
+forwarded generics unchanged.
 
 ## Anti-Patterns
 

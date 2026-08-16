@@ -1,5 +1,5 @@
 ---
-version: 1.4.1
+version: 1.5.0
 applies: Always
 target: rules
 paths:
@@ -98,6 +98,7 @@ For MCP tools, add to the allow list in project `.claude/settings.json`:
   "permissions": {
     "allow": [
       "mcp__context7__*",
+      "mcp__claude-in-chrome__*",
       "mcp__playwright__*",
       "mcp__plugin_context-mode_context-mode__*"
     ]

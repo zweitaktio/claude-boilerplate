@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.1
 applies: playwright | "@playwright/test"
 target: rules
 paths:
@@ -49,7 +49,7 @@ On failure: check test output directory for screenshots and traces.
 
 ### Layer 2: Network Requests
 
-Use Playwright MCP (`browser_network_requests`) or Playwright traces to inspect what the browser did.
+Use Playwright MCP (`browser_network_requests`), Claude in Chrome (`read_network_requests`), or Playwright traces to inspect what the browser did.
 
 **Check for:**
 - **Failed API calls** (4xx, 5xx) — a page can render "empty state" without errors if the API silently fails
@@ -86,13 +86,16 @@ Run through after every E2E test run or manual browser validation:
 
 ## Manual Browser Validation (Playwright MCP)
 
+**Which browser tool to reach for, how to drive it, and signing in are covered by
+`core/browser-verification`** — that rule is the authority, including the rule that a change
+affecting the app is not done until it has been driven in the running UI. This section covers only
+the validation sequence once you are on the page:
+
 1. `browser_navigate` to the page
 2. `browser_snapshot` — accessibility tree (faster than screenshot)
 3. `browser_network_requests` — check API calls
 4. `browser_console_messages` — check for JS errors
 5. `browser_take_screenshot` — only when visual layout matters
-
-Auth: navigate to the login page first. Credentials are in CLAUDE.md.
 
 ## Writing New E2E Tests
 

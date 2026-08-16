@@ -1,5 +1,5 @@
 ---
-version: 1.8.1
+version: 1.9.0
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, comments, best-practices]
@@ -74,6 +74,7 @@ Write the code to read on its own first; add a comment only where the code genui
 **Backend:** See `core/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/unit-testing` for conventions.
 
 **Shared:**
+- **`key: cond ? value : maybeUndefined` handed to a library that merges over defaults is an override, not "no opinion".** What matters to a spread merge is the key being *present*: `{ ...defaults, duration: undefined }` replaces the default with `undefined` and the library runs on that. Write the conditional as a key instead — `...(cond ? { duration: 0 } : {})` — placed after `...opts` if it should win over a caller. It type-checks (`duration?: number` accepts `undefined`), lints clean, and usually degrades silently rather than throwing, so read the merged option back from the running library rather than from the diff
 - Errors handled or intentionally propagated, never silently swallowed
 - Async fetch calls use AbortController for cancellation. Timers use cleanup functions. See `vendor/react-hooks` (auto-loaded) for patterns
 - External service calls have error handling (not just happy path)

@@ -1,5 +1,5 @@
 ---
-version: 1.7.0
+version: 1.8.0
 applies: payload@3
 target: rules
 domain: backend
@@ -235,6 +235,73 @@ req.payload.jobs.runByID({ id: job.id }).catch((err) =>
 ```
 
 If you have a `crons:` config on the workflow, scheduled runs handle execution; otherwise treat `queue()` + `runByID()` as a single unit.
+
+### An omitted `limit` is 10, not "unlimited"
+
+`find()` resolves a missing limit to 10 — `const sanitizedLimit = limit ?? (usePagination ? 10 : 0)`. A list renders its first 10 rows with no pagination UI and no error, and a client-side filter over that truncated page then shows an empty state while records exist. **Pass `limit: 0` explicitly for "everything".** Two safe exceptions: reading only `totalDocs` (the full match count, unaffected by `limit`), and a deliberate `limit: 1` existence check. When adding a limit, check the `where` scopes to the right parent too — an unlimited-but-unscoped `find` is worse than a truncated one.
+
+### `data` in `beforeChange` is not the request body
+
+`beforeValidate` fills in every field the caller omitted, from stored values, before `beforeChange` runs. So `'field' in data` is **always true**, and a guard asking "did the caller try to write this?" by testing for the key rejects every update. **Compare against `originalDoc`** instead — normalise first, since relationship entries arrive as raw ids or populated docs depending on `depth`. Signal sanctioned callers with `req.context`, as Payload does internally.
+
+Related: field-level `access.update` is not a guard. Payload **discards a denied field without raising an error** — field access exists to make the admin panel render read-only. A hook refuses; an access rule only strips.
+
+### `filterOptions` runs as validation on every write, not just in the admin picker
+
+It receives the **whole** stored array (see the `beforeValidate` entry above), so a value the caller never touched is re-checked on every write. An ownership-scoped `filterOptions` therefore makes a document permanently uneditable by anyone but the owner of each referenced row. Scope by the same `Where` the collection's own `read` uses, not by ownership.
+
+For polymorphic relationships you **can** branch on the target collection: `FilterOptionsProps` passes `relationTo` (the single collection being validated) plus `req`, and Payload loops it, calling the function once per collection. A `filterOptions` stricter than the collection's own `read` is the smell — the caller can already see the document; refusing the *reference* only breaks writes.
+
+Two things that make a 400 here weak evidence: a collection `beforeChange` hook runs *before* field validation and will throw first (tell them apart by message — "do not belong to this journey" style text is your hook; `"This field has the following invalid selections"` is `filterOptions`), and a **nonexistent id** also yields "invalid selections", because the query matches no row.
+
+### A `hasMany` write replaces the whole array
+
+`update({ data: { media } })` does not diff — `upsertRow` deletes existing rows by path and reinserts the set. Two callers who read `[1,2]` and write `[1,2,3]` / `[1,2,4]` end with one set silently gone and **both told they succeeded**. None of the obvious fixes work:
+
+| Does not fix it | Why |
+|---|---|
+| A transaction | READ COMMITTED — both still read the pre-write array |
+| Verify-and-retry | A point-in-time read is not a lock: it excludes writers before it, none after |
+| Compare-and-swap on a version column | `where` is not a conditional write — the adapter resolves it to an id under an unlocked `SELECT`, then writes by primary key |
+| `SELECT … FOR UPDATE` | Does not serialise through drizzle |
+
+**Never write a `hasMany` array from a value you read earlier.** Serialise the read *and* the write, or send a delta to something that merges. A caller holding the list across a user interaction — a form's default values — cannot be made safe by any lock, because the window *is* the interaction.
+
+### `createdAt` is client-writable
+
+Payload accepts a supplied `createdAt` through the REST API on both create and update; it is not server-pinned. Never use it to mean "when this row was made" — use the server clock at hook time — and never treat it as audit evidence. If you need a trustworthy timestamp, add a separate field with `access.update: () => false` and set it in `beforeChange`. Do not "fix" `createdAt` itself without checking callers: some flows legitimately set it as domain data. Ordering a feed by it is a spoofing nuisance rather than an authz hole *only if* the query is access-scoped.
+
+### A localized field you can read is not necessarily one you can query
+
+**Reading** a localized field under a locale with no stored value falls back to `defaultLocale` (unless `fallback: false`). **Querying** it in a `where` clause matches only the value stored for that locale — there is no fallback. So link generation and sitemaps happily emit a URL built from the fallback value, and the detail route's lookup 404s. If a list route renders under a locale but the detail route 404s, check whether its `where` filters a localized field. Fix by populating every locale, making the field non-localized, or looking up by `id`.
+
+### A migration is two files — `index.ts` lands in the same commit
+
+`migrate:create` writes the migration **and** rewrites `migrations/index.ts` to register it. `payload migrate` runs the array in `index.ts`; a file missing from it does not exist to the runner. Dev never catches this because the dev server auto-applies schema changes and never consults `index.ts` — it breaks only on staging/production. Enumerating paths by hand for `git commit --only` (see `core/tooling`) makes the omission more likely, and review does not catch it because the diff shows a well-formed migration. After `migrate:create`, check `git status --porcelain <migrations dir>` and commit both. A peer's dirty `index.ts` is an unshipped schema change, not a leftover side effect.
+
+### A data migration must read locales from the data, not the config
+
+The config reflects the *final* locale list the moment it is edited, but the `_locales` Postgres enum only gains a value when the migration adding it runs. A migration iterating `config.localization.localeCodes` therefore queries locales the database does not know yet whenever it sorts **before** the one adding them — and migrations run in filename order, so backfill-then-locale (the natural authoring order) is the broken one. It passes locally because dev auto-push already widened the enum. Derive the list from the rows being touched (`SELECT DISTINCT "_locale"::text FROM "<table>_locales"`) — also more correct, since a locale with no rows has nothing to backfill.
+
+### Changing a workflow's `queue` strands its seeded job
+
+A pending job carries the queue it was created with, and an `autoRun` cron only drains its own queue. `jobs.queue({ workflow })` reads the queue from the workflow config *at insert time*, so editing `queue:` affects only future inserts — and an idempotent seeder matching on `workflowSlug` alone finds the stale job and skips. The workflow silently stops running: the row exists, `completedAt` is null, and `run?queue=<new>` reports `noJobsRemaining: true`. Match the existence check on queue as well, and **delete the stranded row before the next run** — a `repeated: true` re-queue skips when more than one unfinished job exists, so a stale row makes the handler decline to schedule its successor. Detect with `GET /api/payload-jobs?depth=0`, looking for a pending row whose `queue` is not the one the workflow now declares.
+
+### Two auth collections make `req.user` a union
+
+With `users` + `admins`, `req.user` is typed `Admin | User`, and a types regen bakes a required `collection` discriminator into both. Permission helpers declaring `User | null` then fail to compile. **Widen the consuming signatures to `Admin | User | null`** — an existing `if (isAdmin(user)) return true` guard already narrows the rest — and add `collection: '<slug>'` to mock fixtures.
+
+### Payload caches its instance on `globalThis` across HMR
+
+Next dev HMR reloads route modules but **not** already-registered Payload job handlers or config-imported modules, so a fresh request keeps executing the old code — the module's own `console.log` prints the stale value while the file on disk is correct. Restart the dev server after editing anything reached through the Payload config, a collection hook, or a jobs-queue task. Custom endpoints fail two ways: a *new* endpoint 404s (the route table is built at init), and an *edited* one returns 200 running old code — the second is silent and reads as a passing test. Confirm from the server log, not by re-reading the source.
+
+### Admin component paths need the `@/` alias, not bare `src/`
+
+Bare `'src/…#Export'` specifiers in `admin.components` resolve only via tsconfig `baseUrl`. Dropping `baseUrl` (as the TS 6 migration does) leaves `importMap.js` full of specifiers Next cannot resolve — `Module not found: Can't resolve 'src/components/…'` — even though the file exists and `tsc` passes. Reference admin components through the `@/` path alias and re-run `generate:importmap`.
+
+### A native `Buffer` in a JSON column 500s the write
+
+Spreading `sharp.metadata()` into a JSON/JSONB column fails with `TypeError: Method get TypedArray.prototype.length called on incompatible receiver` from `JSON.stringify`. `.withMetadata()` re-attaches EXIF, so `metadata()` returns an `exif` **Buffer**, and buffers from a native binding are cross-realm inside the Next.js runtime — `Buffer.prototype.toJSON` fails its internal brand check. Delete `exif` alongside `icc`/`iptc`/`xmp`, and serialise the column per key so a future non-serialisable value degrades to `null` rather than failing the write. `tsc`, ESLint and unit tests all pass; replicating the hook in plain Node also succeeds, because a single-realm process has no Buffer mismatch. Only the running server reproduces it.
 
 ## Known Issues
 

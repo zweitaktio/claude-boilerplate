@@ -40,19 +40,19 @@ hand. Regenerate after adding or rescoping a template:
 <!-- generated:budget -->
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
-| `process/code-review` | 99 | 5564 | code-review, review, security, quality, validation, smells, comments, best-practices |
+| `process/code-review` | 100 | 6195 | code-review, review, security, quality, validation, smells, comments, best-practices |
 | `process/engineering-discipline` | 243 | 14979 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 45 | 2593 | interaction, questions, wizard, density, conciseness |
 | `process/issue-tracking` | 84 | 6907 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 69 | 3097 | mcp, context7, knowledge-base, tools, workflow |
+| `process/mcp-tools` | 79 | 3819 | mcp, context7, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
-| `process/tooling` | 205 | 10298 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **992** | **54538** (~53 KB) | per-turn baseline |
+| `process/tooling` | 214 | 12025 | tooling, yarn, check, typescript, eslint, biome, verification |
+| **Total** | **1012** | **57618** (~56 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 34058 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 37138 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -70,9 +70,12 @@ Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
 | `frontend/state-management` | `**/*.tsx, **/*.ts, !**/*.test.*, !**/*.spec.*` |
 | `process/backporting` | `.claude/rules/project/**, .claude/docs/**, CLAUDE.md` |
 | `process/code-change-gates` | `**/*.ts, **/*.tsx, **/*.js, **/*.jsx, **/*.py, **/*.go, **/*.rs` |
+| `process/dependencies` | `**/package.json, **/tsconfig*.json, **/eslint.config.*, **/.eslintrc*, **/.fallowrc*, **/yarn.lock, **/package-lock.json, **/pnpm-lock.yaml` |
 | `process/monorepo` | `packages/**, apps/**, services/**, backend/**, frontend/**, scripts/**, docker-compose*, dev.sh, install.sh` |
+| `process/multi-agent` | `.claude/rules/core/multi-agent.md` |
 | `process/payload-api` | `backend/**` |
 | `process/scripting` | `scripts/**, **/*.sh` |
+| `testing/browser-verification` | `**/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/routes/**, **/routes.ts` |
 | `testing/e2e-testing` | `**/*.test.*, **/*.spec.*, **/tests/**, **/e2e/**, **/playwright*, backend/**, frontend/**, **/api/**, **/routes/**` |
 | `testing/e2e-validation` | `**/*.spec.*, **/e2e/**, **/playwright*, backend/**, frontend/**, **/routes/**` |
 | `testing/unit-testing` | `**/*.test.ts, **/*.spec.ts, **/vitest*, !**/*.test.tsx, !**/*.spec.tsx, backend/**` |
@@ -215,7 +218,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
 | screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
-| session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes and wiki counts at session start. |
+| session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent protocol at session start. |
 | subagent-review | `subagent-review.mjs` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
 | test-companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
 | wiki-discipline | `wiki-discipline.ts` | PostToolUse / `Edit\|Write` | Reminds you to record durable knowledge as a path-scoped wiki page after several code edits. |

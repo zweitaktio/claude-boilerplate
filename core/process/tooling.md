@@ -1,5 +1,5 @@
 ---
-version: 2.14.1
+version: 2.15.0
 applies: Always
 target: rules
 priority: high
@@ -180,6 +180,15 @@ Multiple agents (or the user) may be working on the same branch concurrently. Ne
 - **`git checkout <file>`** — silently discards uncommitted changes. Confirm first.
 
 If files are dirty when you arrive, assume another agent put them there. Investigate before discarding or restaging. Stage and commit only the files you intentionally changed, by name — never `git add -A` / `git add .`.
+
+**Staging by name is not enough — the index is shared too.** One checkout means one index, and scoping your `add` does not scope your `commit`: plain `git commit` writes **everything currently staged**, including what another agent staged seconds earlier. `git add <paths> && git commit` does not close the gap either — the `&&` leaves a window that a pre-commit hook widens to tens of seconds.
+
+- **Commit with `git commit --only <paths> -m "…"`** (`-o`). It commits only those paths and ignores the rest of the index.
+- **A file git has never seen is the one exception** — `--only` resolves its pathspec against tracked files, so on a new file it fails with `pathspec '<path>' did not match any file(s) known to git`. Add that one path by name first, then commit with `--only` listing it.
+- **That same error has a second cause: your working directory, not the index.** The Bash tool's cwd persists between calls, so after a `cd backend` a later `git commit --only backend/src/...` resolves as `backend/backend/src/...` and fails on a perfectly tracked file. Run git from the repo root or pass absolute paths; when a pathspec fails, check cwd before concluding anything about the index.
+- **The tell is the file count in `git commit`'s output** — if it exceeds what you staged, you took someone's work with you. Nothing is lost (the content is in the commit), so do **not** reset, revert or rebase to fix it — that rewrites shared history under whoever is mid-edit. Say what happened and leave it alone.
+
+When other sessions are actually live on this checkout, `session-context.mjs` detects them at session start and tells you to read `core/multi-agent` — role claims, the commit gate, and the message format.
 
 ## Agent Behavior
 

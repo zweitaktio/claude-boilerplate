@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: "@playwright/test@1"
 target: rules
 domain: testing
@@ -169,6 +169,28 @@ const product = page.getByTestId('product-card').filter({ hasText: 'Bike' })
 await product.getByRole('button', { name: 'Add to cart' }).click()
 ```
 
+### Don't anchor a regex against an accessible name
+
+A regex `name` is tested against the computed **accessible name**, not the string you read out of the
+DOM, and it is not normalised the way a string `name` is. An anchored pattern can therefore match
+nothing while the text looks exactly right:
+
+```typescript
+page.getByRole('button', { name: /berlin,/i })      // finds 5 buttons
+page.getByRole('button', { name: /^berlin,\s/i })   // finds none — same page, same moment
+```
+
+Keep the pattern loose and disambiguate another way, or use a `data-testid`. **Before believing a
+locator's `element(s) not found`, prove the element is findable by some other locator** — print what
+actually matches rather than reasoning about it. The cost is not the failed run, it's the wrong
+conclusion: repeated red runs read as "the app is still broken" and can bury a fix that already works.
+
+```typescript
+for (const button of await page.getByRole('button').all()) {
+  console.log(JSON.stringify(await button.textContent()))
+}
+```
+
 ## Auto-waiting and actionability
 
 `click`, `fill`, `check`, `hover`, `dblclick`, `selectOption`, etc. auto-wait for the element to be **attached, visible, stable, enabled, and able to receive events**. Don't pre-check.
@@ -203,11 +225,26 @@ await spinner.waitFor({ state: 'detached' }) // wait for it to disappear
 |------|-----|
 | Assert state (and retry until it's true) | `expect(locator).toBe*()` |
 | Wait without asserting | `locator.waitFor({ state })` |
-| Wait for navigation to a URL | `page.waitForURL(urlOrRegex)` |
+| Wait for navigation to a URL | `page.waitForURL(urlOrRegex)` — only for a real navigation |
+| Assert a URL that changed client-side | `expect(page).toHaveURL(urlOrRegex)` |
 | Wait for a response | `page.waitForResponse(predicate)` (register BEFORE the trigger) |
 | Wait for a request | `page.waitForRequest(predicate)` |
 | Wait for a function to return truthy in the page | `page.waitForFunction(fn)` |
 | Settle a specific amount of time | Never. Find a real signal. |
+
+### `waitForURL` hangs on a client-side search-param write
+
+`page.waitForURL()` waits for a **navigation event**. A filter, sort or pagination control that writes
+through `setSearchParams(…, { replace: true })` — or any history replace — fires no navigation and no
+`load`, so the wait can never be satisfied no matter how correct the app is. It times out at the full
+30s *while the URL has already changed*, and reads as a broken feature.
+
+```typescript
+await page.waitForURL(/show=diaryEntry/)          // ❌ hangs, then fails a passing app
+await expect(page).toHaveURL(/show=diaryEntry/)   // ✅ polls the URL itself
+```
+
+The tell is the trailing `waiting for navigation until "load"` in the timeout message.
 
 ### The subscribe-before-trigger pattern
 

@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.2.0
 applies: react-router@8
 target: rules
 domain: routing
@@ -151,6 +151,33 @@ When using `useRouteLoaderData`, use the route ID (NOT the path):
 // Use the ID, NOT the path
 const data = useRouteLoaderData("journey")      // ✅ CORRECT
 const data = useRouteLoaderData("journeys/:id") // ❌ WRONG
+```
+
+**A wrong id fails as `undefined`, not as an error.** `useRouteLoaderData(id)` looks the id up in
+`loaderData` and returns `undefined` on a miss — it does not throw and does not warn. Because the id
+is an arbitrary string argument, typegen cannot check it, and the common
+`const { a, b } = useRouteLoaderData(...) || {}` idiom turns the miss into empty values that flow
+straight into a legitimate-looking not-found branch. A public route can answer "not found" for every
+valid input for months with no console error, no failed request, and no type error.
+
+**Adding an explicit `id` to a layout replaces the file-derived one**, orphaning every child still
+calling with the file path:
+
+```ts
+layout('./routes/shared/journey/_layout.tsx', { id: 'sharedJourneyLoader' }, [ … ])
+```
+
+```tsx
+useRouteLoaderData<Data>('routes/shared/journey/_layout')  // ❌ matches nothing, silently undefined
+useRouteLoaderData<Data>('sharedJourneyLoader')            // ✅
+```
+
+Audit the whole app in one pass after any route restructure — every id used must appear in `routes.ts`
+or be `root`:
+
+```bash
+grep -rho "useRouteLoaderData[^(]*(\s*'[^']*'" app/ | grep -o "'[^']*'" | sort -u
+grep -o "id: '[^']*'" app/routes.ts | sort -u
 ```
 
 ## Known Issues

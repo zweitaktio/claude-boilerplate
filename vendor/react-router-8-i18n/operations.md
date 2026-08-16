@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.2.0
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -277,6 +277,56 @@ jq '.nav.newItem = "Neuer Eintrag"' \
 jq '.nav += {"newItem": "Neuer Eintrag", "settings": "Einstellungen"}' \
   app/locales/de/common.json > /tmp/common.json && mv /tmp/common.json app/locales/de/common.json
 ```
+
+### The first locale in the array gets source-language text, not a blank
+
+i18next-cli treats **`locales[0]` as the primary locale** and writes the code's `t()` default straight
+into it, bypassing the `defaultValue` function that blanks every other locale. If the array is sorted
+alphabetically and the source language is not first — `['de','en','es','fr','it']` with
+`fallbackLng: 'en'` — then `de` receives English while `es`/`fr`/`it` receive `""`.
+
+The consequence is that **the primary locale is the one with no untranslated marker**: source text in
+a `de` file is indistinguishable from a deliberate translation that happens to match, and a
+`select(getpath($p)=="")` blank audit reports nothing for it. Detect by diffing against the source
+locale instead:
+
+```bash
+jq -r --slurpfile en app/locales/en/<ns>.json \
+  'paths(scalars) as $p | select(getpath($p) == ($en[0] | getpath($p))) | $p|join(".")' \
+  app/locales/de/<ns>.json
+```
+
+Expect a few legitimate hits (words identical across the two languages) — read the list, never pipe it
+into a fix. **Audit every namespace, not the ones you edited**: an audit scoped to where work happens
+can never find a namespace nobody works in.
+
+Either put the source language first in `locales`, or keep the audit above in the loop. Nothing checks
+that `locales[0]` and `fallbackLng` agree.
+
+### Prove dynamic `t()` call sites are covered before `removeUnusedKeys: true`
+
+The extractor only sees **static** `t('literal')` calls. Any key reached through a template literal or
+a variable looks unused and is deleted. Before trusting the prune:
+
+```bash
+git grep -nE "[ (,{=>?:&|]t\(\`|[ (,{=>?:&|]t\([A-Za-z_]" \
+  -- 'app/**/*.{ts,tsx}' ':!app/locales' ':!app/types'
+```
+
+Every hit must either be covered by a `preservePatterns` glob, or backed by a dummy extraction file
+supplying source-language defaults. Everything else is a static literal the extractor re-adds, so
+anything pruned is provably dead. Then regenerate types and run the typecheck — `tsc` deriving from
+the pruned source JSON is the empirical proof that no live key was removed.
+
+Breadcrumbs (key from a route `handle` export) and help topics (key a runtime prop) are the two
+families that are intentionally dynamic. Keep them in `preservePatterns`; do not "fix" them into
+static lookups.
+
+**Run the formatter before committing generated `resources.d.ts`.** i18next-cli emits quoted keys,
+double quotes and trailing commas, so a fresh types run shows a large diff that vanishes once
+prettier runs. If you stage at commit time (`git commit --only`) and a pre-commit hook reformats
+*after* staging, the commit carries the unformatted version and the file is dirty again the moment
+the commit finishes — which reads to peers as an unknown-owner artifact.
 
 ## Known Issues
 

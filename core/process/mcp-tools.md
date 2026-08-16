@@ -1,5 +1,5 @@
 ---
-version: 5.0.0
+version: 5.1.0
 applies: Always
 target: rules
 priority: high
@@ -63,7 +63,17 @@ If docs look wrong or outdated, flag it — do not blindly trust.
 
 ---
 
-## Playwright MCP (browser automation)
+## Browser automation — which tool
 
-Screenshots use JPEG format (enforced by hook for context efficiency).
+| Task | Tool |
+|------|------|
+| Driving or verifying the running UI by hand | **Claude in Chrome** — invoke the `claude-in-chrome` skill first, then batch the `mcp__claude-in-chrome__*` tools you need into **one** `ToolSearch` call |
+| Scripted E2E specs, and rescuing a wedged Chrome tab | **Playwright MCP** |
+
+Claude in Chrome is the default for interactive verification; Playwright MCP is the fallback and the
+tool for committed specs. Full driving rules and the traps that cost the most time — never drive by
+coordinates, ref clicks that dispatch nothing, the native value setter, measuring after every action —
+are in `core/browser-verification`, which auto-loads on component and route files.
+
+Playwright MCP screenshots use JPEG format (enforced by hook for context efficiency).
 

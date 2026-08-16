@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: vitest
 target: rules
 paths:
@@ -32,6 +32,31 @@ test("calculateTotal sums items", () => {
   expect(calculateTotal([{ price: 10 }, { price: 20 }])).toBe(30)
 })
 ```
+
+## Test the registration, not only the function
+
+A config-registered handler is two things: a function, and a line registering it. Tests import the
+function directly, so **deleting the registration breaks nothing they can see** — the function still
+passes every test it has; it simply never runs.
+
+```typescript
+import { Users } from '@/collections/Users/users'
+import { stampLastLogin } from './stamp-last-login'
+
+test('users runs stampLastLogin after every login', () => {
+  expect(Users.hooks?.afterLogin).toContain(stampLastLogin)
+})
+```
+
+`toContain` cannot pass vacuously: an absent `afterLogin` makes the matcher throw, and an array without
+the handler fails. Preserve that — an `.every()` over a possibly-empty array would pass on a removed
+guard (see `core/code-change-gates` § FALSIFY).
+
+**Worth the line when silence is the failure mode.** A bookkeeping hook that stamps a timestamp leaves
+the column null when unregistered: nothing errors, no log appears, and a downstream sweep then acts on
+data that was never written. A handler whose absence throws or visibly breaks a flow does not need
+this. Same applies to any registration a test can reach and a reader cannot — `access`, `endpoints`,
+`jobs.tasks`, route tables.
 
 ## What NOT to Test
 

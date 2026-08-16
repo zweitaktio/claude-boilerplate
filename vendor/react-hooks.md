@@ -1,5 +1,5 @@
 ---
-version: 1.0.2
+version: 1.1.0
 applies: react
 target: rules
 domain: frontend
@@ -177,6 +177,36 @@ useEffect(() => {
   return () => window.removeEventListener('resize', handler)
 }, [])
 ```
+
+**A debounced writer built once freezes everything it closes over.** Creating it in a `useState`
+initialiser (or a `useMemo` with `[]`) captures mount-time values for the life of the component:
+
+```tsx
+const [debouncedUpdate] = useState(() =>
+  debounce((v: string) => updateParams({ keyword: v }), 300),   // ❌ updateParams frozen at mount
+)
+```
+
+With URL state this shows up as a filter chosen a moment ago vanishing when you type in the search
+box, while filters already present at page load survive — that asymmetry is the tell, because the
+stale closure writes the mount-time query string back over everything set since.
+
+**A functional updater is not sufficient here.** React Router's `setSearchParams` is itself recreated
+per render and carries *that render's* params into the callback, so
+`setSearchParams(prev => merge(prev, updates), { replace: true })` still receives mount-time `prev`
+when reached through a frozen closure. Route the call through a ref — and keep the functional form as
+well, since it is correct on its own terms:
+
+```tsx
+const updateParamsRef = useRef(updateParams)
+useEffect(() => { updateParamsRef.current = updateParams })
+
+const [debouncedUpdate] = useState(() =>
+  debounce((v: string) => updateParamsRef.current({ keyword: v }), 300),   // ✅
+)
+```
+
+Extracting the merge into a pure reducer makes this testable — a hook needs a DOM, a reducer does not.
 
 ### useLayoutEffect vs useEffect
 - `useEffect` — runs after paint, non-blocking

@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 paths:
@@ -56,6 +56,8 @@ Before a behavior-changing edit, write:
 ```
 
 Two mechanisms do the work: the agent can't fill `<Z>` without opening the spec (the skipped step becomes impossible to skip silently), and the literal token is greppable so a hook can enforce its presence. Reach for a forced artifact before adding another `CRITICAL` — it's the step that makes an otherwise-unenforceable rule hook-enforceable.
+
+Design the last slot so it cannot be filled from what the agent already believes. `FALSIFY: claim <X>; it would have failed if <Y>; that outcome was reachable because <Z>` (`core/code-change-gates`) is the sharpest version: `<Z>` asks for evidence the check *could* have come out differently, which is unanswerable without actually looking.
 
 ## Common Mistakes
 

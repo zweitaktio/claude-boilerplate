@@ -1,4 +1,4 @@
-// version: 3.2.0
+// version: 3.3.0
 // Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files.
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
@@ -85,7 +85,7 @@ if (!forcedReasons.has('review')) {
           `- SSR/hydration: if React components changed, verify no server/client mismatches\n` +
           `- Security: injection vectors, exposed secrets, auth bypasses\n` +
           `- Pattern consistency: does this follow existing patterns? Are there existing utilities that could replace new code?\n` +
-          `- Behavior-change gates: every behavior change should carry an INTENT check (spec/test/code agree); every fixed defect a TWINS search for other sites.\n\n` +
+          `- Behavior-change gates: every behavior change should carry an INTENT check (spec/test/code agree); every fixed defect a TWINS search for other sites; every claimed pass a FALSIFY line naming what would have failed it.\n\n` +
           `Report findings inline — no separate document.`
       } else {
         review =
@@ -97,7 +97,7 @@ if (!forcedReasons.has('review')) {
           `3. Architecture — pattern consistency, reuse opportunities, unnecessary abstractions\n` +
           `4. Regression — signature compatibility at all call sites, removed/renamed exports\n` +
           `5. Tests — run unit and e2e suites, report failures\n` +
-          `6. Behavior-change gates — every behavior change carries an INTENT check (spec/test/code agree); every fixed defect carries a TWINS search for other sites\n` +
+          `6. Behavior-change gates — every behavior change carries an INTENT check (spec/test/code agree); every fixed defect a TWINS search for other sites; every claimed pass a FALSIFY line naming what would have failed it, and "unverifiable" where that cannot be filled\n` +
           `7. Summary — findings by severity (CRITICAL > HIGH > MEDIUM), test results, commit readiness\n\n` +
           `Report findings by severity. State whether the change is safe to commit.`
       }

@@ -1,5 +1,5 @@
 ---
-version: 1.5.2
+version: 1.6.0
 applies: Always
 target: rules
 paths:
@@ -225,7 +225,9 @@ Before a behavior-changing edit, write:
 `INTENT: code does <X>; the check expects <Y>; the spec says <Z>`
 ```
 
-Two things happen. The agent cannot fill `<Z>` without opening the spec, so the skipped step becomes impossible to skip silently. And the literal token is greppable, so a hook can check for its presence. This is the rung that turns an unenforceable rule into a hook-enforceable one — reach for it before adding another `CRITICAL`. (Live examples: the `INTENT:`/`TWINS:` gates in `core/code-change-gates`, and `AUTH:` in `core/engineering-discipline`.)
+Two things happen. The agent cannot fill `<Z>` without opening the spec, so the skipped step becomes impossible to skip silently. And the literal token is greppable, so a hook can check for its presence. This is the rung that turns an unenforceable rule into a hook-enforceable one — reach for it before adding another `CRITICAL`. (Live examples: the `INTENT:`/`TWINS:`/`FALSIFY:` gates in `core/code-change-gates`, and `AUTH:` in `core/engineering-discipline`.)
+
+The strongest slot is the one the agent cannot fill from what it already believes. `FALSIFY: … that outcome was reachable because <Z>` works for exactly that reason — `<Z>` demands evidence the check *could* have failed, which is unanswerable without looking. When designing a forced artifact, put that slot last and make it the one that hurts.
 
 ### Emphasis keywords
 
