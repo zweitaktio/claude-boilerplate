@@ -431,7 +431,11 @@ In addition to per-template version comparison, the skill records the boilerplat
 10. **Scan for backport candidates** — knowledge worth contributing back to the skill. `core/process/backporting`
     tells the working agent to flag generalizable findings with `backport: true` frontmatter. Find them:
     ```bash
-    grep -rl "backport: true" /path/to/project/.claude/rules/project
+    # Candidates are pages flagged for backport that have NOT already been carried upstream.
+    # `backported:` records the skill sha a page landed in — without excluding it, every past
+    # backport re-proposes forever and the scan stops being a work list.
+    grep -rl "backport: true" /path/to/project/.claude/rules/project \
+      | xargs grep -L "^backported:"
     ```
     For each, and for any project pitfall whose root cause is in a library (not project business logic),
     present a candidate:
@@ -444,6 +448,11 @@ In addition to per-template version comparison, the skill records the boilerplat
     ```
     Also check `.claude/rules/` for project rule files outside `core/`/`vendor/`/`project/` that encode
     generalizable patterns — candidates for new core templates.
+
+    **After a candidate lands upstream, stamp its page** with the skill commit that carried it —
+    `backported: <sha>` in the page's frontmatter, alongside the existing `backport: true`. Do this in
+    the same pass that lands it; a page stamped without the content upstream is worse than an unstamped
+    one, because the next scan skips it silently.
 
     If the user approves:
     1. Read the skill source: `~/.claude/skills/webstack/vendor/{file}.md` or `core/{subdir}/{file}.md`
