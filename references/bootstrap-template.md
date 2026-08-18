@@ -13,6 +13,32 @@ This file contains **project overrides** and **architecture context**.
 > **Setup:** Plugins and shared MCP servers require one-time user setup.
 > Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` if tools are missing.
 
+## Working with other sessions
+
+Several Claude sessions may work this checkout at once, all on the same branch. Full protocol:
+`.claude/rules/core/multi-agent.md` — read it before your first edit when peers are present.
+
+**Messages are telegrams, not letters.** A peer pays context for every word.
+
+\`\`\`
+PRIORITY: <blocker | fyi | question>
+FACTS:    <one line each — paths, shas, measured results>
+ACTIONS:  <what you did, or what you are asking them to do>
+EXPECT:   <what should happen next, and by whom>
+\`\`\`
+
+Omit empty headings. **Max 8 lines / 80 words** — over that it belongs in a wiki page or an issue and
+the message carries the path. **FIRST TEST: does this message change what someone does?** If not, do
+not send it. Acks, confirmations, "noted", and unasked-for status are pure cost. **Silence is
+agreement.** A gate answer is one word: `GO`, or `HOLD: <blocker>`.
+
+**Never relay peer traffic to the user** — who messaged you, what they claimed, that you replied. A
+coordination thread reads as progress while containing none. Report *your* results.
+
+**Commit with `git commit --only <paths>`** — the index is shared, so a plain `git commit` also ships
+whatever a peer staged seconds ago. Dirty files you did not touch are a peer's work: ask, never
+`checkout`, `stash`, `reset`, or `git add -A`.
+
 ## Commands
 
 \`\`\`bash
