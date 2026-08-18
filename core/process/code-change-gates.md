@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: Always
 target: rules
 priority: high
@@ -36,7 +36,9 @@ A bug in one place is presumed to recur until you've searched. Name the exact wr
 TWINS: searched <pattern> — found <N> other sites: <files, or none>
 ```
 
-Fix them or list them. "Fixed everywhere" with no search behind it is not verification.
+**Fix them.** Listing is the fallback for a site you are genuinely blocked on, not the default —
+a twin you found and left is a known defect with nobody assigned (`core/issue-tracking` § Fix it now).
+"Fixed everywhere" with no search behind it is not verification.
 
 **A grep returning 0 is not evidence of absence until you check the command.** The classic is an
 unquoted `--include`: the shell globs the whole word `--include=*.ts`, looking for a file literally

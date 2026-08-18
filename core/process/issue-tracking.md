@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
@@ -13,13 +13,37 @@ This governs the **external tracker** (GitHub Issues), not the project knowledge
 
 ## When to create an issue
 
-Open a tracking issue once the work crosses the **Complex** threshold in `core/engineering-discipline` § Task Assessment — it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex and open one. Also open one for any deferred work that outlives the current session (a bug you won't fix now, tech debt, a follow-up surfaced mid-task).
+Open a tracking issue once the work crosses the **Complex** threshold in `core/engineering-discipline` § Task Assessment — it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex and open one. Also open one for standalone work that outlives the current session — tech debt, or a request the user parks for later. **Not** for something you ran into while resolving another issue: see Fix it now.
 
 Trivial and Simple tasks don't need an issue unless you're deferring them — do the work and verify.
 
 - **Complex work is decomposed into sub-issues.** The parent states the outcome; each child is one independently verifiable step. Together the issue and its children are the **todo list** you work through and the **verification source** you check against — a live working record, not a write-once ticket. Check items off as you complete and verify them.
 - Search before creating: `gh issue list --search "<keywords>" --state all`. If it exists, comment on it instead of opening a duplicate.
 - One issue = one outcome. If the description needs "and" to join two independent deliverables, it's two issues (see Splitting).
+
+## Fix it now — don't file what you found on the way
+
+**A defect you discover while resolving an issue gets fixed in that same change, not filed as a new
+issue.** Filing it looks like diligence and is usually the opposite: you are the one person who has
+the repro in front of you, the context loaded, and the files already open. A new issue throws all of
+that away and buys a second investigation later, by someone with less information — often you, from
+scratch.
+
+This is the `TWINS` gate's other half (`core/code-change-gates`): when the search turns up other
+sites, **fix them**. Listing them is the fallback, not the goal.
+
+- Fix it, verify it, and note it in the closing comment of the issue you were already on, so the
+  extra change is visible to review rather than silent.
+- **If it changes what the issue is about, say so rather than quietly widening.** A fix that alters
+  the DoD, touches a package the issue's Scope named as Out, or is large enough to make the change
+  unreviewable is a scope change: tell the user, in one line, and let them call it.
+- **Only a genuinely blocked fix stays unfixed** — it needs a decision, a credential, or an upstream
+  release you do not have. Then it goes in a **comment on the current issue** naming the blocker, and
+  you tell the user. Still not a new issue; a new issue is how a known, reproducible defect becomes
+  nobody's.
+
+The one thing that must never happen: closing an issue while a defect you found during it is open
+somewhere as a ticket nobody is assigned.
 
 ## Writing the issue
 
@@ -34,7 +58,7 @@ Title is imperative and specific — `Checkout fails when cart exceeds 20 items`
 - [ ] No regression in <existing behavior>
 ```
 
-The Definition of Done **is** the acceptance criteria from `core/requirements-engineering` § Acceptance Criteria — binary pass/fail, plus how to verify, plus regression scope. **Every issue requires a DoD — no exceptions.** It is the verification barrier: the work is not done and the issue does not close until every DoD item is checked and verified (see Verifying and closing). Add it before starting work. For user-facing or multi-file work, gather requirements first (same rule). An investigation issue (unknown root cause) still needs one — its DoD is *root cause identified + reproduction documented + follow-up issue(s) filed*, time-boxed so it doesn't run open-ended.
+The Definition of Done **is** the acceptance criteria from `core/requirements-engineering` § Acceptance Criteria — binary pass/fail, plus how to verify, plus regression scope. **Every issue requires a DoD — no exceptions.** It is the verification barrier: the work is not done and the issue does not close until every DoD item is checked and verified (see Verifying and closing). Add it before starting work. For user-facing or multi-file work, gather requirements first (same rule). An investigation issue (unknown root cause) still needs one — its DoD is *root cause identified + reproduction documented + the fix landed or the blocker named*, time-boxed so it doesn't run open-ended.
 
 ## Labels
 
