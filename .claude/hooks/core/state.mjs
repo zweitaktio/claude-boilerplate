@@ -9,7 +9,11 @@ import {
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
-const sessionId = process.env.CLAUDE_SESSION_ID ?? process.ppid ?? 'unknown'
+// CLAUDE_CODE_SESSION_ID is the variable Claude Code actually sets; CLAUDE_SESSION_ID never
+// resolved, so every hook silently fell back to ppid. That works only because run.sh execs,
+// making ppid the stable claude process — keep it as the last resort, not the primary key.
+const sessionId =
+  process.env.CLAUDE_CODE_SESSION_ID ?? process.env.CLAUDE_SESSION_ID ?? process.ppid ?? 'unknown'
 
 export function statePath(name) {
   return join(tmpdir(), `claude-${name}-${sessionId}`)

@@ -1,5 +1,5 @@
-// version: 2.1.0
-// Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent protocol at session start.
+// version: 2.2.0
+// Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { execSync } from 'child_process'
@@ -132,6 +132,8 @@ try {
         `- Dirty files you did not touch are a peer's work. Ask. Never \`checkout\`, \`stash\`, \`reset\`, or \`git add -A\`.\n` +
         `- If you do sweep in a peer's files, say so and leave it — do not reset or rebase shared history.\n` +
         `- Durable findings go to a wiki page, not a message; chat does not survive the session.\n` +
+        `- Messages are telegrams: PRIORITY / FACTS / ACTIONS / EXPECT, max 8 lines. If it does not change what someone does, do not send it — silence is agreement.\n` +
+        `- Do not relay peer traffic to the user. Report your own results; their messages are not your findings.\n` +
         (deployed
           ? `\n**Read \`${protocol}\` now** — role claims, the commit gate, and the message format, before your first edit.`
           : `\n\`${protocol}\` is not deployed here — run \`/webstack update\` to get the full protocol.`)

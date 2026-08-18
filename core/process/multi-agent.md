@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.1.0
 applies: Always
 target: rules
 priority: high
@@ -225,6 +225,14 @@ message carries the path. "This one is important" is why it needs a durable home
   message, and never tell them why their own finding matters.
 
 **Reports to the user: same tests, ~6 lines.** Shas, `file:line`, measured numbers, open decisions.
+
+**Never relay peer traffic to the user.** Do not recount who messaged you, what they claimed, how a
+disagreement was resolved, or that you replied — the user did not ask for a transcript, and a
+coordination thread reads as progress while containing none. Report **your own** results: what you
+changed, what you measured, what is still open. A peer's message is an input to your work, not a
+finding. Two narrow exceptions: a fact from a peer that changes what the *user* must decide, stated as
+the fact alone rather than as its provenance, and a coordination problem you cannot resolve and need
+them to settle.
 
 **Banned outright, because these are what actually inflate a report:** self-assessment ("a fair
 correction of my behaviour"), narrating a rule back after following it, explaining why you will now

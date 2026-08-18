@@ -81,6 +81,16 @@
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh rules-guard"
           }
         ]
+      },
+      {
+        "matcher": "SendMessage",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh peer-message-guard",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [

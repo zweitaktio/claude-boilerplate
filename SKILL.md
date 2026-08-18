@@ -213,12 +213,13 @@ one-sentence description, which is where the Purpose column below comes from.
 | i18n-extract-reminder | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
 | migration-guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
 | payload-guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
+| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse: injects the telegram format on every SendMessage, and flags one over the cap. |
 | prompt-context | `prompt-context.mjs` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
 | requirements-gate | `requirements-gate.mjs` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
 | research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
 | screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
-| session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent protocol at session start. |
+| session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start. |
 | subagent-review | `subagent-review.mjs` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
 | test-companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
 | wiki-discipline | `wiki-discipline.ts` | PostToolUse / `Edit\|Write` | Reminds you to record durable knowledge as a path-scoped wiki page after several code edits. |
