@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 priority: high
@@ -17,6 +17,11 @@ paths:
 -->
 
 # Working Alongside Other Sessions
+
+**Coordination is not report material.** Never tell the user who messaged you, what a peer claimed,
+that you announced or replied, or how a disagreement resolved. Report what *you* changed, measured, or
+left open. A coordination thread reads as progress while containing none. (Full rule and its one
+exception: § Reports to the user.)
 
 Several Claude sessions are on this checkout at once, all on the same branch. `core/tooling` forbids
 worktrees, branches and `git stash`, so the *only* thing keeping two sessions from clobbering each

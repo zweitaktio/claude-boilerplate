@@ -1,12 +1,23 @@
-// version: 1.0.0
-// Keeps peer messages terse: injects the telegram format on every SendMessage, and flags one over the cap.
+// version: 1.1.0
+// Keeps peer messages terse, and blocks relaying the exchange to the user afterwards.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { read, write } from './core/state.mjs'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input, hook_event_name } = JSON.parse(await readStdin())
 
 if (tool_name !== 'SendMessage') pass()
+
+// PostToolUse fires immediately after a peer exchange — the exact moment the report gets
+// written, and the moment the temptation to recount the exchange is highest. This rule is
+// stated in core/multi-agent, the SessionStart digest and CLAUDE.md, and was still broken in
+// nearly every report; position and emphasis had already failed, so it needs to arrive here.
+if (hook_event_name === 'PostToolUse') {
+  inject(
+    'PostToolUse',
+    `Peer exchange done — it is not report material. Do not tell the user who you messaged, what they claimed, that you announced or replied, or how a disagreement resolved. Report only what YOU changed, measured, or left open. If a peer's fact changes a decision the user must make, state the fact alone, never its provenance. (core/multi-agent § Reports to the user)`,
+  )
+}
 
 const MAX_LINES = 8
 const MAX_WORDS = 80

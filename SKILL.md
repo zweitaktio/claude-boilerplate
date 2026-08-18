@@ -213,7 +213,8 @@ one-sentence description, which is where the Purpose column below comes from.
 | i18n-extract-reminder | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
 | migration-guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
 | payload-guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
-| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse: injects the telegram format on every SendMessage, and flags one over the cap. |
+| peer-message-guard | `peer-message-guard.mjs` | PostToolUse / `SendMessage` | Keeps peer messages terse, and blocks relaying the exchange to the user afterwards. |
+| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse, and blocks relaying the exchange to the user afterwards. |
 | prompt-context | `prompt-context.mjs` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
 | requirements-gate | `requirements-gate.mjs` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
 | research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
