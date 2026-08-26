@@ -1,8 +1,8 @@
 ---
-version: 1.9.0
+version: 1.10.0
 applies: Always
 target: rules
-tags: [code-review, review, security, quality, validation, smells, comments, best-practices]
+tags: [code-review, review, security, quality, validation, smells, comments, ste, best-practices]
 ---
 
 # Code Quality Standards
@@ -60,12 +60,52 @@ Don't write these in the first place — they're authoring rules, not just revie
 
 ## Comments
 
-Write the code to read on its own first; add a comment only where the code genuinely can't explain itself. These are authoring rules — apply them as you write, not just at review.
+Comments are wanted. Write them only where the code cannot explain itself. Write the code to read on
+its own first, then comment what remains hidden. These are authoring rules — apply them as you write,
+not just at review.
+
+**The test is visibility, not importance.** Read the function as a stranger would. If the purpose,
+the constraint, or the reason is already visible in the names, the types, and the control flow, a
+comment adds noise. If it is not visible from the code at all, a comment is required.
+
+```ts
+// ❌ The code already says this — the comment restates the mechanism
+// increment the retry counter
+retries += 1
+
+// ✅ Not visible from the code — the reason lives outside the file
+// The gateway rejects a fourth attempt for 60 seconds, so a retry past 3 makes the outage longer.
+if (retries >= 3) return fail(err)
+```
 
 - **Comment the why, not the what.** Restating the mechanism (`// increment the counter`) rots and adds noise. Explain what the code can't: why this approach over the obvious one, a non-obvious constraint, an invariant callers must uphold.
 - **Anchor the non-obvious to a source.** Workarounds link the issue/PR; magic values cite where they come from. A claim in a comment that nobody can verify is worse than no comment.
 - **Don't restate types or narrate lines.** `// returns a string` duplicates the signature; line-by-line narration duplicates the code. Both drift out of sync with what they describe.
 - **A `TODO`/`FIXME` carries an owner or issue link** — a bare one is invisible forever. (Commented-out code: delete it — see Dead weight above.)
+
+### Comment language and length
+
+A comment is technical documentation. `core/process/interaction.md` § Language governs it.
+
+- **Write Simplified Technical English.** Use a complete sentence, with a subject, a verb, and the
+  articles. Use the active voice and a simple tense. Never use a metaphor, an idiom, or a hedge.
+- **Maximum 25 words per sentence.** Maximum 3 sentences per comment. A longer explanation belongs in
+  a wiki page, and the comment carries the path.
+- **One topic per comment.** Two unrelated facts need two comments, each above the line it concerns.
+- Identifiers, paths, and quoted output stay verbatim inside the sentence.
+
+```ts
+// ❌ Fragment, no article, no verb — and it narrates the line
+// retry cap - gateway limit
+
+// ❌ Hedge, metaphor, and 34 words
+// This is basically a guard so the retry storm doesn't snowball into taking down the gateway,
+// which seems to happen when a few callers pile on at the same moment.
+
+// ✅ Two STE sentences, 24 words, one topic
+// The gateway rejects a fourth attempt for 60 seconds. A retry past 3 extends the outage instead
+// of recovering from it.
+```
 
 ## Domain Best Practices
 

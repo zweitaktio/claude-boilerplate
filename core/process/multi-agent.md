@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.3.0
 applies: Always
 target: rules
 priority: high
@@ -201,14 +201,25 @@ identifies the owner; a committed file that now fails belongs to whoever changed
 announce the paths to every session, commit, and report that you took an unslotted commit. A
 coordinator that stops responding must never freeze the repo.
 
-## Message format — terse, no prose
+## Message format — terse, in Simplified Technical English
 
 **A peer pays context for every word you send. Write telegrams, not letters.** No preamble, no
 acknowledgement, no rapport, no restating what they said. Facts and actions only.
 
-**Peer messages are the one exemption from Simplified Technical English.** `core/process/interaction.md`
-§ Language requires complete sentences and articles for answers and documents. It does not apply here.
-Fragments, deleted articles, and arrow chains are correct in a peer message.
+**Simplified Technical English applies here too.** The caps below and `core/process/interaction.md`
+§ Language both hold. The caps govern how much you send. STE governs how you write each sentence.
+Write every heading value as a complete sentence, with a subject, a verb, and the articles. A fragment
+such as `root.tsx:42 typecheck fail` is a violation.
+
+**Exempt tokens — a closed list.** Everything not in this table is a complete sentence.
+
+| Exempt | Example |
+|--------|---------|
+| The four headings | `PRIORITY:`, `FACTS:`, `ACTIONS:`, `EXPECT:` |
+| The `PRIORITY` value | `blocker`, `fyi`, `question` |
+| The gate answers | `GO`, `HOLD: <blocker>, owned by <session>` |
+| The verification categories | `ran-on-dev`, `tests-only`, `inspection-only` |
+| Identifiers, verbatim | file paths, `file:line`, shas, issue numbers, measured numbers |
 
 Use these four headings, omitting any that is empty:
 
@@ -219,6 +230,23 @@ ACTIONS:  <what you did, or what you are asking them to do>
 EXPECT:   <what should happen next, and by whom>
 ```
 
+```
+# Bad — fragments, no verbs, no articles (16 words)
+PRIORITY: blocker
+FACTS: root.tsx:42 typecheck fail, blocks build
+ACTIONS: reverted loader change
+EXPECT: you rerun check
+
+# Good — complete STE sentences, same facts (35 words)
+PRIORITY: blocker
+FACTS: The file frontend/app/root.tsx fails typecheck at line 42. The failure blocks the build.
+ACTIONS: I reverted the loader change in that file.
+EXPECT: Run `yarn check` and confirm that the build is green.
+```
+
+STE costs about two words per fact. A four-heading message stays near 35 words, so the 80-word cap
+below still holds. If a message needs more than 80 words in STE, the content needs a durable home.
+
 **FIRST TEST: does this message change what someone does?** If not, do not send it. Acks,
 confirmations, "noted", relays of anything already in an issue or a wiki page, and status nobody asked
 for are pure cost. **Silence is agreement.** Most messages should not exist.
@@ -228,8 +256,11 @@ message carries the path. "This one is important" is why it needs a durable home
 
 - **A gate answer is one word: `GO`.** Or `HOLD: <blocker>, owned by <session>`. **Attach nothing** —
   no advice, no caveats, no related findings. If it is worth saying, it is worth an issue.
-- One line per fact. Numbers and paths, never adjectives: `900×600 stored as 900×600`.
-- Verification category or it does not count: **ran-on-dev**, **tests-only**, **inspection-only**.
+- **One fact per sentence.** Give the numbers and the paths. Never give an adjective. Write "The
+  store holds the image at 900×600." Never write "the dimensions look correct".
+- **Name the verification category, or the fact does not count.** The categories are `ran-on-dev`,
+  `tests-only`, and `inspection-only`. Each one is an exempt token inside a sentence: "I verified
+  this ran-on-dev."
 - **No praise, no endorsement, no process commentary, no teaching.** Never re-explain a peer's
   message, and never tell them why their own finding matters.
 

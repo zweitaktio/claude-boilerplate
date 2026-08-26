@@ -40,19 +40,19 @@ hand. Regenerate after adding or rescoping a template:
 <!-- generated:budget -->
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
-| `process/code-review` | 100 | 6195 | code-review, review, security, quality, validation, smells, comments, best-practices |
+| `process/code-review` | 140 | 7994 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
 | `process/engineering-discipline` | 243 | 14979 | engineering, process, planning, verification, discipline, workflow |
-| `process/interaction` | 115 | 5793 | interaction, language, ste, asd-ste100, questions, wizard, density |
+| `process/interaction` | 119 | 6111 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 108 | 8510 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
 | `process/mcp-tools` | 79 | 3819 | mcp, context7, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 214 | 12025 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1106** | **62421** (~60 KB) | per-turn baseline |
+| **Total** | **1150** | **64538** (~63 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 41941 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 44058 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -202,7 +202,7 @@ one-sentence description, which is where the Purpose column below comes from.
 |------|------|-----------------|---------|
 | auto-check | `auto-check.mjs` | PostToolUse / `Edit\|Write` | Runs `yarn check` after a code edit, resolving the nearest workspace in a monorepo. |
 | bash-guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git. |
-| code-guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat); tracks session-edited files for completion-gate. |
+| code-guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate. |
 | compact-preservation | `compact-preservation.mjs` | PreCompact / `—` | Tells the compaction summary what to keep: requirements, decisions and rationale, risks. |
 | completion-gate | `completion-gate.ts` | Stop / `—` | Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files. |
 | context7-guard | `context7-guard.mjs` | PostToolUse / `mcp__context7__resolve-library-id` | Enforces resolve-library-id before query-docs, so docs are fetched for a real library ID. |
@@ -213,8 +213,8 @@ one-sentence description, which is where the Purpose column below comes from.
 | i18n-extract-reminder | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
 | migration-guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
 | payload-guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
-| peer-message-guard | `peer-message-guard.mjs` | PostToolUse / `SendMessage` | Keeps peer messages terse, and blocks relaying the exchange to the user afterwards. |
-| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse, and blocks relaying the exchange to the user afterwards. |
+| peer-message-guard | `peer-message-guard.mjs` | PostToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
+| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
 | prompt-context | `prompt-context.mjs` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
 | requirements-gate | `requirements-gate.mjs` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
 | research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
@@ -564,7 +564,7 @@ On `/webstack init`, if no CLAUDE.md exists: create it from the template. If it 
 
 ### Update: CLAUDE.md Drift Checks
 
-On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C6).
+On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C7).
 
 Key rules:
 - The drift report is informational, not blocking — always continue with template updates

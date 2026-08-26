@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.3.0
 applies: Always
 target: rules
 priority: high
@@ -61,10 +61,14 @@ the error state of the route loader boundary
 **Applies to:**
 - Answers and explanations to the user.
 - Rule files, wiki pages, plans, requirement documents, issue bodies, and pull request bodies.
+- Peer messages between sessions. The brevity caps hold as well, and STE governs each sentence inside
+  the telegram frame. `core/process/multi-agent.md` § Message format lists the exempt tokens.
+- Code comments. A comment is technical documentation. Write it only where the code cannot explain
+  itself, then hold it to 25 words per sentence and 3 sentences per comment — see
+  `core/process/code-review` § Comment language and length.
 
 **Exempt:**
-- Peer messages between sessions. Those are telegrams by design — see `core/process/multi-agent.md` § Message format.
-- Commit subject lines, code identifiers, code samples, file paths, and quoted tool output.
+- Commit subject lines, the code itself, identifiers, file paths, and quoted tool output.
 
 **Honest label:** this is the enforced subset of ASD-STE100. It is not full compliance. The
 approved-word Dictionary is not part of this rule set, and the specification states that STE alone

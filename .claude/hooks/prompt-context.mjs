@@ -1,4 +1,4 @@
-// version: 2.1.0
+// version: 2.2.0
 // On a review request, injects the code files edited this session (session state ∩ git diff) to scope it.
 // On every prompt, injects the Simplified Technical English (ASD-STE100 subset) output-language rule.
 import { readStdin } from './core/stdin.mjs'
@@ -116,8 +116,12 @@ hints.push(
     '- Keep the articles. Write complete sentences. STE is controlled prose, NOT telegram style:\n' +
     '  fragments, dropped articles, and arrow chains (A -> B -> fails) are violations, not compliance.\n' +
     '- Max 3 words per noun cluster. No metaphor, no idiom, no analogy, no hedge, no filler.\n' +
-    'Applies to answers, explanations, and documents you write. Exempt: peer messages, commit\n' +
-    'subject lines, code, and quoted tool output.',
+    'Applies to answers, explanations, documents you write, peer messages, AND code comments.\n' +
+    '- A peer message keeps its brevity caps and writes each value as a complete sentence\n' +
+    '  (core/multi-agent § Message format lists the exempt tokens).\n' +
+    '- A code comment goes only where the code cannot explain itself: max 25 words per sentence,\n' +
+    '  max 3 sentences (core/code-review § Comment language and length).\n' +
+    'Exempt: commit subject lines, the code itself, identifiers, file paths, and quoted tool output.',
 )
 
 inject('UserPromptSubmit', hints.join('\n\n'))

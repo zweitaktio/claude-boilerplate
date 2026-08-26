@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 priority: high
@@ -16,7 +16,13 @@ Write every answer, every explanation, and every document in Simplified Technica
 - Maximum 3 words in a noun cluster.
 - No metaphor, no idiom, no analogy, no hedge, no filler.
 
-Exempt: peer messages between sessions, commit subject lines, code, and quoted tool output.
+Peer messages between sessions obey STE too. Their brevity caps hold as well, and
+`core/process/multi-agent.md` § Message format lists the exempt tokens.
+
+Code comments obey STE too. Write a comment only where the code cannot explain itself. Hold it to
+25 words per sentence and 3 sentences per comment.
+
+Exempt: commit subject lines, the code itself, identifiers, file paths, and quoted tool output.
 
 Use the `AskUserQuestion` tool for clarifications — one question at a time, multiple-choice.
 Never present numbered question lists in chat (e.g. "1. X? 2. Y? 3. Z?") — use the wizard.

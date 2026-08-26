@@ -1,5 +1,5 @@
-// version: 1.2.1
-// Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat); tracks session-edited files for completion-gate.
+// version: 1.3.0
+// Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 import { append, hasLine, read, write } from './core/state.mjs'
@@ -115,6 +115,37 @@ else if (/\.sh$/.test(file)) {
   }
   if (/\bfind\s+.*-regex\b/.test(content)) {
     warn('find -regex uses GNU syntax — use -name or -path for portability. (scripting.md)')
+  }
+}
+
+// === Comment length (code files) — warn ===
+// Length is the only half a hook can measure. Whether a comment restates code the reader can already
+// see needs judgment, so code-review.md § Comments carries that half. Warn, never block: a legitimate
+// long comment exists (a licence header, a derivation), and a guard that fires wrongly gets ignored.
+if (/\.(ts|tsx|js|jsx|mjs|cjs|go|rs)$/.test(file)) {
+  const DIRECTIVE = /(eslint-|@ts-|ts-expect|biome-ignore|prettier-|oxlint-|istanbul |c8 |v8 )/
+  const blocks = []
+  let run = []
+  for (const line of content.split('\n')) {
+    const m = line.match(/^\s*(?:\/\/|\*)\s?(.*)$/)
+    if (m && !DIRECTIVE.test(line)) {
+      run.push(m[1])
+    } else {
+      if (run.length) blocks.push(run.join(' '))
+      run = []
+    }
+  }
+  if (run.length) blocks.push(run.join(' '))
+
+  const words = blocks.map((b) => b.split(/\s+/).filter(Boolean).length)
+  const longest = words.length ? Math.max(...words) : 0
+
+  // 75 = the 3-sentences × 25-words cap. Under it, no sentence split is needed, so no false positive
+  // from a path or an abbreviation that contains a period.
+  if (longest > 75) {
+    warn(
+      `A comment in this write runs ${longest} words. The cap is 3 sentences of at most 25 words each. Cut it to what the code cannot say, or move the explanation to a wiki page and let the comment carry the path. Write Simplified Technical English: a complete sentence, the active voice, and no metaphor. (code-review.md § Comment language and length)`,
+    )
   }
 }
 

@@ -8,6 +8,7 @@ On `/webstack update`, step 1 runs drift detection against the bootstrap templat
 |---------|---------------|---------------|
 | `# CLAUDE.md` + intro | Managed | Heading exists; intro references `.claude/rules/core/` |
 | `## How you answer` | Managed | Heading exists; names Simplified Technical English / ASD-STE100 |
+| `## Working with other sessions` | Managed | Heading exists; the message format requires complete STE sentences |
 | `## Commands` | Project-specific | Heading exists (content is user-owned) |
 | `## Architecture` | Project-specific | Heading exists (content is user-owned) |
 | `## Rules` | Mixed | Heading exists; intro references `.claude/rules/core/` |
@@ -27,18 +28,24 @@ If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
 
 | ID | Check | Severity | How |
 |----|-------|----------|-----|
-| S0 | CLAUDE.md exists at project root | FAIL | If absent, everything below is moot — suggest `/webstack init` and skip S1–C6 |
-| S1 | Required headings exist | MISSING | Check for: `## How you answer`, `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
+| S0 | CLAUDE.md exists at project root | FAIL | If absent, everything below is moot — suggest `/webstack init` and skip S1–C7 |
+| S1 | Required headings exist | MISSING | Check for: `## How you answer`, `## Working with other sessions`, `## Commands`, `## Architecture`, `## Rules`, `## Vendor Knowledge` (or alias), `### Knowledge accumulation` |
 | S2 | Legacy section names | WARN | Flag: `## Vendor Memory Loading`, `## MCP Tools:` |
 | C1 | Rules intro references core rules | WARN | Text between `## Rules` and next `##` heading contains `.claude/rules/core/` |
 | C2 | Vendor Knowledge has domain table | WARN | Section contains a markdown table row (`\| … \|`) |
 | C4 | Knowledge accumulation references the wiki | WARN | Section contains `wiki.sh`, `rules/project`, or `pitfall` |
 | C5 | No inlined MCP tool instructions | INFO | No `## MCP Tools` section with tool names (belongs in `.claude/rules/core/mcp-tools.md`) |
 | C6 | Answer-language rule present | WARN | `## How you answer` section contains `Simplified Technical English` or `ASD-STE100`. On MISSING/WARN, append the section from the bootstrap template |
+| C7 | Peer-message format requires STE | WARN | `## Working with other sessions` section contains `complete Simplified Technical English sentence` or `complete sentence`. A section that grants peer messages an exemption is stale — replace it |
 
 **C6 fires on every project bootstrapped before the STE rule landed.** That is the intent: S1 + C6
 together are how the rule reaches projects whose CLAUDE.md predates it. Appending the section is safe —
 it is a managed section, so it never overwrites project-owned content.
+
+**C7 catches stale content, not a missing heading.** `bootstrap-claude-md.sh` appends a section only
+when the heading is absent, so a project that already carries an older `## Working with other sessions`
+keeps it forever. On a C7 WARN, replace that managed section's body with the bootstrap template's copy.
+Never edit the surrounding project-owned sections.
 
 **C3 is retired.** It checked that each vendor entry matched a Knowledge Graph entity; the KG → wiki
 migration removed the entities, so the check had nothing to compare. The ID is not reused — see

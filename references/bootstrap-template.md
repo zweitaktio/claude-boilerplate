@@ -25,7 +25,11 @@ This file contains **project overrides** and **architecture context**.
 - Maximum 3 words in a noun cluster. One word, one meaning.
 - No metaphor, no idiom, no analogy, no hedge, no filler.
 
-Exempt: peer messages between sessions (see below), commit subject lines, code, and quoted output.
+**Peer messages obey STE too** — see below. **Code comments obey STE too:** write one only where the
+code cannot explain itself, then hold it to 25 words per sentence and 3 sentences per comment
+(`.claude/rules/core/code-review.md` § Comment language and length).
+
+Exempt: commit subject lines, the code itself, identifiers, file paths, and quoted output.
 
 ## Working with other sessions
 
@@ -40,6 +44,11 @@ FACTS:    <one line each — paths, shas, measured results>
 ACTIONS:  <what you did, or what you are asking them to do>
 EXPECT:   <what should happen next, and by whom>
 \`\`\`
+
+**Write each value as a complete Simplified Technical English sentence** — a subject, a verb, and the
+articles. Write "The file frontend/app/root.tsx fails typecheck at line 42." Never write
+"root.tsx:42 typecheck fail". Exempt tokens, a closed list: the four headings, the `PRIORITY` value,
+`GO` / `HOLD`, `ran-on-dev` / `tests-only` / `inspection-only`, and identifiers written verbatim.
 
 Omit empty headings. **Max 8 lines / 80 words** — over that it belongs in a wiki page or an issue and
 the message carries the path. **FIRST TEST: does this message change what someone does?** If not, do

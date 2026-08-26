@@ -1,5 +1,8 @@
-// version: 1.1.0
-// Keeps peer messages terse, and blocks relaying the exchange to the user afterwards.
+// version: 1.2.0
+// Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange
+// to the user afterwards. No STE regex checks here on purpose: article and tense detection false-
+// positives on paths, shas and GO — the exact content that must pass verbatim — and a guard that
+// fires wrongly gets ignored, costing the terseness enforcement that already works.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { read, write } from './core/state.mjs'
@@ -40,6 +43,8 @@ PRIORITY: <blocker | fyi | question>
 FACTS:    <one line each — issue number, file paths, shas, measured results>
 ACTIONS:  <what you did, or what you are asking them to do>
 EXPECT:   <what should happen next, and by whom>
+
+WRITE EACH VALUE AS A COMPLETE SENTENCE. Simplified Technical English applies here: a subject, a verb, and the articles. "The file frontend/app/root.tsx fails typecheck at line 42." NOT "root.tsx:42 typecheck fail". Exempt tokens, a closed list: the four headings, the PRIORITY value, GO / HOLD, ran-on-dev / tests-only / inspection-only, and identifiers written verbatim.
 
 Omit any heading that is empty. FIRST TEST: does this message change what someone does? If not, do not send it — acks, confirmations, "noted", and status nobody asked for are pure cost. Silence is agreement. A gate answer is one word: GO, or HOLD: <blocker>. Durable findings go to a wiki page or an issue; the message carries the path, not the content. (core/multi-agent § Message format)`
 
