@@ -112,7 +112,8 @@ Remove from the message to the user:
 - **Intent narration** — "I'll now check X" *before* you do it. Report what you found, not what you plan. (A brief progress update during long multi-step work is the exception.)
 - **Restatement** of the request, or a recap of output the user just saw.
 - **Postamble** — "let me know if you need anything else", and a follow-up offer that did not emerge from the work.
-- **Hedges** — "it seems", "I think", "possibly", when the evidence lets you state the fact directly.
+- **Hedges** — "it seems", "I think", "possibly". § Language rule 9 bans them outright, with no
+  evidence escape. State the fact, or state that you do not know it. Never soften the gap with a hedge.
 
 Density never means compression. § Language rule 6 forbids the dropped article and the arrow chain,
 and rule 6 wins over any impulse to save tokens. Use a bullet list or a table for enumerable facts.
