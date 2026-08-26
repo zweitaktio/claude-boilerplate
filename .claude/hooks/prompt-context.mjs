@@ -1,5 +1,6 @@
-// version: 2.0.0
+// version: 2.1.0
 // On a review request, injects the code files edited this session (session state ∩ git diff) to scope it.
+// On every prompt, injects the Simplified Technical English (ASD-STE100 subset) output-language rule.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { readLines } from './core/state.mjs'
@@ -106,6 +107,17 @@ if (!isVague && featurePattern.test(lower)) {
   )
 }
 
-if (hints.length === 0) pass()
+// Output language — pushed last so it sits closest to the user's turn, and unconditionally:
+// a style rule read once at session start decays over a long session. See core/process/interaction.md.
+hints.push(
+  'ANSWER IN SIMPLIFIED TECHNICAL ENGLISH (ASD-STE100 subset — core/process/interaction.md § Language).\n' +
+    '- One instruction per sentence. Max 20 words per instruction, 25 per description.\n' +
+    '- Active voice. Simple tenses only. Never use an -ing form as a verb.\n' +
+    '- Keep the articles. Write complete sentences. STE is controlled prose, NOT telegram style:\n' +
+    '  fragments, dropped articles, and arrow chains (A -> B -> fails) are violations, not compliance.\n' +
+    '- Max 3 words per noun cluster. No metaphor, no idiom, no analogy, no hedge, no filler.\n' +
+    'Applies to answers, explanations, and documents you write. Exempt: peer messages, commit\n' +
+    'subject lines, code, and quoted tool output.',
+)
 
 inject('UserPromptSubmit', hints.join('\n\n'))

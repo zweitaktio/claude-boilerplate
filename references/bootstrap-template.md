@@ -13,6 +13,20 @@ This file contains **project overrides** and **architecture context**.
 > **Setup:** Plugins and shared MCP servers require one-time user setup.
 > Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` if tools are missing.
 
+## How you answer
+
+**Write every answer, every explanation, and every document in Simplified Technical English**
+(the ASD-STE100 subset). Full rules: `.claude/rules/core/interaction.md` § Language.
+
+- One instruction per sentence. Maximum 20 words in an instruction, 25 in a description.
+- Active voice. Simple tenses only. Never use an `-ing` form as a verb.
+- Keep the articles and write complete sentences. **STE is controlled prose, not telegram style** —
+  fragments, deleted articles, and arrow chains (`A → B → fails`) are violations, not compliance.
+- Maximum 3 words in a noun cluster. One word, one meaning.
+- No metaphor, no idiom, no analogy, no hedge, no filler.
+
+Exempt: peer messages between sessions (see below), commit subject lines, code, and quoted output.
+
 ## Working with other sessions
 
 Several Claude sessions may work this checkout at once, all on the same branch. Full protocol:

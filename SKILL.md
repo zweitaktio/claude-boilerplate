@@ -42,17 +42,17 @@ hand. Regenerate after adding or rescoping a template:
 |------|-------|-------|------|
 | `process/code-review` | 100 | 6195 | code-review, review, security, quality, validation, smells, comments, best-practices |
 | `process/engineering-discipline` | 243 | 14979 | engineering, process, planning, verification, discipline, workflow |
-| `process/interaction` | 45 | 2593 | interaction, questions, wizard, density, conciseness |
+| `process/interaction` | 115 | 5793 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 108 | 8510 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
 | `process/mcp-tools` | 79 | 3819 | mcp, context7, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 214 | 12025 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1036** | **59221** (~57 KB) | per-turn baseline |
+| **Total** | **1106** | **62421** (~60 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 38741 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 41941 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -553,13 +553,13 @@ The CLAUDE.md bootstrap describes where knowledge lives (the wiki) and the deplo
 
 ### Required CLAUDE.md Content
 
-Read the bootstrap template from `references/bootstrap-template.md` and deploy it. The template includes: Commands, Architecture, Rules, Vendor Knowledge (with domain table), and Knowledge accumulation sections.
+Read the bootstrap template from `references/bootstrap-template.md` and deploy it. The template includes: How you answer (Simplified Technical English), Working with other sessions, Commands, Architecture, Rules, Vendor Knowledge (with domain table), and Knowledge accumulation sections.
 
-On `/webstack init`, if no CLAUDE.md exists: create it from the template. If it exists but is missing required sections (especially `## Vendor Knowledge`): append them.
+On `/webstack init`, if no CLAUDE.md exists: create it from the template. If it exists but is missing required sections (especially `## How you answer` and `## Vendor Knowledge`): append them.
 
 ### Update: CLAUDE.md Drift Checks
 
-On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C5).
+On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C6).
 
 Key rules:
 - The drift report is informational, not blocking — always continue with template updates

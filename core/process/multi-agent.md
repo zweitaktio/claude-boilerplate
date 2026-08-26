@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: Always
 target: rules
 priority: high
@@ -205,6 +205,10 @@ coordinator that stops responding must never freeze the repo.
 
 **A peer pays context for every word you send. Write telegrams, not letters.** No preamble, no
 acknowledgement, no rapport, no restating what they said. Facts and actions only.
+
+**Peer messages are the one exemption from Simplified Technical English.** `core/process/interaction.md`
+§ Language requires complete sentences and articles for answers and documents. It does not apply here.
+Fragments, deleted articles, and arrow chains are correct in a peer message.
 
 Use these four headings, omitting any that is empty:
 
