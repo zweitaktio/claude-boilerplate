@@ -13,8 +13,8 @@ tags: [sync, versioning, semver, deployment, data-loss, backporting]
 # sync.sh treated any version difference as UPDATE and downgraded targets
 
 **Symptom:** a project improved a deployed hook or rule locally and bumped its version. The next
-`sync.sh apply` overwrote that file with the older boilerplate copy. The local work disappeared with
-no warning, and `compare` had announced it as an ordinary `UPDATE`.
+`sync.sh apply` overwrote it with the older boilerplate copy, with no warning. `compare` had
+announced it as an ordinary `UPDATE`.
 
 **Root cause:** `determine_action` compared versions for equality only:
 
