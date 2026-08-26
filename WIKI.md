@@ -7,12 +7,16 @@
 
 - [Variables incremented inside a "cmd | while" loop are lost in Bash 3.2](.claude/rules/project/pitfalls/bash-subshell-counter-loss.md)
   `scripts/** **/*.sh `
+- [Bootstrap template fences reach CLAUDE.md still escaped](.claude/rules/project/pitfalls/bootstrap-template-fences-stay-escaped.md)
+  `scripts/bootstrap-claude-md.sh references/bootstrap-template.md `
 - [A grep that matches nothing inside $(...) aborts the script under set -e](.claude/rules/project/pitfalls/grep-in-command-substitution-aborts.md)
   `scripts/** **/*.sh `
 - [bash-guard blocks inline "echo JSON | run.sh hook" test commands](.claude/rules/project/pitfalls/hook-testing-inline-json-pipes.md)
   `.claude/hooks/** `
 - [manifest include globs match dotfiles, so config files ship as payload](.claude/rules/project/pitfalls/manifest-glob-matches-dotfiles.md)
   `manifest.json scripts/sync.sh .claude/hooks/** `
+- [sync.sh treated any version difference as UPDATE and downgraded targets](.claude/rules/project/pitfalls/sync-downgrades-a-target-that-is-ahead.md)
+  `scripts/sync.sh manifest.json `
 
 ## Backlinks (upstream ← project)
 

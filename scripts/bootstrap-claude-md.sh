@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.0.0
+# version: 1.1.0
 # Bootstraps CLAUDE.md in target projects from the template.
 # Creates if missing, appends missing sections if exists.
 #
@@ -65,6 +65,11 @@ if [ -z "$TEMPLATE_CONTENT" ]; then
   exit 1
 fi
 
+# The template lives inside a ```markdown fence, so its own fences are written as \`\`\` to keep
+# the outer fence from closing early. Unescape AFTER extraction — before it, the awk above would
+# stop at the first inner fence and truncate the template.
+TEMPLATE_CONTENT=$(printf '%s\n' "$TEMPLATE_CONTENT" | sed 's/\\`/`/g')
+
 # ─── Section definitions (heading + content from template) ──
 # Each section is identified by its heading and extracted from the template
 extract_section() {
@@ -90,10 +95,10 @@ extract_section() {
 # ─── Create from scratch ──
 if [ ! -f "$CLAUDE_MD" ]; then
   if [ "$DRY_RUN" = "true" ]; then
-    echo '{"action":"CREATE","sections_added":["## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
+    echo '{"action":"CREATE","sections_added":["## How you answer","## Working with other sessions","## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
   else
     echo "$TEMPLATE_CONTENT" > "$CLAUDE_MD"
-    echo '{"action":"CREATE","sections_added":["## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
+    echo '{"action":"CREATE","sections_added":["## How you answer","## Working with other sessions","## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
   fi
   exit 0
 fi
@@ -140,6 +145,8 @@ ${section_content}"
   fi
 }
 
+check_and_queue "How you answer" 2 "## How you answer"
+check_and_queue "Working with other sessions" 2 "## Working with other sessions"
 check_and_queue "Commands" 2 "## Commands"
 check_and_queue "Architecture" 2 "## Architecture"
 check_and_queue "Rules" 2 "## Rules"

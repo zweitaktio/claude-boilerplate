@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.2.0
+# version: 1.3.0
 # Deterministic sync of webstack assets to target projects.
 # Reads manifest.json to enumerate deployable asset groups, compares versions,
 # and deploys files idempotently.
@@ -35,6 +35,7 @@ Actions:
   UPDATE   — source version is newer
   SKIP     — versions match, no changes
   REVIEW   — versions match but git SHA shows content changed
+  AHEAD    — target version is NEWER than source; never deployed (backport it first)
   REPLACE  — target has no version (legacy)
   MERGE    — settings.json hook key merge
   PRUNE    — file in target has no matching source (removed)
@@ -166,6 +167,30 @@ group_included() {
   echo ",$GROUP_FILTER," | grep -q ",$name," 2>/dev/null
 }
 
+# ─── Version comparison ──────────────────────────────────────────────────────
+# True when $1 is strictly newer than $2. Compares major.minor.patch numerically.
+# Unlike semver_gte in evaluate-applies.sh, this does NOT require a matching major:
+# a target on 2.0.0 must count as newer than a source on 1.9.0.
+semver_newer() {
+  local a="$1" b="$2"
+  local a_maj a_min a_pat b_maj b_min b_pat
+  a_maj=$(echo "$a" | cut -d. -f1 | sed 's/[^0-9].*//')
+  a_min=$(echo "$a" | cut -d. -f2 | sed 's/[^0-9].*//')
+  a_pat=$(echo "$a" | cut -d. -f3 | sed 's/[^0-9].*//')
+  b_maj=$(echo "$b" | cut -d. -f1 | sed 's/[^0-9].*//')
+  b_min=$(echo "$b" | cut -d. -f2 | sed 's/[^0-9].*//')
+  b_pat=$(echo "$b" | cut -d. -f3 | sed 's/[^0-9].*//')
+  a_maj="${a_maj:-0}" a_min="${a_min:-0}" a_pat="${a_pat:-0}"
+  b_maj="${b_maj:-0}" b_min="${b_min:-0}" b_pat="${b_pat:-0}"
+
+  if [ "$a_maj" -gt "$b_maj" ]; then return 0; fi
+  if [ "$a_maj" -lt "$b_maj" ]; then return 1; fi
+  if [ "$a_min" -gt "$b_min" ]; then return 0; fi
+  if [ "$a_min" -lt "$b_min" ]; then return 1; fi
+  if [ "$a_pat" -gt "$b_pat" ]; then return 0; fi
+  return 1
+}
+
 # ─── Action determination ────────────────────────────────────────────────────
 determine_action() {
   local src_file="$1"
@@ -187,6 +212,8 @@ determine_action() {
       elif [ "$src_ver" = "$tgt_ver" ]; then
         local rel="${src_file#$SKILL_DIR/}"
         if sha_file_changed "$rel"; then echo "REVIEW"; else echo "SKIP"; fi
+      elif semver_newer "$tgt_ver" "$src_ver"; then
+        echo "AHEAD"
       else
         echo "UPDATE"
       fi
@@ -200,6 +227,8 @@ determine_action() {
       elif [ "$src_ver" = "$tgt_ver" ]; then
         local rel="${src_file#$SKILL_DIR/}"
         if sha_file_changed "$rel"; then echo "REVIEW"; else echo "SKIP"; fi
+      elif semver_newer "$tgt_ver" "$src_ver"; then
+        echo "AHEAD"
       else
         echo "UPDATE"
       fi
@@ -422,7 +451,7 @@ while [ "$g" -lt "$NUM_GROUPS" ]; do
 
       action=$(determine_action "$src_file" "$tgt_file" "$VERSIONING")
 
-      if [ "$COMMAND" = "apply" ] && [ "$action" != "SKIP" ]; then
+      if [ "$COMMAND" = "apply" ] && [ "$action" != "SKIP" ] && [ "$action" != "AHEAD" ]; then
         deploy_file "$src_file" "$tgt_file" "$DO_CHMOD"
       fi
 
@@ -507,7 +536,7 @@ while [ "$g" -lt "$NUM_GROUPS" ]; do
     fi
 
     # ── Emit entry with version details ──
-    if [ -n "$src_ver" ] && [ -n "$tgt_ver" ] && [ "$action" = "UPDATE" ]; then
+    if [ -n "$src_ver" ] && [ -n "$tgt_ver" ] && { [ "$action" = "UPDATE" ] || [ "$action" = "AHEAD" ]; }; then
       emit \
         --arg group "$NAME" \
         --arg file "$rel_from_skill" \

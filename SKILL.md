@@ -478,6 +478,11 @@ are deployed.
 
 Each template has YAML frontmatter with `version`, `applies`, `target`, `priority` (optional), and `tags`. Read `references/versioning.md` for the full schema, applies condition patterns, operators, version comparison rules, and when to bump versions.
 
+**`AHEAD` means stop, not skip.** When a target's `version` is newer than the source's, `sync.sh`
+emits `AHEAD` and deploys nothing — the project edited that file locally and bumped it. Report it to
+the user and offer to backport the target's copy into the boilerplate (`core/process/backporting.md`).
+Never resolve `AHEAD` by bumping the source version to win the comparison.
+
 **Quick reference — applies operators:**
 - `Always` — unconditional
 - `package-name` — package in dependencies/devDependencies
