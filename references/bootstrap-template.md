@@ -25,7 +25,7 @@ This file contains **project overrides** and **architecture context**.
 - Maximum 3 words in a noun cluster. One word, one meaning.
 - No metaphor, no idiom, no analogy, no hedge, no filler.
 
-**Peer messages obey STE too** — see below. **Code comments obey STE too:** write one only where the
+**Peer messages obey STE too** — see § Working with other sessions. **Code comments obey STE too:** write one only where the
 code cannot explain itself, then hold it to 25 words per sentence and 3 sentences per comment
 (`.claude/rules/core/code-review.md` § Comment language and length).
 
