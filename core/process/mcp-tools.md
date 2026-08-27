@@ -1,9 +1,9 @@
 ---
-version: 5.1.0
+version: 5.2.0
 applies: Always
 target: rules
 priority: high
-tags: [mcp, context7, knowledge-base, tools, workflow]
+tags: [mcp, context7, codebase-memory, code-discovery, knowledge-base, tools, workflow]
 ---
 
 # MCP Tools & Plugins
@@ -41,6 +41,32 @@ Use the **specific version** in both queries — `"daisyui 5 form patterns"` not
 ### Repeat before writing code that uses a different library
 
 Run the steps again when you: switch to a different library, hit an unexpected error, or call an API you haven't verified this session. When errors don't make sense, check for a recorded pitfall first: `.claude/scripts/wiki.sh find "<symptom>"`.
+
+---
+
+## Code discovery — which tool
+
+**Reach for the graph first when you look for code.** Grep matches lines. It cannot tell a definition
+from a mention, it cannot follow a call, and it dumps raw bytes into your context.
+
+| Task | Tool |
+|------|------|
+| Locate a symbol — a function, a class, a route | **`search_graph`** with a `name_pattern` and a `label` |
+| Find the callers or the callees of a symbol | **`trace_call_path`** with a `function_name` and a `direction` |
+| Read the exact source of a symbol you located | **`get_code_snippet`** |
+| Orient yourself in an unfamiliar area | **`get_architecture`** |
+| Ask a multi-hop structural question | **`query_graph`** (Cypher) |
+| Find a literal string, a config value, a comment marker, a `TODO` | **Grep** — text the graph does not model |
+
+The tool is `trace_call_path`, not `trace_path`. Full tool list and config:
+`core/claude-config/mcp-servers` § codebase-memory-mcp.
+
+**Scope every query to the workspace you own.** Pass `file_pattern` in a monorepo. Without it a query
+returns matches from a sibling package you did not mean to touch, and a short identifier collides
+across workspaces.
+
+**Grep is the fallback, not the alternative.** Use Grep for literal text, for a file type the graph
+does not index, and in a project that has not registered the server yet. Check `.mcp.json`.
 
 ---
 

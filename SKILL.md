@@ -41,18 +41,18 @@ hand. Regenerate after adding or rescoping a template:
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
 | `process/code-review` | 140 | 7994 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
-| `process/engineering-discipline` | 243 | 14979 | engineering, process, planning, verification, discipline, workflow |
+| `process/engineering-discipline` | 243 | 15165 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 120 | 6210 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 108 | 8510 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 79 | 3819 | mcp, context7, knowledge-base, tools, workflow |
+| `process/mcp-tools` | 105 | 5206 | mcp, context7, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 214 | 12025 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1151** | **64637** (~63 KB) | per-turn baseline |
+| **Total** | **1177** | **66210** (~64 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 44157 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 45730 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -62,7 +62,7 @@ Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
 |------|----------------------|
 | `claude-config/claude-md` | `CLAUDE.md, .claude/**, CLAUDE.local.md` |
 | `claude-config/claude-settings` | `.claude/**, CLAUDE.md` |
-| `claude-config/mcp-servers` | `.claude/**, **/*mcp*, **/*playwright*` |
+| `claude-config/mcp-servers` | `.claude/**, **/*mcp*, **/*playwright*, **/.cbmignore` |
 | `claude-config/writing-rules` | `CLAUDE.md, .claude/**, SKILL.md, **/rules/**` |
 | `frontend/i18n` | `**/*.tsx, **/*.ts, **/locales/**, **/i18n*` |
 | `frontend/react-components` | `**/*.tsx, **/*.ts, !**/*.test.*, !**/*.spec.*` |
@@ -99,6 +99,7 @@ Outputs JSON with availability status. If any tool shows `"available": false`, t
 |------|---------|-----------------|-----------------|
 | `jq` | JSON parsing in evaluation scripts | `brew install jq` | `sudo apt install jq` / `sudo dnf install jq` |
 | `git` | SHA tracking, change detection | `xcode-select --install` | `sudo apt install git` |
+| `codebase-memory-mcp` | Structural code discovery (global npm binary) | `npm install -g codebase-memory-mcp` | `npm install -g codebase-memory-mcp` |
 
 ### MCP Servers
 
@@ -107,6 +108,7 @@ Verify each by attempting a lightweight call. If any fails, show the missing ser
 | Server | Verify with | Purpose | Install |
 |--------|------------|---------|---------|
 | Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp` |
+| codebase-memory-mcp | Any `mcp__codebase-memory-mcp__*` tool available | Structural code discovery — `search_graph`, `trace_call_path` | Register in the project `.mcp.json`, not with `claude mcp add`. See `core/claude-config/mcp-servers` § codebase-memory-mcp |
 | Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp` |
 
 ### Plugins
@@ -125,8 +127,9 @@ Run once per developer machine to install shared plugins and MCP servers:
 ~/.claude/skills/webstack/scripts/setup-user-env.sh
 ```
 
-This installs user-scoped tools (context-mode, memory, context7).
-Project-specific servers (Playwright, Payload MCP) are configured during `/webstack init`.
+This installs user-scoped tools (context-mode, memory, context7) and the global npm binary
+`codebase-memory-mcp`. Project-scoped servers (Playwright, Payload MCP, codebase-memory-mcp) are
+registered during `/webstack init` — the script only puts the binary on PATH.
 
 ### Preflight Sequence
 
@@ -137,6 +140,20 @@ Run this at the start of every `/webstack init` or `/webstack update`:
 3. Check whether **any** `mcp__plugin_context-mode_context-mode__*` tool is available — if none is, report "context-mode plugin not installed. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude plugin install context-mode@context-mode`" and stop
 
    Match on the server prefix, never on a specific tool name. context-mode has renamed its tools before (`__execute` → `__ctx_execute`), and a hardcoded name turns a working install into a hard stop at step 0.
+
+4. Check whether any `mcp__codebase-memory-mcp__*` tool is available. If none is, the project has not
+   registered the server in its `.mcp.json`. Report it and continue — this one is **not** a hard stop
+   while projects are still adopting the graph. `scripts/preflight.sh` already told you at step 1
+   whether the global binary is on PATH; the two failures are different and need different fixes.
+
+   | Symptom | Fix |
+   |---------|-----|
+   | `preflight.sh` reports `codebase-memory-mcp: available false` | `npm install -g codebase-memory-mcp` |
+   | Binary present, no `mcp__codebase-memory-mcp__*` tool | Add the server block to the project `.mcp.json` — `core/claude-config/mcp-servers` § codebase-memory-mcp |
+
+   **Never run `codebase-memory-mcp install`** to fix either one. It writes MCP entries, skills and hooks
+   into 43 global agent surfaces. The skill does not manage `.mcp.json`, so offer the block and let the
+   user apply it.
 
 The Knowledge Graph / `memory` MCP server is **no longer required** — project knowledge lives in path-scoped Markdown under `.claude/rules/project/` (see `core/process/knowledge-base`). `setup-user-env.sh` may still install the `memory` server for unrelated uses, but webstack does not depend on it.
 

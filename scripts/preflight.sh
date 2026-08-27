@@ -21,8 +21,9 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   echo "Detects macOS/Linux and shows platform-appropriate install commands."
   echo ""
   echo "Required tools:"
-  echo "  jq     JSON processor"
-  echo "  git    Version control"
+  echo "  jq                     JSON processor"
+  echo "  git                    Version control"
+  echo "  codebase-memory-mcp    Structural code discovery (global npm package)"
   exit 0
 fi
 
@@ -77,6 +78,9 @@ check_tool() {
 
 check_tool "jq"  "brew install jq"  "sudo apt install jq"
 check_tool "git" "xcode-select --install" "sudo apt install git"
+# codebase-memory-mcp ships as a global npm package and must be on PATH. `command -v` is the check
+# that matters: a global binary lives under the active nvm node version, so a node switch hides it.
+check_tool "codebase-memory-mcp" "npm install -g codebase-memory-mcp" "npm install -g codebase-memory-mcp"
 
 RESULTS="${RESULTS}]"
 

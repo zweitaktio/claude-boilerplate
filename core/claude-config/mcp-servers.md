@@ -1,12 +1,13 @@
 ---
-version: 5.0.0
+version: 5.1.0
 applies: Always
 target: rules
 paths:
   - ".claude/**"
   - "**/*mcp*"
   - "**/*playwright*"
-tags: [mcp, context-mode, context7, playwright, configuration, setup]
+  - "**/.cbmignore"
+tags: [mcp, context-mode, context7, playwright, codebase-memory, configuration, setup]
 ---
 
 # MCP Server & Plugin Setup
@@ -21,6 +22,7 @@ For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/
 | Context7 | [GitHub](https://github.com/upstash/context7) | Library doc lookup |
 | Playwright | [GitHub](https://github.com/microsoft/playwright-mcp) | Browser automation |
 | context-mode | [GitHub](https://github.com/claude-context-mode/context-mode) | Large output handling (plugin) |
+| codebase-memory-mcp | [GitHub](https://github.com/DeusData/codebase-memory-mcp) | Structural code discovery (global npm binary, project-scoped data) |
 
 ## Setup Commands
 
@@ -53,6 +55,82 @@ claude plugin install context-mode@context-mode
 claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp
 ```
 
+## codebase-memory-mcp (structural code discovery)
+
+The binary installs globally. Everything else stays inside the project.
+
+### 1. Verify the global npm package
+
+```bash
+~/.claude/skills/webstack/scripts/preflight.sh      # reports codebase-memory-mcp availability
+codebase-memory-mcp --version                       # expect 0.10.8 or later
+npm install -g codebase-memory-mcp                  # if it is missing
+```
+
+**Never run `codebase-memory-mcp install`.** That command writes MCP entries, skills, hooks and
+instruction files into 43 global agent surfaces, including `~/.claude.json` and `~/.claude/skills/`.
+The npm `postinstall` only downloads and checksum-verifies the native binary, so npm is the safe path.
+
+A global npm binary lives under the active nvm node version. A node switch hides it, and you must
+reinstall with `npm install -g codebase-memory-mcp`.
+
+### 2. Register the server in the project `.mcp.json`
+
+**Both env paths must be absolute**, for the same reason the Playwright `--output-dir` must be — the
+server resolves a relative path against its own working directory, not against `.mcp.json`.
+
+```jsonc
+{
+  "mcpServers": {
+    "codebase-memory-mcp": {
+      "type": "stdio",
+      "command": "codebase-memory-mcp",
+      "args": [],
+      "env": {
+        "CBM_CACHE_DIR": "<project-root>/.cbm",
+        "CBM_ALLOWED_ROOT": "<project-root>"
+      }
+    }
+  }
+}
+```
+
+`CBM_CACHE_DIR` holds the graph database and the server's own settings (`_config.db`). Keep it inside
+the repo and add `.cbm` to `.gitignore`. The default root `~/.cache/codebase-memory-mcp` puts index
+data outside the project, so always set this.
+
+### 3. Add `.cbmignore` at the repo root
+
+`.cbmignore` layers on top of `.gitignore`. It excludes files that are tracked but add no structure
+to the graph — generated types, generated import maps, build caches, translation catalogs, and the
+Markdown rule corpora.
+
+```
+# Generated but tracked
+**/payload-types.ts
+**/importMap.js
+
+# Build caches and generated routes
+frontend/.react-router/
+
+# Large Markdown with no code structure
+.claude/rules/
+.claude/docs/
+```
+
+### One account, one cache root at a time
+
+**A hand-run `config` or `cli` command must carry the project's `CBM_CACHE_DIR`.** Without it the
+command reads and writes the default account cache, and the change never reaches the MCP server.
+
+```bash
+CBM_CACHE_DIR="$PWD/.cbm" codebase-memory-mcp cli get_architecture '{}'
+```
+
+**One account uses one canonical cache root at a time.** The daemon rejects a second project with a
+different `CBM_CACHE_DIR` while a session on the first project is live. The error names both cache
+hashes. Close the other project's sessions before you index this one.
+
 ## Scope Model
 
 | Tool | Scope | Reason |
@@ -61,6 +139,7 @@ claude mcp add payload --transport http --scope project --header "Authorization:
 | context-mode | **user** | Plugin, user is the default scope |
 | Playwright (`playwright`) | **project** | Uses project-local `--config .claude/playwright-mcp.config.json` |
 | Payload (`payload`) | **project** | HTTP transport to project-specific Payload backend URL |
+| codebase-memory-mcp | **project** | Binary is global; `CBM_CACHE_DIR` and `CBM_ALLOWED_ROOT` are project-absolute |
 
 User-scoped tools are installed once per developer. Project-scoped tools use project-local configuration and are set up during `/webstack init`.
 

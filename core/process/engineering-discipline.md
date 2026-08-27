@@ -1,5 +1,5 @@
 ---
-version: 2.10.0
+version: 2.11.0
 applies: Always
 target: rules
 priority: high
@@ -51,12 +51,12 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 - **Primary sources beat memory.** Any fact you'd write from recall — an API signature, endpoint, config key, env var name, magic constant, price, or figure — is not evidence. Open its source before you use it, or write it and label it unverified. For library APIs this is mandatory and hook-enforced (see Library Doc Lookup); for everything else it's on you. Catching yourself about to type a fact from memory re-opens evidence gathering.
 - **Orient before reading.** Enumerate what exists — list the directory, glob the project — before picking files to read. You can't choose the right files from memory of what a project usually contains.
-- **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on (Grep the symbol at module boundaries; trace the loaders/actions/endpoints it touches). Edge cases and breakage live at these seams, not in the file you opened first.
+- **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on. Run `trace_call_path` on the symbol for its callers and callees, and `search_graph` to locate it. Grep is the fallback for literal text (`core/mcp-tools` § Code discovery). Edge cases and breakage live at these seams, not in the file you opened first.
 - **Surprises route the work.** Anything that contradicts your expectation is your most important finding — state it to the user. If it changes what "done" means, revise it; if it changes what the user is actually asking for, re-classify the ask. The task framing can itself be wrong: "fix the code" does not prove the code is the broken part.
 
 **For complex tasks:**
 1. Identify all affected files and modules
-2. Check who consumes what you're changing — Grep for the symbol across the codebase at module boundaries
+2. Check who consumes what you're changing — `trace_call_path` on the symbol, then `search_graph` for the rest of the surface
 3. Determine if changes cross package/workspace boundaries
 4. Decompose into incremental, independently verifiable steps before starting
 5. Check existing patterns in the codebase before creating anything new
@@ -118,7 +118,7 @@ Before implementing, classify the change to determine required safeguards.
 - API endpoint changes (path, method, request/response shape)
 - Removed CSS classes or changed component prop interfaces
 
-**CRITICAL:** Find all consumers with the Grep tool. Update all call sites. Consider migration path.
+**CRITICAL:** Find all consumers with `trace_call_path`, not with Grep — Grep cannot tell a call from a mention. Update all call sites. Consider migration path.
 
 **Additive** — extends without breaking existing behavior:
 - New exports, components, routes, endpoints
@@ -132,11 +132,11 @@ Before implementing, classify the change to determine required safeguards.
 - Extracting helpers, renaming locals, reorganizing files
 - Performance improvements with identical output
 
-*Required:* Verify tests pass. Confirm no exported interface changes. Grep for the symbol if uncertain.
+*Required:* Verify tests pass. Confirm no exported interface changes. Run `search_graph` on the symbol if uncertain.
 
 **How to decide:**
 - Is the symbol exported from a module boundary? → Potentially breaking
-- Does anyone import or call it? → Check with the Grep tool
+- Does anyone import or call it? → Check with `trace_call_path`
 - Does only the current file use it? → Safe refactor
 - Does the database schema change? → Always treat as breaking
 

@@ -1,6 +1,6 @@
 #!/bin/bash
-# version: 1.0.0
-# One-time setup for user-scoped plugins and MCP servers.
+# version: 1.1.0
+# One-time setup for user-scoped plugins, MCP servers, and global npm binaries.
 # Installs shared tools that don't need per-project configuration.
 # Compatible with Bash 3.2 (macOS) and Bash 4+ (Linux).
 
@@ -23,9 +23,10 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   echo "Installs:"
   echo "  Plugins:     context-mode"
   echo "  MCP servers: context7 (library docs); memory (general Knowledge Graph — NOT used by webstack)"
+  echo "  npm globals: codebase-memory-mcp (structural code discovery)"
   echo ""
-  echo "Project-scoped servers (Playwright, Payload MCP) are configured"
-  echo "during /webstack init — this script does not install those."
+  echo "Project-scoped servers (Playwright, Payload MCP, codebase-memory-mcp) are"
+  echo "registered during /webstack init — this script only puts the binary on PATH."
   exit 0
 fi
 
@@ -111,6 +112,47 @@ install_mcp() {
 # for other projects/tools. Remove this line if you don't want it on this machine.
 install_mcp "memory" npx -y @modelcontextprotocol/server-memory
 install_mcp "context7" npx -y @upstash/context7-mcp
+
+# --- Global npm binaries ---
+echo ""
+echo "Checking global npm packages..."
+
+# codebase-memory-mcp installs as a global npm package, then each project registers it in its own
+# .mcp.json. Never run `codebase-memory-mcp install`: that command writes MCP entries, skills, hooks
+# and instruction files into 43 global agent surfaces, including ~/.claude.json and ~/.claude/skills/.
+# The npm postinstall only downloads and checksum-verifies the native binary, so npm is the safe path.
+# (core/claude-config/mcp-servers § codebase-memory-mcp)
+install_npm_global() {
+  local binary="$1"
+  local package="$2"
+
+  if command -v "$binary" >/dev/null 2>&1; then
+    log "SKIP $binary — already on PATH ($("$binary" --version 2>/dev/null | head -1))"
+    SKIPPED=$((SKIPPED + 1))
+    return
+  fi
+
+  if [ "$DRY_RUN" = true ]; then
+    dry "Would run: npm install -g $package"
+    return
+  fi
+
+  log "Installing $package..."
+  if npm install -g "$package" >/dev/null 2>&1; then
+    log "OK   Installed $package"
+    INSTALLED=$((INSTALLED + 1))
+  else
+    log "FAIL $package — install failed"
+    FAILED=$((FAILED + 1))
+  fi
+}
+
+if command -v npm >/dev/null 2>&1; then
+  install_npm_global "codebase-memory-mcp" "codebase-memory-mcp"
+else
+  log "SKIP codebase-memory-mcp — npm not found on PATH"
+  SKIPPED=$((SKIPPED + 1))
+fi
 
 # --- Detect project-scoped duplicates ---
 echo ""

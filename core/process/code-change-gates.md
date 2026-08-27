@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: Always
 target: rules
 priority: high
@@ -30,11 +30,15 @@ If X, Y, and Z disagree, that contradiction *is* the finding — surface it; nev
 
 ## TWINS — after fixing a defect
 
-A bug in one place is presumed to recur until you've searched. Name the exact wrong construct, Grep the whole project for it, and write:
+A bug in one place is presumed to recur until you've searched. Name the exact wrong construct, search the whole project for it, and write:
 
 ```
 TWINS: searched <pattern> — found <N> other sites: <files, or none>
 ```
+
+**Pick the search tool by what the twin is.** A literal wrong construct — a bad string, a wrong flag,
+a copy-pasted expression — is a Grep search, and Grep is correct here. A misused *symbol* is a graph
+search: run `trace_call_path` on it to find every call site (`core/mcp-tools` § Code discovery).
 
 **Fix them.** Listing is the fallback for a site you are genuinely blocked on, not the default —
 a twin you found and left is a known defect with nobody assigned (`core/issue-tracking` § Fix it now).
