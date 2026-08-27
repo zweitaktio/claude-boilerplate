@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.1.0
+# version: 1.2.0
 # Preflight check for CLI tool dependencies.
 # Validates that required CLI tools are available before the skill runs.
 # Compatible with Bash 3.2 (macOS) and Bash 4+ (Linux).
