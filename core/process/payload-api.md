@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: payload
 target: rules
 paths:
@@ -52,7 +52,8 @@ deleteTechnologies { id: 89 }
 
 **Empty objects are prohibited.** Arrays of blocks, columns items, or any nested structure must never contain `{}`. If a slot is unused, remove it from the array entirely. Payload will reject or silently corrupt data with empty objects.
 
-**Write to `/tmp/` first for complex payloads.** For updates with layout blocks, rich text, or other deeply nested structures: write the JSON to a temp file, validate it, then send.
+**Write a complex payload to `/tmp/` first.** This covers an update with layout blocks, rich text or
+another deeply nested structure. Write the JSON to a temporary file. Validate it. Then send it.
 
 ## Migrations
 

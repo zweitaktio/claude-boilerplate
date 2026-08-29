@@ -1,5 +1,5 @@
 ---
-version: 1.0.2
+version: 1.0.3
 applies: react
 target: rules
 domain: frontend
@@ -18,7 +18,6 @@ tags: [state, zustand, context, react-query]
 | Zustand docs | https://zustand.docs.pmnd.rs/ | Primary state library |
 | Zustand GitHub | https://github.com/pmndrs/zustand | Source, issues |
 | React docs | https://react.dev/reference/react/useContext | Context API reference |
-| Context7 | `/pmndrs/zustand` | Zustand coverage |
 
 ## Zustand (Recommended Default)
 

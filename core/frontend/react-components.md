@@ -1,5 +1,5 @@
 ---
-version: 1.9.2
+version: 1.9.3
 applies: react
 target: rules
 priority: high
@@ -133,7 +133,8 @@ return { error: "Not found" }
 
 ## Accessibility
 
-- **Focus management after navigation:** When client-side navigation completes, focus should move to the main content area or a heading — don't leave focus on the clicked link
+- **Move the focus after navigation.** When a client-side navigation completes, move the focus to the
+  main content area or to a heading. Never leave the focus on the clicked link
 - **Skip link:** Include a "Skip to content" link as the first focusable element in the layout, targeting `#main-content`
 - **Reduced motion:** Wrap animations in `prefers-reduced-motion` media query. Use `motion-safe:` Tailwind modifier
 

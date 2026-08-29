@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: Always
 target: rules
 tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
@@ -9,15 +9,23 @@ tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
 
 Applies when the project has an issue tracker — almost always GitHub Issues, driven by the `gh` CLI. Confirm once per project with `gh issue list`; if the repo has no tracker, skip this file. Commands below assume GitHub + `gh`; adapt them to another tracker's CLI if that's what the project uses.
 
-This governs the **external tracker** (GitHub Issues), not the project knowledge wiki. Wiki pitfall/decision pages under `.claude/rules/project/` are a separate system (see `core/process/knowledge-base`). "Open an issue" here means `gh issue create`, never a wiki page.
+This governs the **external tracker** (GitHub Issues), not the project knowledge wiki. Wiki pitfall/decision pages under `.claude/rules/project/` are a separate system (see `core/knowledge-base`). "Open an issue" here means `gh issue create`, never a wiki page.
 
 ## When to create an issue
 
-Open a tracking issue once the work crosses the **Complex** threshold in `core/engineering-discipline` § Task Assessment — it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex and open one. Also open one for standalone work that outlives the current session — tech debt, or a request the user parks for later. **Not** for something you ran into while resolving another issue: see Fix it now.
+Open a tracking issue once the work crosses the **Complex** threshold. `core/engineering-discipline`
+§ Task Assessment defines that threshold and lists its four conditions. Never restate them here.
+
+Also open an issue for standalone work that outlives the current session, such as tech debt or a request
+the user parks for later. Do **not** open one for a problem you meet while you resolve another issue.
+See Fix it now.
 
 Trivial and Simple tasks don't need an issue unless you're deferring them — do the work and verify.
 
-- **Complex work is decomposed into sub-issues.** The parent states the outcome; each child is one independently verifiable step. Together the issue and its children are the **todo list** you work through and the **verification source** you check against — a live working record, not a write-once ticket. Check items off as you complete and verify them.
+- **Split complex work into sub-issues.** The parent states the outcome. Each child is one
+  independently verifiable step. The issue and its children serve two purposes. They are the **todo
+  list** you work through. They are also the **verification source** you check against. Keep the record
+  live, and check each item off as you complete and verify it.
 - Search before creating: `gh issue list --search "<keywords>" --state all`. If it exists, comment on it instead of opening a duplicate.
 - One issue = one outcome. If the description needs "and" to join two independent deliverables, it's two issues (see Splitting).
 
@@ -58,7 +66,18 @@ Title is imperative and specific — `Checkout fails when cart exceeds 20 items`
 - [ ] No regression in <existing behavior>
 ```
 
-The Definition of Done **is** the acceptance criteria from `core/requirements-engineering` § Acceptance Criteria — binary pass/fail, plus how to verify, plus regression scope. **Every issue requires a DoD — no exceptions.** It is the verification barrier: the work is not done and the issue does not close until every DoD item is checked and verified (see Verifying and closing). Add it before starting work. For user-facing or multi-file work, gather requirements first (same rule). An investigation issue (unknown root cause) still needs one — its DoD is *root cause identified + reproduction documented + the fix landed or the blocker named*, time-boxed so it doesn't run open-ended.
+The Definition of Done **is** the acceptance criteria from `core/requirements-engineering`
+§ Acceptance Criteria. Each criterion is a binary pass or fail. Each one states how to verify it and
+names the regression scope.
+
+**Every issue requires a DoD. There are no exceptions.** The DoD is the verification barrier. The work
+is not done, and the issue does not close, until you check and verify every DoD item. See Verifying and
+closing. Add the DoD before you start work. For user-facing or multi-file work, gather the requirements
+first.
+
+An investigation issue with an unknown root cause also needs a DoD. Its DoD names the root cause, the
+documented reproduction, and either the landed fix or the named blocker. Give it a time box so it does
+not run open-ended.
 
 ## Labels
 
@@ -68,9 +87,15 @@ The Definition of Done **is** the acceptance criteria from `core/requirements-en
 
 ## Splitting
 
-Split an issue when any is true: it spans independent deliverables (the "and" test), it can't be verified as a single pass/fail, it crosses package/workspace boundaries, or it's large enough that partial completion strands value. Keep parts together only when they're meaningless apart (a feature and its own test).
+Split an issue when any one condition holds. It spans independent deliverables, which the "and" test
+finds. You cannot verify it as a single pass or fail. It crosses a package or workspace boundary. It is
+large enough that a partial completion strands value.
 
-- **Slice vertically, not by layer.** Each child is a thin end-to-end behavior a caller or user can verify on its own — not "the DB part" then "the API part." A horizontal, by-layer slice can't satisfy its own DoD alone.
+Keep two parts together only when each part is meaningless alone, such as a feature and its own test.
+
+- **Slice vertically, never by layer.** Each child is a thin end-to-end behavior that a caller or a user
+  can verify alone. Never write "the DB part" and then "the API part". A horizontal slice cannot satisfy
+  its own DoD.
 - Create children under a parent: `gh issue create --parent <n> …` (GitHub tracks sub-issue progress).
 - Model ordering with `--blocked-by <n>` / `--blocking <n>` rather than prose.
 - Close children independently; close the parent when its own DoD is met.
@@ -83,12 +108,20 @@ Split an issue when any is true: it spans independent deliverables (the "and" te
 
 ## Linking in commits and PRs
 
-Get this exact — a keyword auto-closes an issue **only when it lands on the default branch** (a merged PR, or a direct push to default):
+Get this exact. A keyword auto-closes an issue **only when it lands on the default branch**. A merged PR
+lands there, and so does a direct push to default.
 
-- **Link, don't close:** put a bare reference in the commit subject. Single-line commits (`.claude/rules/git.md`) keep it in the subject: `Prevent checkout overflow past 20 items (#123)`. This shows the commit on the issue timeline without closing it. (Keep closing-keyword verbs — `fix`, `close`, `resolve` — out of the subject unless you mean it to close; a keyword directly before the reference, like `Fixes #123`, auto-closes on merge to default.)
+- **Link, do not close.** Put a bare reference in the commit subject. A single-line commit
+  (`.claude/rules/git.md`) keeps the reference in the subject:
+  `Prevent checkout overflow past 20 items (#123)`. The commit then shows on the issue timeline and the
+  issue stays open. Keep the closing verbs `fix`, `close` and `resolve` out of the subject unless you
+  intend to close. A keyword directly before the reference, such as `Fixes #123`, auto-closes on merge
+  to the default branch.
 - **Close on merge:** put a keyword + reference in the **PR description**: `Closes #123`. It closes once, when the PR merges — not per commit.
 - Keywords: `close/closes/closed`, `fix/fixes/fixed`, `resolve/resolves/resolved`. Cross-repo: `Fixes owner/repo#123`.
-- Keep the closing keyword in the PR body, not sprinkled across commits — a keyword on a feature-branch commit does nothing until merge, so centralizing it in the PR keeps intent in one place and avoids premature closes.
+- Keep the closing keyword in the PR body. Never spread it across commits. A keyword on a
+  feature-branch commit does nothing until the merge. One keyword in the PR holds the intent in one
+  place and prevents a premature close.
 
 ## Grooming an existing tracker
 

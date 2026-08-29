@@ -22,7 +22,6 @@ if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   echo ""
   echo "Installs:"
   echo "  Plugins:     context-mode"
-  echo "  MCP servers: context7 (library docs); memory (general Knowledge Graph — NOT used by webstack)"
   echo "  npm globals: codebase-memory-mcp (structural code discovery)"
   echo ""
   echo "Project-scoped servers (Playwright, Payload MCP, codebase-memory-mcp) are"
@@ -107,12 +106,6 @@ install_mcp() {
   fi
 }
 
-# context7 is required by webstack (library doc lookups).
-# memory is a general-purpose Knowledge Graph server webstack no longer uses — it stays installed
-# for other projects/tools. Remove this line if you don't want it on this machine.
-install_mcp "memory" npx -y @modelcontextprotocol/server-memory
-install_mcp "context7" npx -y @upstash/context7-mcp
-
 # --- Global npm binaries ---
 echo ""
 echo "Checking global npm packages..."
@@ -177,9 +170,6 @@ remove_project_duplicate() {
     fi
   fi
 }
-
-remove_project_duplicate "memory"
-remove_project_duplicate "context7"
 
 # --- Summary ---
 echo ""

@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: tslog
 target: rules
 domain: tooling
@@ -37,4 +37,8 @@ try { /* ... */ } catch (err) { logger.error(err) }
 try { /* ... */ } catch (err) { logger.error('failed to X', err) }
 ```
 
-**Detection gap:** unit tests (Vitest) and runtime both pass — only `tsc` (`yarn typecheck`, or the production build's `tsc --build`) flags it, and ESLint does not gate it. After a tslog major bump, run `yarn typecheck` (or a full build) across **every** workspace, not just the test suite, to surface these before they reach a Docker build.
+**Detection gap:** the Vitest unit tests pass, and the runtime passes. Only `tsc` flags the problem,
+through `yarn typecheck` or the production build's `tsc --build`. ESLint does not gate it.
+
+After a tslog major bump, run `yarn typecheck` or a full build across **every** workspace. Never run
+the test suite alone. This surfaces the errors before they reach a Docker build.

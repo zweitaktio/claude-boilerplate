@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.3.1
 applies: Always
 target: rules
 priority: high
@@ -10,7 +10,7 @@ paths:
 
 <!--
   Scoped to itself so it never auto-loads: this file costs nothing in a solo session,
-  which is most sessions. `session-context.mjs` detects live peer sessions on this same
+  which is most sessions. `session-context.ts` detects live peer sessions on this same
   checkout at SessionStart and injects a short digest telling the agent to read this file.
   Do not remove `paths:` — that would put ~220 lines into every project's always-loaded
   budget for a case that usually does not apply.
@@ -115,45 +115,23 @@ and it sends other sessions hunting.
 
 ## Committing on a shared index
 
-**A dirty working tree is another session's work until proven otherwise.** `git status` showing files
-you did not modify means someone is mid-flight. Investigate and ask — never `git checkout`,
-`git stash`, `git reset`, or restage them, and never `git add -A`.
+**`core/tooling` § Shared Branch Safety holds the git mechanics.** It is always loaded, so it is in
+context now. It covers the dirty tree, the ban on `git add -A`, `git commit --only <paths>`, the
+untracked-file exception, the cwd cause of a failed pathspec, the file count tell, and the ban on a
+reset or a revert to fix a sweep. Never restate any of that here.
 
-**Staging by name is not enough — the git index is shared.** All sessions work one checkout, so there
-is one index. Scoping your `add` does not scope your `commit`: `git commit` writes **everything
-currently staged**, including files another session staged seconds earlier.
+Two consequences apply only when a peer is live.
 
-- **Always commit with `git commit --only <paths> -m "…"`** (`-o`). It commits *only* those paths and
-  ignores the rest of the index, so a peer cannot be swept in. No `git add` step is needed —
-  **except for a file git has never seen.** `--only` resolves its pathspec against tracked files, so
-  on a new file it fails with `pathspec '<path>' did not match any file(s) known to git`. Add that one
-  path by name first, then commit with `--only` listing it: the add is unavoidable, and `--only` still
-  scopes the commit.
-- **That error has a second cause, and it is not the index — it is your working directory.** The Bash
-  tool's cwd **persists between calls**, so after `cd backend && yarn check` a later
-  `git commit --only backend/src/...` resolves as `backend/backend/src/...` and fails on a perfectly
-  tracked file. **Run git from the repo root, or pass absolute paths**, and when a pathspec fails
-  check cwd before concluding anything about the index. The tell is in git's own output —
-  `warning: could not open directory 'backend/backend/'`.
-- **`git add <paths> && git commit` is not enough.** The `&&` leaves a real window, which a pre-commit
-  hook widens to tens of seconds by running the full check; a peer staging inside that window still
-  gets committed. Inspecting `git diff --cached --name-only` first does not help — it samples state
-  that can change.
-- **A file that fails typecheck blocks every session's commit in that workspace, not just yours.** A
-  pre-commit hook decides *whether* to run from the staged path prefix, then checks the **whole
-  workspace** — so one unfinished file fails the hook for anyone staging anything there. **`--only`
-  scopes what you commit; it does not scope what the hook checks.** Park or finish a file that does
-  not compile rather than leaving it mid-flight — it is not local to you.
-- The tell is the file count in `git commit`'s output — if it exceeds what you staged, you took
-  someone's work with you.
-
-Nothing is lost when that happens (the content is intact in the commit), so **do not reset, revert or
-rebase to fix it** — that rewrites shared history under whoever else is mid-edit. Say what happened
-and leave the history alone.
+**A file that fails typecheck blocks every session's commit in that workspace, not only yours.** A
+pre-commit hook decides *whether* to run from the staged path prefix, then checks the **whole
+workspace**. One unfinished file therefore fails the hook for anyone who stages anything there.
+`--only` scopes what you commit. It does not scope what the hook checks. Park or finish a file that
+does not compile. It is not local to you.
 
 **Write the contract before the call site, so the tree is never red between two of your own edits.**
-The import is the one that actually bites — JSX referencing an icon or component that gets imported a
-moment later. Import first, then props/type, then the place the behaviour changes. The natural order
+The import is the edit that actually breaks the tree. The JSX references an icon or a component, and
+the import arrives a moment later. Write the import first, then the props and the type, then the place
+where the behaviour changes. The natural order
 is the reverse, and in a single-session repo that is invisible because the red never leaves your
 machine. **Here every intermediate state is public**, and a peer's check fails on your half-applied
 edit seconds later.
@@ -188,7 +166,7 @@ whose path sets are **disjoint** and touch **no** shared generated file collide 
 which is transient — so the coordinator may grant concurrent slots there, and should say that is why.
 
 **HOLD always names the blocker** — "hold, frontend is red on `<file>`, owned by `<session>`" — never
-a bare no. A session on hold keeps working; it just does not commit.
+a bare no. A session on hold keeps working, and it does not commit.
 
 **A red build blocks everyone except the session that caused it.** When the breakage is a half-applied
 change, no one else's commit can clear it, and holding its owner deadlocks the repo. Expedite that
@@ -206,7 +184,7 @@ coordinator that stops responding must never freeze the repo.
 **A peer pays context for every word you send. Write telegrams, not letters.** No preamble, no
 acknowledgement, no rapport, no restating what they said. Facts and actions only.
 
-**Simplified Technical English applies here too.** The caps below and `core/process/interaction.md`
+**Simplified Technical English applies here too.** The caps below and `core/interaction`
 § Language both hold. The caps govern how much you send. STE governs how you write each sentence.
 Write every heading value as a complete sentence, with a subject, a verb, and the articles. A fragment
 such as `root.tsx:42 typecheck fail` is a violation.

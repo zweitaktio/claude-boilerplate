@@ -1,9 +1,10 @@
-// version: 1.0.0
+// version: 1.1.0
 // On writes to migration or schema files, injects the reversibility and data-loss checks to run first.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input } = JSON.parse(await readStdin()) as HookInput
 
 if (tool_name !== 'Write' && tool_name !== 'Edit') pass()
 
@@ -12,7 +13,7 @@ const file = tool_input?.file_path ?? ''
 const isMigration =
   /\/migrations\//.test(file) ||
   /\/migrate\.\w+$/.test(file) ||
-  /migration/i.test(file.split('/').pop())
+  /migration/i.test(file.split('/').pop() ?? '')
 const isSchema =
   /\/schema\.\w+$/.test(file) || /\/schema\//.test(file) || /\.schema\.(ts|js|json)$/.test(file)
 

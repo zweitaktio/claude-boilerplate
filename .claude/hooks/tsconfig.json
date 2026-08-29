@@ -11,5 +11,5 @@
     "lib": ["esnext"],
     "types": ["node"]
   },
-  "include": ["*.ts", "core/*.ts", "core/*.d.mts"]
+  "include": ["*.ts", "core/*.ts", "core/*.d.mts", "../../scripts/*.ts"]
 }

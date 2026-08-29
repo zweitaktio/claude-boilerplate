@@ -1,2 +1,5 @@
 .DS_Store
 node_modules/
+
+# Raw model answers from scripts/pitfall-eval.ts — a diagnostic artifact, not source.
+scripts/pitfall-eval-runs.log

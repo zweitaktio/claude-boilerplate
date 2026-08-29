@@ -1,5 +1,5 @@
 ---
-version: 2.2.0
+version: 2.2.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -12,12 +12,14 @@ tags: [react-router, routing, framework, overview]
 
 ## Documentation
 
+**This table is the source list for every `vendor/react-router-8/` file.** They share the same `paths:`,
+so this file loads with each of them. Never copy the table into a sibling.
+
 | Source | URL | Notes |
 |--------|-----|-------|
 | React Router docs | https://reactrouter.com/ | Official docs, v8 |
 | API reference | https://api.reactrouter.com/v8/ | v8 API reference |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
 
 React Router's framework mode enables full-stack development with file-based routing, multiple rendering strategies, data loading, mutations, and type-safe APIs.
 
@@ -54,7 +56,9 @@ open a file matching their `paths:` — you do not need to fetch them.
 
 ## Version Requirements
 
-Framework mode requires React Router 8: Node.js 22+, React 19+, Vite 7+, and ESM-only packages. Middleware is built in — no config flag. See the v7 → v8 upgrade guide: https://reactrouter.com/upgrading/v7
+Framework mode requires React Router 8. It also requires Node.js 22+, React 19+, Vite 7+ and ESM-only
+packages. Middleware is built in, and it needs no config flag. The upgrade guide from v7 to v8 is at
+https://reactrouter.com/upgrading/v7
 
 ## Critical Implementation Patterns
 

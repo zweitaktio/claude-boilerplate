@@ -1,5 +1,5 @@
 ---
-version: 2.2.0
+version: 2.2.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [routing, routes, nested-routes, layout, params, dynamic-segments]
 ---
 
 # Routing
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-For file conventions (`root.tsx`, `routes.ts`, etc.), see `VendorReactRouter8SpecialFiles`.
 
 ## Route Configuration
 
@@ -323,7 +312,7 @@ export default function ExpenseCreate({ loaderData }: Route.ComponentProps) {
 ### Benefits
 
 - Direct URL access to modals (shareable, bookmarkable)
-- Browser back button closes the modal naturally
+- The browser back button closes the modal
 - List page stays mounted underneath (no re-render on open/close)
 - Each modal has its own loader/action for data isolation
 - Works with `useFetcher` for non-navigating submissions
@@ -354,11 +343,12 @@ export function shouldRevalidate({
 - Layout routes with data that rarely changes (user info, nav items)
 - Routes with expensive loaders (aggregations, search)
 
-**When NOT to override:** If the route's data depends on other routes' mutations (e.g., a count that changes when items are added), let default revalidation handle it.
+**When NOT to override:** the route's data depends on a mutation in another route. A count that changes
+when a user adds an item is one example. Let the default revalidation handle it.
 
 ### New route file 404s under explicit `routes.ts` config
 
-**Symptom:** a new file under `app/routes/` returns 404 with no errors — the route simply doesn't exist.
+**Symptom:** a new file under `app/routes/` returns 404 with no error. The route does not exist.
 
 **Cause:** RR8 has two modes — file-based (auto-discovered) and explicit config (`routes.ts`). When the
 project has a `routes.ts` exporting a `RouteConfig`, new route files are **not** auto-discovered.

@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -18,15 +18,16 @@ Component-level i18n patterns, namespace splitting, Trans component, and routing
 | react-i18next | https://react.i18next.com | React bindings, hooks, Trans component |
 | i18next docs | https://www.i18next.com/overview/getting-started | Core i18n library |
 | GitHub | https://github.com/i18next/react-i18next | Source, issues |
-| Context7 | `/i18next/react-i18next` | Good coverage |
 
 ## Client Setup
 
-The client (`entry.client.tsx`) loads namespaces from the `/api/locales/:lang/:ns` resource route via `i18next-fetch-backend`, with `detection: { caches: [], order: ['htmlTag'] }` so it trusts the server-set `<html lang>`. See `VendorReactRouter8I18nSetup` for the full file. Do **not** use `i18next-http-backend` / `getInitialNamespaces` — those are the v7 pattern.
+The client (`entry.client.tsx`) loads namespaces from the `/api/locales/:lang/:ns` resource route via `i18next-fetch-backend`, with `detection: { caches: [], order: ['htmlTag'] }` so it trusts the server-set `<html lang>`. See `vendor/react-router-8-i18n/setup` for the full file. Do **not** use `i18next-http-backend` / `getInitialNamespaces` — those are the v7 pattern.
 
 ## Root Layout & Language Sync
 
-**`useChangeLanguage` was removed in remix-i18next v8.** Sync i18next to the server-detected locale (`loaderData.locale`, from the root loader's `getLocale(context)`) with an effect, and drive `<html lang>`/`dir` from i18next:
+**remix-i18next v8 removed `useChangeLanguage`.** Sync i18next to the server-detected locale with an
+effect. That locale is `loaderData.locale`, which the root loader gets from `getLocale(context)`. Then
+drive `<html lang>` and `dir` from i18next:
 
 ```typescript
 import { useEffect, type PropsWithChildren } from 'react'
@@ -104,7 +105,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 
 ### `app/routes/home.tsx` — Language-Prefixed Page
 
-Routes under the `:lang` prefix don't re-validate the language — the `_lang-guard` layout already 404s unsupported locales. Just read `params.lang`:
+A route under the `:lang` prefix does not re-validate the language. The `_lang-guard` layout already returns 404 for an unsupported locale. Read `params.lang`:
 
 ```typescript
 import { type Route } from './+types/home'
@@ -233,7 +234,7 @@ app/locales/
 
 ### Configuration
 
-No per-namespace config needed — `i18next-cli` discovers namespaces from `useTranslation('...')` and `t('ns:key')` usage. See `VendorReactRouter8I18nOperations` for the full `i18next.config.ts`.
+No per-namespace config needed — `i18next-cli` discovers namespaces from `useTranslation('...')` and `t('ns:key')` usage. See `vendor/react-router-8-i18n/operations` for the full `i18next.config.ts`.
 
 ### Route Declaration
 
@@ -313,7 +314,7 @@ const { t: tAdmin } = useTranslation('admin')
 
 ### TypeScript Types for Multiple Namespaces
 
-No manual work — `i18next-cli` regenerates `app/types/resources.d.ts` for **all** namespaces on `yarn i18n:extract` / `i18n:types`. Just add the namespace's JSON files and re-run extraction.
+This needs no manual work. `i18next-cli` regenerates `app/types/resources.d.ts` for **all** namespaces on `yarn i18n:extract` and `yarn i18n:types`. Add the namespace's JSON files, then re-run the extraction.
 
 ### Trans Component for JSX in Translations
 

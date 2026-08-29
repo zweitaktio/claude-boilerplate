@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [errors, ErrorBoundary, error-handling, useRouteError, 404, 500]
 ---
 
 # Error Handling in React Router
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-React Router provides built-in mechanisms for catching and managing errors across your application through error boundaries and strategic error throwing.
 
 ## Core Concepts
 
@@ -171,7 +160,7 @@ export function handleError(
 
 ### Returning error objects instead of throwing Responses
 
-Never return `{ error: "..." }` from loaders/actions. This renders the component normally with an error prop instead of triggering the ErrorBoundary:
+Never return `{ error: "..." }` from a loader or an action. It renders the component with an error prop, and it does not trigger the ErrorBoundary:
 
 ```typescript
 // ❌ Component renders normally — no ErrorBoundary, no HTTP status

@@ -1,5 +1,5 @@
 ---
-version: 2.15.0
+version: 2.16.0
 applies: Always
 target: rules
 priority: high
@@ -84,7 +84,11 @@ for f in $(find . -name '*.ts'); do mv "$f" "$f.bak"; done
 
 ### No Inline Scripts, Loops, or Long Pipe Chains (enforced by hook)
 
-`python -c`, `node -e`, `ruby -e`, `for`/`while` loops, `xargs`, and pipe chains of 5+ are blocked. Short pipe chains (up to 4) are fine — they're normal shell usage. For anything longer or with real logic, run it in **context-mode `ctx_execute`** (sandboxed; the output stays out of context), or create a script file in `scripts/` if it's reusable.
+A hook blocks `python -c`, `node -e`, `ruby -e`, a `for` or `while` loop, `xargs`, and a pipe chain of 5
+or more. A short pipe chain of up to 4 is normal shell usage and stays allowed.
+
+Run anything longer, or anything with real logic, in **context-mode `ctx_execute`**. It runs in a sandbox
+and keeps the output out of context. Create a script file in `scripts/` when the logic is reusable.
 
 ### Use Dedicated Tools Instead
 
@@ -106,17 +110,19 @@ Prefer context-mode's sandbox execution when output may be large or you only nee
 | Read (large file) | context-mode `execute_file` | File >50 lines and you only need specific data (logs, CSV, JSON) |
 | WebFetch | context-mode `fetch_and_index` | Fetching URL for reference — indexes for later `search` |
 | Multiple Bash + Read calls | context-mode `batch_execute` | Running 2+ commands and searching across all results in one call |
-| Storing docs/content for later | context-mode `index` | Indexing API refs, skill prompts, migration guides, Context7 output |
+| Storing docs/content for later | context-mode `index` | Indexing API refs, skill prompts, migration guides |
 | Finding specific info in indexed content | context-mode `search` | After any indexing step — pass all queries in one call |
 
 **After indexing** (via `fetch_and_index`, `index`, or `batch_execute`), use `search` to query the indexed content on demand — no need to re-fetch or re-read.
 
-**When NOT to use context-mode:** Short commands with predictable output (`git status`, `yarn check`, `docker ps`), files you need to edit (use Read + Edit instead), and quick file existence checks.
+**When NOT to use context-mode:** a short command with predictable output, such as `git status`,
+`yarn check` or `docker ps`. Also skip it for a file you intend to edit, because Edit needs the exact
+bytes. Also skip it for a quick check that a file exists.
 
 ### File Copy/Move — Use Bash, Not Read+Write
 
 When the task is to copy or move a file without modification, use `cp` or `mv` directly.
-Reading a file into context just to write it elsewhere wastes tokens and adds no value.
+A read of the file into context, only to write it elsewhere, wastes tokens and adds no value.
 
 ```bash
 # Good — zero tokens spent on file content
@@ -146,7 +152,7 @@ The Edit tool cannot match literal tab characters. If the project uses tabs (che
 | Whole file or large section | Write tool (full rewrite) |
 | Config files (YAML, TOML, Makefile) | Write tool |
 
-For space-indented files, the Edit tool works normally.
+The Edit tool works on a space-indented file.
 
 On session start, check `.editorconfig` at the project root. If `indent_style = tab`, prefer Write over Edit for all file modifications.
 
@@ -181,14 +187,28 @@ Multiple agents (or the user) may be working on the same branch concurrently. Ne
 
 If files are dirty when you arrive, assume another agent put them there. Investigate before discarding or restaging. Stage and commit only the files you intentionally changed, by name — never `git add -A` / `git add .`.
 
-**Staging by name is not enough — the index is shared too.** One checkout means one index, and scoping your `add` does not scope your `commit`: plain `git commit` writes **everything currently staged**, including what another agent staged seconds earlier. `git add <paths> && git commit` does not close the gap either — the `&&` leaves a window that a pre-commit hook widens to tens of seconds.
+**Staging by name is not enough, because the index is shared too.** One checkout means one index. A
+scoped `add` does not scope your `commit`. A plain `git commit` writes **everything currently staged**,
+including what another agent staged seconds earlier.
+
+`git add <paths> && git commit` does not close the gap. The `&&` leaves a window, and a pre-commit hook
+widens that window to tens of seconds.
 
 - **Commit with `git commit --only <paths> -m "…"`** (`-o`). It commits only those paths and ignores the rest of the index.
-- **A file git has never seen is the one exception** — `--only` resolves its pathspec against tracked files, so on a new file it fails with `pathspec '<path>' did not match any file(s) known to git`. Add that one path by name first, then commit with `--only` listing it.
-- **That same error has a second cause: your working directory, not the index.** The Bash tool's cwd persists between calls, so after a `cd backend` a later `git commit --only backend/src/...` resolves as `backend/backend/src/...` and fails on a perfectly tracked file. Run git from the repo root or pass absolute paths; when a pathspec fails, check cwd before concluding anything about the index.
-- **The tell is the file count in `git commit`'s output** — if it exceeds what you staged, you took someone's work with you. Nothing is lost (the content is in the commit), so do **not** reset, revert or rebase to fix it — that rewrites shared history under whoever is mid-edit. Say what happened and leave it alone.
+- **A file git has never seen is the one exception.** `--only` resolves its pathspec against tracked
+  files. On a new file it fails with `pathspec '<path>' did not match any file(s) known to git`. Add
+  that one path by name first. Then commit with `--only` and list it.
+- **That same error has a second cause. The cause is your working directory, not the index.** The Bash
+  tool keeps its cwd between calls. After a `cd backend`, a later `git commit --only backend/src/...`
+  resolves as `backend/backend/src/...` and fails on a tracked file. Run git from the repository root,
+  or pass an absolute path. When a pathspec fails, check the cwd first.
+- **The file count in the `git commit` output is the tell.** A count above what you staged means you
+  took another session's work with you. Nothing is lost, because the content is in the commit.
+  Therefore do **not** reset, revert or rebase. Each of those rewrites shared history under a session
+  that is mid-edit. Say what happened, and leave the commit alone.
 
-When other sessions are actually live on this checkout, `session-context.mjs` detects them at session start and tells you to read `core/multi-agent` — role claims, the commit gate, and the message format.
+`session-context.ts` detects a live peer session on this checkout at session start. It then tells you
+to read `core/multi-agent`. That file holds the role claims, the commit gate and the message format.
 
 ## Agent Behavior
 
@@ -197,6 +217,27 @@ When other sessions are actually live on this checkout, `session-context.mjs` de
 - Use platform tools that don't require manual approval (see `core/claude-settings`)
 - In monorepos, ensure every command runs in the correct workspace directory (see `core/monorepo`)
 - Follow `core/engineering-discipline` for task assessment, verification, and implementation process
+
+### Delegating to a subagent
+
+A subagent starts with a fresh context. It does not inherit this conversation or its auto memory. It
+pays for itself when it keeps a large volume of output out of your context. It costs time and money when
+the task is small.
+
+**Delegate when all three hold:**
+1. The work is an independent track. It does not need your conversation to make sense.
+2. The work is sizeable. It reads many files, or produces many lines of output.
+3. A named agent covers it, or the work is a broad search whose file dumps you do not need.
+
+**Never delegate** a single-file edit, a question you can answer from an open file, or a task whose
+result you must interpret against context the subagent cannot see.
+
+**Pass what the subagent cannot see.** State the paths, the task, and every forced-artifact line you
+wrote. It has no access to this conversation.
+
+The deployed agents are `code-reviewer` (a gated adversarial review, see `core/engineering-discipline`
+§ Review Gate), `mechanical-replacer` (a decided replacement list across 5 or more files), and
+`i18n-translator` (a translation pass over two or more locale files).
 
 ## Monorepo Verification
 

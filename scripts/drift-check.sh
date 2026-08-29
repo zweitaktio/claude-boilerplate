@@ -63,7 +63,7 @@ section_content() {
 }
 
 # ─── Vendor Knowledge heading aliases ──
-VK_ALIASES='## Vendor Knowledge|## Knowledge Graph|## KG Entities|## Vendor Docs'
+VK_ALIASES='## Vendor Knowledge|## Vendor Docs'
 
 # Start results array
 RESULTS="[]"
@@ -92,7 +92,7 @@ done
 # Check Vendor Knowledge (with aliases)
 vk_found=""
 vk_alias=""
-for alias in "## Vendor Knowledge" "## Knowledge Graph" "## KG Entities" "## Vendor Docs"; do
+for alias in "## Vendor Knowledge" "## Vendor Docs"; do
   if echo "$CONTENT" | grep -q "^${alias}"; then
     vk_found="true"
     if [ "$alias" != "## Vendor Knowledge" ]; then
@@ -146,7 +146,7 @@ fi
 # ─── C2: Vendor Knowledge has domain table ──
 vk_section=""
 if [ -n "$vk_found" ]; then
-  for alias in "## Vendor Knowledge" "## Knowledge Graph" "## KG Entities" "## Vendor Docs"; do
+  for alias in "## Vendor Knowledge" "## Vendor Docs"; do
     if echo "$CONTENT" | grep -q "^${alias}"; then
       vk_section=$(section_content "^${alias}" 2)
       break

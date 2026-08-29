@@ -1,4 +1,4 @@
-// version: 1.2.0
+// version: 1.4.0
 // Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange
 // to the user afterwards. No STE regex checks here on purpose: article and tense detection false-
 // positives on paths, shas and GO — the exact content that must pass verbatim — and a guard that
@@ -6,8 +6,11 @@
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { read, write } from './core/state.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name, tool_input, hook_event_name } = JSON.parse(await readStdin())
+const { tool_name, tool_input, hook_event_name } = JSON.parse(await readStdin()) as HookInput & {
+  tool_input?: { message?: unknown }
+}
 
 if (tool_name !== 'SendMessage') pass()
 
@@ -28,13 +31,13 @@ const MAX_WORDS = 80
 const body = typeof tool_input?.message === 'string' ? tool_input.message : ''
 const lines = body.split('\n').filter((l) => l.trim() !== '').length
 const words = body.split(/\s+/).filter(Boolean).length
-const over = lines > MAX_LINES || words > MAX_WORDS
+const isOverCap = lines > MAX_LINES || words > MAX_WORDS
 
 // The format itself is only worth repeating once per session — after that it is the
 // same cost this hook exists to prevent. An over-cap message always gets the warning,
 // because that one is not a reminder, it is a measurement of what is about to be sent.
 const reminded = read('peer-msg-reminded')
-if (reminded && !over) pass()
+if (reminded && !isOverCap) pass()
 write('peer-msg-reminded', '1')
 
 const format = `Peer messages are telegrams, not letters — a peer pays context for every word.
@@ -51,4 +54,4 @@ Omit any heading that is empty. FIRST TEST: does this message change what someon
 const warning = `OVER CAP — this message is ${lines} lines / ${words} words; the cap is ${MAX_LINES} / ${MAX_WORDS}.
 Cut it to facts and actions: numbers and paths, never adjectives. Drop any praise, process commentary, restating what they said, or explaining why you will now comply. If the content is genuinely load-bearing, that is why it needs a durable home — put it in a wiki page or an issue and send the path.`
 
-inject('PreToolUse', over ? `${warning}\n\n${format}` : format)
+inject('PreToolUse', isOverCap ? `${warning}\n\n${format}` : format)

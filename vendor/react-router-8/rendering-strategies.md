@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [ssr, spa, prerender, static, rendering, hydration]
 ---
 
 # Rendering Strategies
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-React Router supports three rendering strategies, configured in `react-router.config.ts`.
 
 ## Server-Side Rendering (SSR)
 

@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.3.2
 applies: payload-rest-client
 target: rules
 domain: backend
@@ -106,7 +106,11 @@ Key rules:
 
 ### `select` doesn't include implicit fields
 
-The `select` parameter only returns explicitly listed fields. Implicit fields like `id` are NOT included automatically. If you need `id` in the response, either omit `select` or include a real collection field to get a minimal response (Payload always includes `id` when at least one field is selected via the REST API — but the TypeScript type won't reflect it).
+The `select` parameter returns only the fields you list. It does NOT add an implicit field such as `id`.
+
+To get `id` in the response, omit `select`, or list one real collection field for a minimal response.
+Payload always includes `id` when the REST API request selects at least one field. The TypeScript type
+does not reflect that.
 
 ### `in` operator expects a comma-separated string
 

@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.6.0
 applies: Always
 target: rules
 paths:
@@ -85,9 +85,12 @@ tags: [configuration, settings, permissions, hooks]
 Project settings override user settings for that project.
 
 **What goes where:**
-- MCP tool **permissions** → project `.claude/settings.json` (team-shared, checked into git)
-- Plugin **installations** → user scope (per developer, `claude plugin install`)
-- MCP server **installations** → user scope for generic servers (`memory`, `context7`); project scope for project-specific servers (`playwright`, `payload`)
+
+| Item | Scope | Reason |
+|------|-------|--------|
+| MCP tool **permissions** | Project `.claude/settings.json` | The team shares them through git |
+| Plugin **installations** | User scope | Each developer installs with `claude plugin install` |
+| **Project-specific** MCP servers, such as `playwright` and `payload` | Project scope | Only this project uses them |
 
 ## Adding MCP Permissions
 
@@ -97,7 +100,6 @@ For MCP tools, add to the allow list in project `.claude/settings.json`:
 {
   "permissions": {
     "allow": [
-      "mcp__context7__*",
       "mcp__claude-in-chrome__*",
       "mcp__playwright__*",
       "mcp__plugin_context-mode_context-mode__*"
@@ -107,3 +109,29 @@ For MCP tools, add to the allow list in project `.claude/settings.json`:
 ```
 
 For Payload projects, also add `"mcp__payload__*"` to the allow list.
+
+## Capping Subagent Spend
+
+Claude Opus 5 delegates to subagents more readily than earlier models. Delegation pays off on an
+independent, sizeable track of work. It multiplies cost and time on a small task.
+
+`core/tooling` § Delegating to a subagent states the criteria. Set a deterministic cap as well, because
+a criterion is advisory and a cap is not.
+
+```json
+{
+  "env": {
+    "CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH": "1",
+    "CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS": "3"
+  }
+}
+```
+
+- `CLAUDE_CODE_MAX_SUBAGENT_SPAWN_DEPTH` stops a subagent from spawning its own subagents. Set it to `1`
+  unless a workflow needs nesting.
+- `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` caps how many run at once.
+- Both need Claude Code 2.1.217 or later.
+
+Claude Code adds its own delegation instruction on Opus 5 only under the `claude_code` system prompt
+preset. A custom or omitted system prompt gets no such instruction, so the rule and the cap carry the
+work.

@@ -8,6 +8,9 @@ paths:
   - "scripts/**"
   - "**/*.sh"
 tags: [bash, set-e, pipefail, grep, command-substitution]
+trip-task: In a bash script that starts with `set -euo pipefail`, write a function `purpose()` that takes a file path and prints the text of the line-2 comment if that line begins with //, or prints nothing when it does not. Then call it in a loop over several files. Reply with the script only, in one bash code block.
+defect: ^(?![\s\S]*\|\|\s*(?:true|:))[\s\S]*\bgrep\b
+proof: "none 8/8, full 8/8, claude-sonnet-5, 2026-08-29"
 ---
 
 # A grep that matches nothing inside `$(...)` aborts the script under `set -e`

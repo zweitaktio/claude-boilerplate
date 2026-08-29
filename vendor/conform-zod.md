@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.1.2
 applies: "@conform-to/react" | "@conform-to/zod"
 target: rules
 domain: forms
@@ -134,7 +134,8 @@ export const createCheckoutSchema = (t: TranslationFn) =>
 
 ## Action Pattern (Server-Side)
 
-The canonical parse → validate → reply → execute pattern:
+The canonical pattern has four steps. Parse the submission. Validate it. Reply on a failure. Execute on
+a success.
 
 ```typescript
 import { data, redirect } from 'react-router'
@@ -334,7 +335,8 @@ export function FormCheckbox({ field, children }: FormCheckboxProps) {
 
 ### Boolean Coercion
 
-Conform's `parseWithZod` from `@conform-to/zod/v4` auto-coerces checkbox values: `"on"` → `true`, absence → `false`. No manual coercion needed:
+Conform's `parseWithZod` from `@conform-to/zod/v4` coerces a checkbox value automatically. It turns
+`"on"` into `true`, and an absent value into `false`. You need no manual coercion:
 
 ```typescript
 // ✅ Schema — plain z.boolean(), Conform handles coercion
@@ -732,6 +734,6 @@ import { createLoginSchema } from '~/schemas/login'
 
 ## See Also
 
-- `VendorReactRouter8Actions` — Form submission patterns, useFetcher
-- `VendorReactRouter8Integration` — Integration-specific gotchas (checkbox coercion, dynamic form ID, Conform duplicate input bug)
-- `VendorDaisyui5` — Full DaisyUI 5 component class reference
+- `vendor/react-router-8/actions` — Form submission patterns, useFetcher
+- `vendor/react-router-8-integration` — Integration-specific gotchas (checkbox coercion, dynamic form ID, Conform duplicate input bug)
+- `vendor/daisyui-5` — Full DaisyUI 5 component class reference

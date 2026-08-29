@@ -8,6 +8,11 @@ paths:
   - "scripts/sync.sh"
   - "manifest.json"
 tags: [sync, versioning, semver, deployment, data-loss, backporting]
+trip-task: Write a bash function `determine_action` that takes a source version and a target version as semver strings and echoes what a deploy tool should do. Echo SKIP when they match, and decide the rest. Reply with the function only, in one bash code block.
+defect: ^(?![\s\S]*(AHEAD|newer|gt |-gt|sort -V|semver))[\s\S]*else[\s\S]*UPDATE
+defect-flags: ""
+on-task: determine_action
+proof: "none 8/8, full 8/8, claude-sonnet-5, 2026-08-29"
 ---
 
 # sync.sh treated any version difference as UPDATE and downgraded targets

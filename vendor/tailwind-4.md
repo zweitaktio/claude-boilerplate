@@ -1,5 +1,5 @@
 ---
-version: 1.2.3
+version: 1.2.4
 applies: tailwindcss@4
 target: rules
 domain: styling
@@ -16,7 +16,6 @@ tags: [tailwind, css, styling, utilities, responsive, themes]
 |--------|-----|-------|
 | Official docs | https://tailwindcss.com/docs | v4 docs |
 | GitHub | https://github.com/tailwindlabs/tailwindcss | Source, issues, changelog |
-| Context7 | `/tailwindlabs/tailwindcss` | Verify v4 content |
 
 ## Quick Reference
 
@@ -57,7 +56,7 @@ cn('btn', { 'btn-primary': variant === 'primary' })
 ```
 
 Key points:
-- `cn()` resolves Tailwind class conflicts (e.g. `p-4` + `p-2` → `p-2`)
+- `cn()` resolves a Tailwind class conflict. It reduces `p-4 p-2` to `p-2`
 - Handles `undefined` gracefully (no "undefined" string in class)
 - Only use `cn()` when classes are conditional or merged — static strings don't need it
 
@@ -133,4 +132,6 @@ Key rules:
 </div>
 ```
 
-This affects any layout with container blocks (sections, columns, cards) that need to opt out of prose for structural elements but re-enable it for rich text content inside.
+This affects any layout with container blocks, such as a section, a column or a card. Such a container
+must opt out of prose for its structural elements. It must then re-enable prose for the rich text
+inside.

@@ -1,6 +1,6 @@
 ---
 name: i18n-translator
-description: Manages i18next JSON translation files using jq. Translates with cultural sensitivity, requires tone/formality specification.
+description: Translates and maintains i18next JSON files with jq. Use it to add, translate or reorganize keys across two or more locale files, or for any translation pass large enough that the raw JSON would fill the parent context. The task must state the target locales and the tone and formality; the agent refuses without them.
 model: inherit
 ---
 

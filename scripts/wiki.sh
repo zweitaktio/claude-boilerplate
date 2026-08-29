@@ -136,6 +136,13 @@ cmd_new() {
       echo "paths:"
       echo "  - \"TODO/narrowest/glob/that/fires/**\""
       echo "tags: []"
+      if [ "$type" = "pitfall" ] || [ "$type" = "decision" ]; then
+        echo "trip-tasks:   # two or more. A task states the GOAL, never the trap."
+        echo "  - \"TODO — a task that walks into this, without naming it\""
+        echo "  - \"TODO — a second task of a different shape\""
+        echo "defect: TODO — a regex matching the WRONG output"
+        echo "proof: unproven"
+      fi
       echo "---"
       echo ""
       echo "# TODO: title"

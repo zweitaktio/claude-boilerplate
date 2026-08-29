@@ -1,5 +1,5 @@
 ---
-version: 2.2.0
+version: 2.2.1
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -9,7 +9,7 @@ tags: [i18n, translations, workflow, languages, pitfalls, operations]
 
 # React Router 8 i18n — Operations
 
-Translation workflow, language management, pitfalls, and known issues. For architecture see `VendorReactRouter8I18nSetup`.
+Translation workflow, language management, pitfalls, and known issues. For architecture see `vendor/react-router-8-i18n/setup`.
 
 ## Documentation
 
@@ -18,7 +18,6 @@ Translation workflow, language management, pitfalls, and known issues. For archi
 | i18next docs | https://www.i18next.com/ | Core i18n library |
 | i18next-cli | https://github.com/i18next/i18next-cli | Extraction + type generation |
 | remix-i18next | https://github.com/sergiodxa/remix-i18next | v8 middleware integration |
-| Context7 | `/i18next/i18next` | Good coverage |
 
 ## Translation File Workflow
 
@@ -110,7 +109,8 @@ Switching navigates to a `/{newLang}/...` URL; the i18n middleware detects the n
 
 ## Server-Side Translation in Loaders
 
-There is no standalone server instance in v8 — pull the request's i18next instance (already scoped to the detected locale) from the middleware and destructure `t`:
+v8 has no standalone server instance. Pull the request's i18next instance from the middleware, and
+destructure `t`. The middleware already scopes that instance to the detected locale.
 
 ```typescript
 import { getInstance } from '~/middleware/i18next'
@@ -127,7 +127,7 @@ export async function loader({ context }: Route.LoaderArgs) {
 
 Configured in the i18n middleware's `detection.order` (`['custom', 'searchParams', 'cookie', 'header']`):
 
-1. **URL path** — first segment (`/en/about` → `en`), via the custom `findLocale`
+1. **URL path** — the first segment, so `/en/about` gives `en`. The custom `findLocale` reads it
 2. **`?lng` search param**
 3. **Cookie** — the `lng` cookie (an explicit prior choice)
 4. **`Accept-Language` header** — browser preference
@@ -199,24 +199,54 @@ Fill in the `app/locales/fr/*.json` strings, then run `yarn i18n:types`.
 
 ### If the backend is Payload CMS — content locales
 
-A UI locale (above) and a Payload **content** locale are separate things. When the backend is Payload with `localization.locales`, adding a language means editing **two** sources of truth — the backend locale constant that feeds `localization.locales`, and the frontend i18n constant — and the order of operations matters.
+A UI locale and a Payload **content** locale are separate things. The section above covers the UI
+locale.
 
-**1. Regenerate types before touching any hardcoded locale union.** `payload-types.ts` encodes the locale union, and every `payload.create/update({ locale })` call site validates against it. Add the locale to the backend constant, then run type generation and the type-copy step *first*. Editing `z.enum` schemas or locale casts before regenerating produces a flood of `TS2322: '<locale>' is not assignable` errors that only clear after regen — they are noise, not real failures.
+When the backend is Payload with `localization.locales`, a new language needs an edit in **two** sources
+of truth. The first is the backend locale constant that feeds `localization.locales`. The second is the
+frontend i18n constant. The order of the steps matters.
 
-**2. Let `tsc` find the localized dictionaries.** Any typed `Record<Locale, …>` dictionary becomes a compile error until the new locale is added. `tsc` is the completeness oracle here — run it and work the list. Expect hits well beyond translation files: transactional email copy, PDF/document text and label maps, seeded CMS content, `date-fns` locale maps (which need a locale *import*, not a translation), and inline message maps inside endpoints.
+**1. Regenerate the types before you touch a hardcoded locale union.** `payload-types.ts` encodes the
+locale union. Every `payload.create` and `payload.update` call site with a `locale` validates against it.
 
-**3. Grep for casts — `tsc` cannot see them.** A cast like `as 'de' | 'en' | 'fr'` silently narrows the new locale away and is *not* flagged, because a cast defines its own type. These must be found by grep, not the compiler.
+Add the locale to the backend constant. Then run the type generation and the type-copy step *first*.
+
+An edit to a `z.enum` schema or a locale cast before the regeneration produces many
+`TS2322: '<locale>' is not assignable` errors. They clear after the regeneration. They are noise, never
+real failures.
+
+**2. Let `tsc` find the localized dictionaries.** A typed `Record<Locale, …>` dictionary becomes a
+compile error until you add the new locale. `tsc` is the completeness oracle. Run it, and work through
+the list.
+
+Expect hits well beyond the translation files. The list covers transactional email copy, PDF and
+document text, label maps, seeded CMS content, and inline message maps inside endpoints. A `date-fns`
+locale map needs a locale *import*, never a translation.
+
+**3. Grep for the casts, because `tsc` cannot see them.** A cast such as `as 'de' | 'en' | 'fr'` narrows
+the new locale away in silence. The compiler does *not* flag it, because a cast defines its own type.
+Find these with grep, never with the compiler.
 
 **4. Migrations — the enum add.** Adding a content locale emits `ALTER TYPE … ADD VALUE` for **every** `_locales` enum in the schema (one per localized collection and version table).
 
-- **Idempotency:** add `IF NOT EXISTS` to every `ADD VALUE`/`ADD COLUMN` in `up()`. On PG12+, `ALTER TYPE … ADD VALUE IF NOT EXISTS` runs fine inside a migration transaction *as long as the new value is not USED in the same transaction* — a locale-add only adds, so this is safe. `down()` needs no guards.
-- **`migrate:create` captures all pending drift, not just your change.** It diffs the latest migration snapshot against the *current* config, so it sweeps in any committed-but-unmigrated schema change from a teammate. Do not hand-edit the generated snapshot `.json` to strip foreign columns — that breaks the migration chain. Sequence the commit with the other change instead.
-- **Shared-branch gotcha:** `migrate:create` rewrites `migrations/index.ts` to import every migration file present on disk, including a teammate's uncommitted one — which commit-couples your migration to their unfinished work.
-- Do **not** run the migrate command in local dev; dev auto-applies schema changes. The migration first truly runs on staging/production.
+- **Idempotency:** add `IF NOT EXISTS` to every `ADD VALUE` and `ADD COLUMN` in `up()`. On PG12 and
+  later, `ALTER TYPE … ADD VALUE IF NOT EXISTS` runs inside a migration transaction, as long as the same
+  transaction does not USE the new value. A locale addition only adds, so it is safe. `down()` needs no
+  guard.
+- **`migrate:create` captures all pending drift, not only your change.** It diffs the latest migration
+  snapshot against the *current* config. It therefore sweeps in a committed but unmigrated schema change
+  from a teammate. Never hand-edit the generated snapshot `.json` to strip a foreign column, because
+  that breaks the migration chain. Sequence your commit with the other change instead.
+- **Shared-branch problem:** `migrate:create` rewrites `migrations/index.ts` to import every migration
+  file on disk. That includes a teammate's uncommitted file. Your migration then couples to their
+  unfinished work.
+- Do **not** run the migrate command in local dev, because dev auto-applies a schema change. The migration first runs on staging or production.
 
 ## Removing a Language
 
-To remove German (`de`), reverse the above: drop it from `supportedLngs` and `resources` in `app/i18n-config.ts`, delete `app/locales/de.ts`, remove it from `locales` in `i18next.config.ts`, and delete the `app/locales/de/` directory. Re-run `yarn i18n:extract` to confirm it's gone.
+To remove German (`de`), reverse the steps above. Drop `de` from `supportedLngs` and `resources` in
+`app/i18n-config.ts`. Delete `app/locales/de.ts`. Remove `de` from `locales` in `i18next.config.ts`.
+Delete the `app/locales/de/` directory. Then re-run `yarn i18n:extract` to confirm the removal.
 
 ## Pitfalls
 
@@ -236,7 +266,7 @@ Declare multiple namespaces in route `handle.i18n` (arrays are fine there — ne
 
 ### Don't use Trans for plain text
 
-`<Trans>` is for JSX inside translations (links, formatting). For plain strings, `t()` is simpler:
+`core/i18n` rule 10 states the rule. This is what it looks like:
 
 ```typescript
 // ❌ Overkill for plain text
@@ -331,9 +361,10 @@ the commit finishes — which reads to peers as an unknown-owner artifact.
 ## Known Issues
 
 ### Key collision with nested keys
-Parent and child keys must not collide. `t('nav')` and `t('nav.about')` in the same namespace causes i18next to return an object instead of a string.
+`core/i18n` rule 8 forbids this. The symptom here: i18next returns an object instead of a string, and
+the UI renders nothing.
 
-**Fix:** Use unique parent keys or flatten the structure.
+**Fix:** Use a unique parent key, or flatten the structure.
 
 ### i18next-cli empty strings silently break t() fallbacks
 

@@ -1,9 +1,10 @@
-// version: 1.0.0
+// version: 1.1.0
 // Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const input = JSON.parse(await readStdin())
+const input = JSON.parse(await readStdin()) as HookInput
 const msg = input.last_assistant_message ?? ''
 const agentType = input.agent_type ?? 'unknown'
 

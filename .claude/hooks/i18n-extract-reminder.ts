@@ -1,9 +1,10 @@
-// version: 1.0.0
+// version: 1.1.0
 // Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input } = JSON.parse(await readStdin()) as HookInput
 
 if (tool_name !== 'Edit' && tool_name !== 'Write') pass()
 

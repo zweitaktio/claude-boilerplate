@@ -57,6 +57,45 @@ if (/\.claude\/rules\/project\//.test(file) && tool_name === 'Write') {
     warn(`type: "${type ?? ''}" is not one of ${TYPES.join(' | ')}. (knowledge-base.md)`)
   }
 
+  // A pitfall or a decision claims to change behaviour. Measured: 2 of 3 existing
+  // pitfalls changed nothing, because the model already knew them. The page must
+  // name a task that trips it and a regex that catches the wrong answer.
+  if (type === 'pitfall' || type === 'decision') {
+    const hasField = (k: string): boolean => new RegExp(String.raw`^${k}:\s*\S`, 'm').test(fm)
+    const isTodo = (k: string): boolean => new RegExp(String.raw`^${k}:\s*TODO\b`, 'm').test(fm)
+    // Count real trip-tasks: a YAML list item that is not still a TODO placeholder.
+    const taskBlock = /^trip-tasks:\s*\n((?:[ \t]*-[ \t]*.*\n?)+)/m.exec(fm)?.[1] ?? ''
+    const tasks = taskBlock
+      .split('\n')
+      .map((l) =>
+        l
+          .replace(/^[ \t]*-[ \t]*/, '')
+          .trim()
+          .replaceAll(/^["']|["']$/g, ''),
+      )
+      .filter((s) => s.length > 0 && !/^TODO\b/.test(s))
+    const missing: string[] = []
+    if (tasks.length < 2) missing.push(`trip-tasks (found ${tasks.length}, need 2)`)
+    if (!hasField('defect') || isTodo('defect')) missing.push('defect')
+    if (missing.length > 0 && !hasField('proof-waiver')) {
+      deny(
+        'PreToolUse',
+        `This ${type} page needs ${missing.join(' and ')} in its frontmatter.\n\n` +
+          `  trip-tasks: TWO or more tasks. Each states the GOAL, never the trap.\n` +
+          `             Leak test: delete the page, read the task — could a reader still\n` +
+          `             avoid the defect because the TASK told them? Then it leaks.\n` +
+          `  defect:    a regex matching the WRONG output (for a decision, the rejected approach)\n` +
+          `  proof:     unproven — the review pass fills this in\n\n` +
+          `Without them nobody can tell whether this page changes behaviour. Two of three pages ` +
+          `measured here changed nothing: the model already knew the fact, and the page cost ` +
+          `context for free.\n\n` +
+          `If this page genuinely cannot be tested, say why:\n` +
+          `  proof-waiver: <the reason no task can trip it>\n` +
+          `(knowledge-base.md § Prove the page before you keep it)`,
+      )
+    }
+  }
+
   for (const g of pathsGlobs(fm)) {
     if (['**', '**/*', '**/**', '*'].includes(g)) {
       warn(

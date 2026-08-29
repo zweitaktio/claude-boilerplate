@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [navigation, Link, NavLink, useNavigate, redirect, history]
 ---
 
 # Navigation
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-React Router provides several ways to navigate between routes.
 
 ## Link Component
 

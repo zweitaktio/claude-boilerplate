@@ -1,9 +1,9 @@
 ---
-version: 5.2.0
+version: 5.2.1
 applies: Always
 target: rules
 priority: high
-tags: [mcp, context7, codebase-memory, code-discovery, knowledge-base, tools, workflow]
+tags: [mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow]
 ---
 
 # MCP Tools & Plugins
@@ -18,25 +18,45 @@ The version determines which API is correct. Never assume you know the version.
 
 ### 2. Vendor docs + project pitfalls
 
-**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/` — no manual lookup needed. They load automatically when you read files matching their path patterns. Each vendor doc has a `## Documentation` section with verified source URLs, GitHub repos, and Context7 library IDs — use these as the primary sources for API lookups in step 3.
+**Vendor docs** auto-load as path-scoped rules from `.claude/rules/vendor/`. You need no manual lookup.
+They load when you read a file that matches their path patterns. Each vendor doc holds a
+`## Documentation` section with the verified source URL and the GitHub repository. Use that section as
+the source list for step 3.
 
-**Project-specific pitfalls and decisions** are path-scoped Markdown under `.claude/rules/project/` — they auto-load when you read the files they concern, so you rarely have to look. For an area you won't open, run `.claude/scripts/wiki.sh find "<topic>"`. There is no Knowledge Graph to query. See `core/process/knowledge-base`.
+**Project pitfalls and decisions** auto-load the same way. For an area you will not open, run
+`.claude/scripts/wiki.sh find "<topic>"`. See § Project knowledge below.
 
-### 3. Look up the API docs — Context7 + web search, in parallel
+### 3. Read the official source for the installed version
 
-Always run both. Vendor rules have project context; these have current API details.
+**Go to the source the library publishes, at the version the project runs.** A documentation site shows
+the latest release. Your project rarely runs the latest release, and that gap is what a wrong API call
+is made of.
 
-**Use the `## Documentation` section in the auto-loaded vendor doc** as your source list — it has the verified URLs, GitHub repos, and Context7 library IDs for each library. Don't guess at library IDs or doc URLs.
+Take the source list from the auto-loaded vendor doc. Never guess a URL.
+
+Fetch with `ctx_fetch_and_index`, then `ctx_search`. Never fetch a documentation page with `curl`,
+because the whole page then lands in context (`core/tooling` § curl).
+
+**Source order. Stop at the first one that answers the question.**
+
+| Order | Source | Why it ranks here |
+|-------|--------|-------------------|
+| 1 | The GitHub repository **at the installed tag**: `https://github.com/<org>/<repo>/tree/v<version>/docs` | Version-exact. The docs match the code you run |
+| 2 | The release notes for that tag: `https://github.com/<org>/<repo>/releases/tag/v<version>` | The fastest answer when the behaviour changed between versions |
+| 3 | The official documentation site | Current and readable. Confirm it covers your version |
+| 4 | `WebSearch("<library> <version> <topic>")` | The fallback when the three above do not answer |
 
 ```
-# Context7 — use the library ID from the vendor doc's Documentation table
-resolve-library-id("<package-name>")  → query-docs(id, topic: "<what you need>")
-
-# Web search — use the official docs URL from the vendor doc's Documentation table
-WebSearch("<library> <version> <topic> site:<docs-url>")
+# Version-exact, from the repository the library publishes
+ctx_fetch_and_index(url: "https://raw.githubusercontent.com/remix-run/react-router/v8.1.0/docs/start/framework/route-module.md",
+                    source: "RR8 route modules")
+ctx_search(queries: ["clientLoader hydration"])
 ```
 
-Use the **specific version** in both queries — `"daisyui 5 form patterns"` not `"daisyui form patterns"`.
+**Name the version in every query.** Search `"daisyui 5 form patterns"`, never `"daisyui form patterns"`.
+
+**A source that contradicts the installed version is wrong, not authoritative.** Say so, and use the
+tag.
 
 ### Repeat before writing code that uses a different library
 
@@ -59,7 +79,7 @@ from a mention, it cannot follow a call, and it dumps raw bytes into your contex
 | Find a literal string, a config value, a comment marker, a `TODO` | **Grep** — text the graph does not model |
 
 The tool is `trace_call_path`, not `trace_path`. Full tool list and config:
-`core/claude-config/mcp-servers` § codebase-memory-mcp.
+`core/mcp-servers` § codebase-memory-mcp.
 
 **Scope every query to the workspace you own.** Pass `file_pattern` in a monorepo. Without it a query
 returns matches from a sibling package you did not mean to touch, and a short identifier collides
@@ -72,22 +92,12 @@ does not index, and in a project that has not registered the server yet. Check `
 
 ## Project knowledge
 
-Project decisions, bug resolutions, and conventions live in path-scoped Markdown under
-`.claude/rules/project/`, not a Knowledge Graph. They auto-load when you read the files they concern.
-Full read/write rules, the tiered model, and the frontmatter schema are in `core/process/knowledge-base`.
+Project decisions, bug resolutions and conventions live in path-scoped Markdown under
+`.claude/rules/project/`. They auto-load when you read the files they concern.
+Full read/write rules, the tiered model, and the frontmatter schema are in `core/knowledge-base`.
 
 ---
 
-## Context7
-
-Version-specific library documentation and code examples.
-
-1. `resolve-library-id("<package-name>")` — get the Context7 library ID (must call first, enforced by hook)
-2. `query-docs(id, topic: "<specific topic>")` — fetch docs filtered by topic
-
-If docs look wrong or outdated, flag it — do not blindly trust.
-
----
 
 ## Browser automation — which tool
 

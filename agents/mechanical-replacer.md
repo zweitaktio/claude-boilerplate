@@ -1,6 +1,6 @@
 ---
 name: mechanical-replacer
-description: Performs mechanical find-and-replace operations across multiple files with verification and reporting
+description: Applies a predetermined list of text replacements across many files, then verifies and reports each one. Use it when the replacements are already decided and span 5 or more files, such as a rename, an import path move or an API signature migration. Do not use it when the replacement still needs a judgment call per site.
 model: inherit
 ---
 
@@ -85,4 +85,5 @@ Use the Grep tool (not bash grep) for initial search. Use `git diff` via Bash fo
 - **If you encounter an Edit tool failure**, report it and move on to the next replacement. Do not retry.
 - **Work sequentially through the file list.** Do not parallelize edits to the same file.
 - **Minimize context consumption.** Use Grep with line numbers to locate targets. Read only the specific lines needed (offset + limit) when the Edit tool requires surrounding context. Never read an entire file just to find a string.
-- **Never handle translations.** If the task involves translating UI strings, i18n JSON files, or locale content, refuse and direct the caller to use the `i18n-translator` agent instead.
+- **Never handle translations.** Refuse any task that translates a UI string, an i18n JSON file or
+  locale content. Direct the caller to the `i18n-translator` agent instead.

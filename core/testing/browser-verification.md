@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: Always
 target: rules
 paths:
@@ -92,7 +92,7 @@ whether anything touched the other port before blaming the app or a backend rest
 ## Signing in on local dev
 
 Fill the form and submit it. Credentials come from committed dev fixtures or `.env`, or the form
-arrives prefilled by the browser's password manager — in which case just submit. Drive submits with
+arrives prefilled by the browser's password manager. In that case, submit the form. Drive submits with
 `form.requestSubmit()`.
 
 **Never print a credential into the transcript** — no echoing a password, token or API key into

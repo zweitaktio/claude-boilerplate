@@ -1,19 +1,20 @@
-// version: 2.2.0
+// version: 2.3.0
 // On a review request, injects the code files edited this session (session state ∩ git diff) to scope it.
 // On every prompt, injects the Simplified Technical English (ASD-STE100 subset) output-language rule.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { readLines } from './core/state.mjs'
-import { execSync } from 'child_process'
+import type { HookInput } from './core/hook-types.ts'
+import { execSync } from 'node:child_process'
 
-const { prompt } = JSON.parse(await readStdin())
+const { prompt } = JSON.parse(await readStdin()) as HookInput
 if (!prompt) pass()
 
 const lower = prompt.toLowerCase().trim()
 
 // --- "review" keyword: full code review on session-changed files ---
 if (/^review\.?$/i.test(lower)) {
-  const run = (cmd) => {
+  const run = (cmd: string): string => {
     try {
       return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim()
     } catch {
@@ -116,6 +117,8 @@ hints.push(
     '- Keep the articles. Write complete sentences. STE is controlled prose, NOT telegram style:\n' +
     '  fragments, dropped articles, and arrow chains (A -> B -> fails) are violations, not compliance.\n' +
     '- Max 3 words per noun cluster. No metaphor, no idiom, no analogy, no hedge, no filler.\n' +
+    '- Keep an intensifier, a frequency adverb or a qualifier ONLY when it changes the technical\n' +
+    '  outcome. Test: delete the word, re-read the sentence, keep it only if the meaning changed.\n' +
     'Applies to answers, explanations, documents you write, peer messages, AND code comments.\n' +
     '- A peer message keeps its brevity caps and writes each value as a complete sentence\n' +
     '  (core/multi-agent § Message format lists the exempt tokens).\n' +

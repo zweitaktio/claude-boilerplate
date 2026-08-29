@@ -1,126 +1,65 @@
 ---
-version: 1.1.0
+version: 2.1.0
 applies: Always
 target: rules
 priority: high
 tags: [rules, writing, compliance]
 ---
 
-# Writing Effective Rules
+# Writing Rules — project overlay
 
-## What a Good Rule Looks Like
+`core/claude-config/writing-rules.md` is the authority. It holds the compliance hierarchy, forced
+artifacts, the escalation path, rule sizing, the Simplified Technical English requirement, the
+duplication rule and the common mistakes. Read it there. Never restate it here, and never let the two
+files disagree.
 
-A rule works when an agent follows it without interpretation. Test: could you check compliance by reading the output?
+This file holds only what applies to this repository.
 
-```
-# Bad — requires interpretation
-Verify library APIs before using them.
+## This repository is the rule set
 
-# Good — observable, checkable
-Read package.json for the actual installed version before writing library code.
-Use Context7 to look up the API signature for that version.
-```
+Every template you edit deploys to another project. A defect here reaches every target on the next
+`/webstack update`. Three consequences follow.
 
-```
-# Bad — abstract category
-Follow proper error handling patterns.
+- **A cross-reference must use the deployed path.** `core/{subdir}/` deploys to
+  `.claude/rules/core/{name}.md`. Write `core/knowledge-base`, never `core/process/knowledge-base`. The
+  second form resolves here and fails in every target project.
+- **`SKILL.md` and `references/maintenance.md` are the exception.** They stay in this repository, so the
+  source path is correct in them.
+- **Bump the `version` in frontmatter on every content change.** Use patch for wording, minor for a new
+  section, and major for a restructure. An unbumped change ships silently.
 
-# Good — concrete pattern
-Use <ErrorBoundary> at route level. Use try/catch in loaders.
-Never return a bare catch — always log or rethrow with context.
-```
+## Run the checks before you commit
 
-```
-# Bad — persona framing
-You are a senior engineer who writes clean, maintainable code.
+| Command | What it proves |
+|---------|----------------|
+| `node scripts/ste-check.ts` | No arrow chain, no hedge, no sentence over 25 words. Exits non-zero on a violation |
+| `node scripts/ste-check.ts --filler` | Lists rule 11 candidates. Judge each with the deletion test |
+| `node scripts/dupe-check.ts` | No repeated instruction between two files that load together |
+| `node scripts/wiki-review.ts` | Which project pages to retire, fix, merge or review |
+| `./scripts/gen-inventory.sh --check` | The SKILL.md tables match the templates on disk |
+| `./scripts/context-budget.sh` | The always-loaded byte cost. It parses frontmatter, so trust it |
+| `cd .claude/hooks && bun run check` | The hooks and `scripts/*.ts` typecheck, lint and format |
 
-# Good — observable constraint
-Every change must pass `yarn check` before moving to the next step.
-```
+All three review tools take `--root <dir>`, so you can run them against a target project from this
+checkout.
 
-## Common Mistakes
+**Never detect `paths:` with a plain grep over a whole file.** A fenced frontmatter example contains a
+`paths:` line, and the grep then reports an always-loaded file as path-scoped. That error hid
+`core/knowledge-base` from the always-loaded count for months.
 
-**Stating what to think instead of what to do:**
+## `.claude/rules/` here is a mirror, not a duplicate
 
-```
-# Bad
-Consider the implications of breaking changes carefully.
+This repository does not deploy its own `core/` templates, so only `.claude/rules/*.md` loads here.
+`interaction.md` and `fetching.md` therefore repeat content from `core/interaction` and `core/tooling`
+on purpose. A pointer would resolve to a file that never loads.
 
-# Good
-If a symbol is exported from a module boundary, run `find_referencing_symbols`
-and update all call sites before changing its signature.
-```
+**Edit both sides together.** The mirror is the one place where the duplication rule in
+`core/writing-rules` does not apply.
 
-**Writing rules that can't fail:**
+## Count the emphasis budget across the whole set
 
-```
-# Bad — always "followed", never useful
-Write high-quality code with good naming conventions.
+The budget is 3 to 5 markers across the **whole always-loaded set**, not per file. Count them before you
+add one. Search for `**CRITICAL` and `**IMPORTANT` in every `core/` template whose frontmatter has no
+`paths:` key.
 
-# Good — can visibly fail, catches real mistakes
-Components use `export const` arrow functions. No `React.FC`.
-One component per file, except compound components.
-```
-
-**Duplicating what the tool already enforces:**
-
-```
-# Bad — ESLint already catches this
-Use const instead of let when the variable is never reassigned.
-
-# Good — supplements tooling with judgment calls
-When a function exceeds 50 lines, extract a named helper.
-ESLint won't flag this — it's a readability judgment.
-```
-
-## Rule Sizing
-
-- **One rule file per topic** — `react-components.md`, not `frontend.md`
-- **Aim for under 150 lines per file** — adherence drops with length. Longer is fine for complex topics (context window is not the constraint — attention is), but every line should earn its place. If a section could be a separate path-scoped rule, split it.
-- **Path-scope when possible** — a React rule shouldn't load when editing CI configs. Use `paths:` frontmatter
-- **5-10 actionable instructions per file** — each one something an agent could get wrong without the rule
-
-## When to Add a Rule
-
-Add a rule when you observe the same mistake twice. Not before.
-
-```
-# Bad — preemptive rule for a theoretical problem
-Always validate that environment variables exist before using them.
-
-# Good — rule born from an actual failure
-`process.env.DATABASE_URL` is undefined in client bundles.
-Access environment variables only in loaders, actions, and .server modules.
-```
-
-## When to Remove a Rule
-
-A rule is dead weight when:
-- The tooling already enforces it (`yarn check` catches it)
-- Nobody has violated it in months — it may be obvious enough to not need stating
-- It contradicts a newer rule or project convention
-
-## Making Rules Stick
-
-Compliance depends on mechanism, position, and contrast — in that order. Opus 4.7's more literal instruction-following amplifies this: rules stated as precise, observable actions land without needing emphasis.
-
-**1. Mechanism beats keywords.** A hook that denies tool execution is more reliable than any CRITICAL marker. If a rule has 0% voluntary compliance, promote it to a hook — don't add more emphasis.
-
-**2. Position beats emphasis.** Top-of-file and end-of-file rules get more attention than mid-document rules (U-shaped attention curve). Place the most important rules first. A plain rule at line 1 outperforms a CRITICAL rule at line 80.
-
-**3. Emphasis works through contrast.** `CRITICAL` and `IMPORTANT` improve adherence only when rare. Budget: 3-5 per instruction set. Beyond that, each marker dilutes the others.
-
-**Escalation path when a rule is ignored:**
-1. Rewrite with a concrete before/after example
-2. Move to top of file
-3. Add CRITICAL/IMPORTANT marker
-4. Restructure as a forced artifact — demand a literal output line (e.g. `INTENT:`, `TWINS:`), then grep for it. Writing the line forces the work; the token makes the next rung possible
-5. Promote to a hook (inject reminder at the right moment)
-6. Promote to a hard gate (deny tool execution)
-
-## Checking if a Rule Works
-
-A working rule produces **visible behavior change**. After deploying a rule:
-- Does the agent follow it without reminders? → Working
-- Does the agent follow it sometimes? → Too vague, add an example or reposition to top of file
-- Does the agent ignore it? → Buried, too abstract, or needs hook enforcement. See escalation path above
+Adding a marker means you remove one somewhere else.

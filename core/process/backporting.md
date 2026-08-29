@@ -1,5 +1,5 @@
 ---
-version: 2.1.0
+version: 2.1.1
 applies: Always
 target: rules
 tags: [backport, knowledge-base, vendor, maintenance]
@@ -88,8 +88,10 @@ project-specific.
 
 ## What happens downstream
 
-- `/webstack update` scans project pages for `backport: true` without `backported:` → proposes adding
-  them to skill templates
-- `/webstack maintenance` audits the wiki (staleness, orphans, collisions) and surfaces backport candidates
-- Approved backports get added to `~/.claude/skills/webstack/vendor/` or `core/` templates with a version bump
+- `/webstack update` scans the project pages for `backport: true` without `backported:`. It then
+  proposes to add them to the skill templates
+- `/webstack maintenance` audits the wiki for staleness, orphans and collisions. It also surfaces the
+  backport candidates
+- An approved backport goes into `~/.claude/skills/webstack/vendor/` or a `core/` template, with a
+  version bump
 - Subsequent `/webstack update` on other projects picks up the change

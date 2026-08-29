@@ -1,5 +1,5 @@
 ---
-version: 1.8.0
+version: 1.8.1
 applies: payload@3
 target: rules
 domain: backend
@@ -21,7 +21,6 @@ tags: [payload, cms, collections, api, backend, database]
 | llms.txt | https://payloadcms.com/llms.txt | Fetch via WebFetch |
 | API reference | https://payloadcms.com/docs/local-api/overview | Local API |
 | REST API | https://payloadcms.com/docs/rest-api/overview | REST endpoints |
-| Context7 | `/payloadcms/payload` | Good coverage |
 | GitHub | https://github.com/payloadcms/payload | Source, issues, examples |
 | GitHub raw docs | https://github.com/payloadcms/payload/tree/main/docs | **Prefer for LLM access** — raw markdown, no rendering issues |
 | Discord | https://discord.com/invite/payload | Community support |
@@ -97,7 +96,15 @@ Key points:
 
 ### Never wrap external API calls in a transaction
 
-A transaction holds a Postgres connection in `idle-in-transaction` state for the duration of every `await` inside it. If you call an external API (OpenAI, Stripe, third-party HTTP) inside a transaction, that connection sits idle for seconds to minutes — holding row locks and a pool slot. Under load, the pool starves and unrelated services sharing the same Postgres instance (Hydra OAuth, jobs queue, other apps) start failing with connection timeouts.
+A transaction holds a Postgres connection in the `idle-in-transaction` state for the duration of every
+`await` inside it.
+
+A call to an external API inside a transaction leaves that connection idle for seconds or minutes. This
+covers OpenAI, Stripe and any third-party HTTP call. The idle connection holds its row locks and its
+pool slot.
+
+Under load the pool starves. Unrelated services on the same Postgres instance then fail with a
+connection timeout. This covers Hydra OAuth, the jobs queue and other applications.
 
 Each external call is independent — there's no atomicity benefit. Run the external call first, then open a short transaction only around the DB writes that need to be atomic. If the DB writes are also independent (one row each), skip the transaction entirely.
 
@@ -175,11 +182,16 @@ updatePages { id: 8, data: { seoTitle: "New Title" } }
 createTechnologies { data: { title: "Redis", slug: "redis" } }
 ```
 
-**The `data` wrapper pattern fails silently** — the update reports success but no fields change. This is because `data` is not a reserved key, so it ends up in `fieldData` as a field named "data" which doesn't exist in any collection schema. Payload ignores unknown fields without error.
+**The `data` wrapper pattern fails in silence.** The update reports success, and no field changes.
+
+`data` is not a reserved key. It therefore lands in `fieldData` as a field named "data", and no
+collection schema holds that field. Payload ignores an unknown field without an error.
 
 ### Layout fields (blocks with Lexical JSON)
 
-Layout fields work via MCP — including nested Lexical rich-text JSON, discriminated block type unions, and deeply nested structures (columns → text blocks). No REST API fallback needed.
+Layout fields work through MCP. This covers nested Lexical rich-text JSON, a discriminated block type
+union, and a deeply nested structure such as a column that holds text blocks. You need no REST API
+fallback.
 
 **Caveat:** The plugin generates its Zod validation schema from the running Payload config at server startup. If block definitions change, the backend server must be restarted for MCP to accept the new schema. A stale server will reject blocks with unrecognized fields.
 
@@ -211,11 +223,20 @@ Payload's `create()` Options type is `RequiredData | (DraftData + draft: true)`.
 
 ### Localized blocks — never mix levels
 
-When a `blocks` / `layout` field is NOT localized at the top level but individual block fields have `localized: true`, updating via API with a `locale` param overwrites the single shared layout array — last locale update wins. **Fix:** localize the layout field itself (`localized: true` on the blocks field). Remove `localized: true` from individual block fields within. Each locale then gets its own independent block array.
+A `blocks` or `layout` field can lack `localized: true` at the top level while its individual block
+fields carry it. An API update with a `locale` parameter then overwrites the single shared layout array,
+and the last locale update wins.
+
+**Fix:** localize the layout field itself. Put `localized: true` on the blocks field. Remove
+`localized: true` from the individual block fields inside it. Each locale then gets its own independent
+block array.
 
 ### Optional boolean fields from checkboxes
 
-HTML checkboxes send no value when unchecked → Conform/Zod parses as `undefined` → Payload ignores `undefined` fields in updates (field stays at its previous value). **Always default to `false`** when passing optional boolean fields to Payload: `marketingConsent: formData.marketingConsent ?? false`.
+An unchecked HTML checkbox sends no value. Conform and Zod then parse it as `undefined`. Payload ignores
+an `undefined` field in an update, so the field keeps its previous value. **Always default to `false`**
+when you pass an optional boolean field to Payload:
+`marketingConsent: formData.marketingConsent ?? false`.
 
 ### `jobs.queue()` does not run jobs
 
@@ -238,7 +259,18 @@ If you have a `crons:` config on the workflow, scheduled runs handle execution; 
 
 ### An omitted `limit` is 10, not "unlimited"
 
-`find()` resolves a missing limit to 10 — `const sanitizedLimit = limit ?? (usePagination ? 10 : 0)`. A list renders its first 10 rows with no pagination UI and no error, and a client-side filter over that truncated page then shows an empty state while records exist. **Pass `limit: 0` explicitly for "everything".** Two safe exceptions: reading only `totalDocs` (the full match count, unaffected by `limit`), and a deliberate `limit: 1` existence check. When adding a limit, check the `where` scopes to the right parent too — an unlimited-but-unscoped `find` is worse than a truncated one.
+`find()` resolves a missing limit to 10. The code is
+`const sanitizedLimit = limit ?? (usePagination ? 10 : 0)`.
+
+A list then renders its first 10 rows, with no pagination UI and no error. A client-side filter over
+that truncated page shows an empty state while the records exist.
+
+**Pass `limit: 0` explicitly when you want everything.** Two exceptions are safe. The first reads only
+`totalDocs`, which is the full match count and ignores `limit`. The second is a deliberate `limit: 1`
+existence check.
+
+When you add a limit, check that the `where` scopes to the right parent. An unlimited and unscoped
+`find` is worse than a truncated one.
 
 ### `data` in `beforeChange` is not the request body
 
@@ -250,9 +282,20 @@ Related: field-level `access.update` is not a guard. Payload **discards a denied
 
 It receives the **whole** stored array (see the `beforeValidate` entry above), so a value the caller never touched is re-checked on every write. An ownership-scoped `filterOptions` therefore makes a document permanently uneditable by anyone but the owner of each referenced row. Scope by the same `Where` the collection's own `read` uses, not by ownership.
 
-For polymorphic relationships you **can** branch on the target collection: `FilterOptionsProps` passes `relationTo` (the single collection being validated) plus `req`, and Payload loops it, calling the function once per collection. A `filterOptions` stricter than the collection's own `read` is the smell — the caller can already see the document; refusing the *reference* only breaks writes.
+For a polymorphic relationship you **can** branch on the target collection. `FilterOptionsProps` passes
+`relationTo`, which names the single collection under validation, plus `req`. Payload loops over the
+collections and calls the function once for each one.
 
-Two things that make a 400 here weak evidence: a collection `beforeChange` hook runs *before* field validation and will throw first (tell them apart by message — "do not belong to this journey" style text is your hook; `"This field has the following invalid selections"` is `filterOptions`), and a **nonexistent id** also yields "invalid selections", because the query matches no row.
+A `filterOptions` stricter than the collection's own `read` is the smell. The caller can already see the
+document. A refusal of the *reference* then breaks writes only.
+
+Two things make a 400 here weak evidence.
+
+First, a collection `beforeChange` hook runs *before* field validation, and it throws first. Tell the two
+apart by the message. Text such as "do not belong to this journey" comes from your hook.
+`"This field has the following invalid selections"` comes from `filterOptions`.
+
+Second, a **nonexistent id** also yields "invalid selections", because the query matches no row.
 
 ### A `hasMany` write replaces the whole array
 
@@ -265,11 +308,26 @@ Two things that make a 400 here weak evidence: a collection `beforeChange` hook 
 | Compare-and-swap on a version column | `where` is not a conditional write — the adapter resolves it to an id under an unlocked `SELECT`, then writes by primary key |
 | `SELECT … FOR UPDATE` | Does not serialise through drizzle |
 
-**Never write a `hasMany` array from a value you read earlier.** Serialise the read *and* the write, or send a delta to something that merges. A caller holding the list across a user interaction — a form's default values — cannot be made safe by any lock, because the window *is* the interaction.
+**Never write a `hasMany` array from a value you read earlier.** Serialise the read *and* the write, or
+send a delta to something that merges.
+
+No lock makes a caller safe when it holds the list across a user interaction, such as a form's default
+values. The window *is* the interaction.
 
 ### `createdAt` is client-writable
 
-Payload accepts a supplied `createdAt` through the REST API on both create and update; it is not server-pinned. Never use it to mean "when this row was made" — use the server clock at hook time — and never treat it as audit evidence. If you need a trustworthy timestamp, add a separate field with `access.update: () => false` and set it in `beforeChange`. Do not "fix" `createdAt` itself without checking callers: some flows legitimately set it as domain data. Ordering a feed by it is a spoofing nuisance rather than an authz hole *only if* the query is access-scoped.
+Payload accepts a supplied `createdAt` through the REST API, on both create and update. The server does
+not pin it.
+
+Never read `createdAt` as "when this row was made". Use the server clock at hook time instead. Never
+treat it as audit evidence.
+
+For a trustworthy timestamp, add a separate field with `access.update: () => false`, and set it in
+`beforeChange`.
+
+Never "fix" `createdAt` itself before you check the callers. Some flows set it as domain data, and that
+is legitimate. An order-by on `createdAt` is a spoofing nuisance rather than an authorization hole,
+*only if* the query is access-scoped.
 
 ### A localized field you can read is not necessarily one you can query
 
@@ -277,15 +335,50 @@ Payload accepts a supplied `createdAt` through the REST API on both create and u
 
 ### A migration is two files — `index.ts` lands in the same commit
 
-`migrate:create` writes the migration **and** rewrites `migrations/index.ts` to register it. `payload migrate` runs the array in `index.ts`; a file missing from it does not exist to the runner. Dev never catches this because the dev server auto-applies schema changes and never consults `index.ts` — it breaks only on staging/production. Enumerating paths by hand for `git commit --only` (see `core/tooling`) makes the omission more likely, and review does not catch it because the diff shows a well-formed migration. After `migrate:create`, check `git status --porcelain <migrations dir>` and commit both. A peer's dirty `index.ts` is an unshipped schema change, not a leftover side effect.
+`migrate:create` writes the migration **and** rewrites `migrations/index.ts` to register it.
+`payload migrate` runs the array in `index.ts`. A file missing from that array does not exist to the
+runner.
+
+Dev never catches this. The dev server auto-applies a schema change and never consults `index.ts`. The
+defect appears only on staging or production.
+
+A hand-written path list for `git commit --only` (see `core/tooling`) makes the omission more likely.
+Review does not catch it either, because the diff shows a well-formed migration.
+
+After `migrate:create`, run `git status --porcelain <migrations dir>` and commit both files. A peer's
+dirty `index.ts` is an unshipped schema change, never a leftover side effect.
 
 ### A data migration must read locales from the data, not the config
 
-The config reflects the *final* locale list the moment it is edited, but the `_locales` Postgres enum only gains a value when the migration adding it runs. A migration iterating `config.localization.localeCodes` therefore queries locales the database does not know yet whenever it sorts **before** the one adding them — and migrations run in filename order, so backfill-then-locale (the natural authoring order) is the broken one. It passes locally because dev auto-push already widened the enum. Derive the list from the rows being touched (`SELECT DISTINCT "_locale"::text FROM "<table>_locales"`) — also more correct, since a locale with no rows has nothing to backfill.
+The config holds the *final* locale list the moment you edit it. The `_locales` Postgres enum gains a
+value only when the migration that adds it runs.
+
+A migration that loops over `config.localization.localeCodes` therefore queries a locale the database
+does not know yet, whenever that migration sorts **before** the one that adds the locale. Migrations run
+in filename order. The natural authoring order puts the backfill first, and that order is the broken
+one. It passes locally, because the dev auto-push already widened the enum.
+
+Derive the list from the rows you touch instead:
+`SELECT DISTINCT "_locale"::text FROM "<table>_locales"`. This is also more correct, because a locale
+with no rows has nothing to backfill.
 
 ### Changing a workflow's `queue` strands its seeded job
 
-A pending job carries the queue it was created with, and an `autoRun` cron only drains its own queue. `jobs.queue({ workflow })` reads the queue from the workflow config *at insert time*, so editing `queue:` affects only future inserts — and an idempotent seeder matching on `workflowSlug` alone finds the stale job and skips. The workflow silently stops running: the row exists, `completedAt` is null, and `run?queue=<new>` reports `noJobsRemaining: true`. Match the existence check on queue as well, and **delete the stranded row before the next run** — a `repeated: true` re-queue skips when more than one unfinished job exists, so a stale row makes the handler decline to schedule its successor. Detect with `GET /api/payload-jobs?depth=0`, looking for a pending row whose `queue` is not the one the workflow now declares.
+A pending job carries the queue it was created with. An `autoRun` cron drains its own queue only.
+
+`jobs.queue({ workflow })` reads the queue from the workflow config *at insert time*. An edit to
+`queue:` therefore affects future inserts only. An idempotent seeder that matches on `workflowSlug`
+alone finds the stale job and skips.
+
+The workflow then stops in silence. The row exists, `completedAt` is null, and `run?queue=<new>` reports
+`noJobsRemaining: true`.
+
+Match the existence check on the queue as well. Then **delete the stranded row before the next run**. A
+`repeated: true` re-queue skips when more than one unfinished job exists, so a stale row makes the
+handler decline to schedule its successor.
+
+Detect the problem with `GET /api/payload-jobs?depth=0`. Look for a pending row whose `queue` differs
+from the one the workflow now declares.
 
 ### Two auth collections make `req.user` a union
 
@@ -293,15 +386,43 @@ With `users` + `admins`, `req.user` is typed `Admin | User`, and a types regen b
 
 ### Payload caches its instance on `globalThis` across HMR
 
-Next dev HMR reloads route modules but **not** already-registered Payload job handlers or config-imported modules, so a fresh request keeps executing the old code — the module's own `console.log` prints the stale value while the file on disk is correct. Restart the dev server after editing anything reached through the Payload config, a collection hook, or a jobs-queue task. Custom endpoints fail two ways: a *new* endpoint 404s (the route table is built at init), and an *edited* one returns 200 running old code — the second is silent and reads as a passing test. Confirm from the server log, not by re-reading the source.
+Next dev HMR reloads a route module. It does **not** reload an already-registered Payload job handler or
+a config-imported module. A fresh request therefore keeps executing the old code. The module's own
+`console.log` prints the stale value while the file on disk is correct.
+
+Restart the dev server after you edit anything the Payload config reaches. This covers a collection hook
+and a jobs-queue task.
+
+A custom endpoint fails in two ways. A *new* endpoint returns 404, because the route table is built at
+init. An *edited* endpoint returns 200 and runs the old code. The second failure is silent and reads as
+a passing test.
+
+Confirm the behaviour from the server log. Never confirm it by a re-read of the source.
 
 ### Admin component paths need the `@/` alias, not bare `src/`
 
-Bare `'src/…#Export'` specifiers in `admin.components` resolve only via tsconfig `baseUrl`. Dropping `baseUrl` (as the TS 6 migration does) leaves `importMap.js` full of specifiers Next cannot resolve — `Module not found: Can't resolve 'src/components/…'` — even though the file exists and `tsc` passes. Reference admin components through the `@/` path alias and re-run `generate:importmap`.
+A bare `'src/…#Export'` specifier in `admin.components` resolves only through the tsconfig `baseUrl`.
+
+The TS 6 migration drops `baseUrl`. `importMap.js` then holds specifiers that Next cannot resolve, and
+the build fails with `Module not found: Can't resolve 'src/components/…'`. The file exists, and `tsc`
+passes.
+
+Reference an admin component through the `@/` path alias. Then re-run `generate:importmap`.
 
 ### A native `Buffer` in a JSON column 500s the write
 
-Spreading `sharp.metadata()` into a JSON/JSONB column fails with `TypeError: Method get TypedArray.prototype.length called on incompatible receiver` from `JSON.stringify`. `.withMetadata()` re-attaches EXIF, so `metadata()` returns an `exif` **Buffer**, and buffers from a native binding are cross-realm inside the Next.js runtime — `Buffer.prototype.toJSON` fails its internal brand check. Delete `exif` alongside `icc`/`iptc`/`xmp`, and serialise the column per key so a future non-serialisable value degrades to `null` rather than failing the write. `tsc`, ESLint and unit tests all pass; replicating the hook in plain Node also succeeds, because a single-realm process has no Buffer mismatch. Only the running server reproduces it.
+A spread of `sharp.metadata()` into a JSON or JSONB column fails. `JSON.stringify` throws
+`TypeError: Method get TypedArray.prototype.length called on incompatible receiver`.
+
+`.withMetadata()` re-attaches EXIF, so `metadata()` returns an `exif` **Buffer**. A buffer from a native
+binding is cross-realm inside the Next.js runtime, and `Buffer.prototype.toJSON` fails its internal
+brand check.
+
+Delete `exif` together with `icc`, `iptc` and `xmp`. Serialise the column one key at a time, so a future
+non-serialisable value degrades to `null` instead of a failed write.
+
+`tsc`, ESLint and the unit tests all pass. A copy of the hook in plain Node also succeeds, because a
+single-realm process has no Buffer mismatch. Only the running server reproduces the failure.
 
 ## Known Issues
 
@@ -358,7 +479,15 @@ Key CSS variables: `--theme-bg`, `--theme-text`, `--theme-border-color`, `--them
 
 ### `drizzle session.execute()` doesn't serialize FOR UPDATE locks
 
-Raw SQL with `FOR UPDATE` (or `FOR UPDATE NOWAIT`) executed via `req.payload.db.session(transactionID).db.execute(sql\`...\`)` does NOT serialize concurrent transactions — observed on `@payloadcms/drizzle@3.82.x–3.84.x`. The same SQL run through a raw `pg` client correctly blocks the second caller until the first commits, but through drizzle the second `.execute()` returns immediately without waiting for the first transaction's commit. The lock appears to be released at statement end rather than transaction end, or the SQL is routed through a connection outside the transaction.
+Raw SQL with `FOR UPDATE`, or with `FOR UPDATE NOWAIT`, does NOT serialize concurrent transactions when
+you run it through `req.payload.db.session(transactionID).db.execute(sql\`...\`)`. This was observed on
+`@payloadcms/drizzle@3.82.x` through `3.84.x`.
+
+The same SQL through a raw `pg` client blocks the second caller until the first commits. Through drizzle
+the second `.execute()` returns at once, and it does not wait for the first transaction to commit.
+
+Two causes fit the evidence. The lock releases at the end of the statement rather than at the end of the
+transaction. Or the SQL routes through a connection outside the transaction.
 
 This breaks any concurrency control built on `SELECT ... FOR UPDATE` (stock holds, balance checks, idempotency guards). Symptom: race tests pass intermittently or never serialize at all under parallel load.
 

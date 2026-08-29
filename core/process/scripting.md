@@ -1,18 +1,44 @@
 ---
-version: 1.1.0
+version: 1.2.0
 applies: Always
 target: rules
 paths:
   - "scripts/**"
   - "**/*.sh"
+  - ".claude/hooks/**"
 tags: [scripting, bash, shell, compatibility, macos]
 ---
 
 # Scripting Standards
 
-## When Shell Logic IS Needed — Create a Script
+## Pick the language by what the script does
 
-**Bash only** — all project scripts use Bash. No Python, Node/ts-node, or other runtimes for internal tooling scripts.
+| The script | Language | Why |
+|------------|----------|-----|
+| Moves files, runs git, drives a deploy, must run with no runtime installed | **Bash** | It works on any machine, with no install step |
+| Parses text, compares structures, computes a report, holds real logic | **TypeScript** | Bash 3.2 has no data structures, and the logic becomes unreadable |
+| A Claude Code hook | **TypeScript** | The `.claude/hooks/` toolchain typechecks and lints them |
+
+**Never write a `.mjs` file.** Every hook and script is TypeScript. `.claude/hooks/run.sh` still falls
+back to `.mjs`, and that branch exists for a target project that holds an old deployed hook. It is never
+for a new file. The one exception is `.claude/hooks/core/*.mjs`, the runtime shims the `.ts` hooks
+import; they keep their extension and carry `.d.mts` type declarations.
+
+**Never use Python or another runtime for a committed script.** A one-off analysis in a sandbox is fine.
+A file in `scripts/` is Bash or TypeScript.
+
+### Running a TypeScript script
+
+`bun script.ts` runs it. `node script.ts` also runs it on Node 22.6 and later, which strips the types.
+Neither needs a build step.
+
+A TypeScript file in `scripts/` is typechecked by the `.claude/hooks/` toolchain:
+
+```bash
+cd .claude/hooks && bun run check     # typecheck + lint + format
+```
+
+## When Shell Logic IS Needed — Create a Script
 
 If a task genuinely requires loops, conditionals, parsing, or >3 lines of logic:
 
@@ -37,7 +63,8 @@ Every script must:
    # Bad — secret visible in context, history, and ps output
    ./scripts/deploy.sh --token sk-1234abc
    ```
-   The PreToolUse hook blocks `$VAR` expansion in Bash commands for this reason — scripts that source `.env` internally sidestep this by keeping secrets out of the agent's context entirely.
+   The PreToolUse hook blocks `$VAR` expansion in a Bash command for this reason. A script that sources
+   `.env` internally avoids the block, and it keeps every secret out of the agent's context.
 
 2. **Support `--help`** — print usage, purpose, and required env vars. Another agent or human running the script months later should understand what it does without reading the source.
    ```bash

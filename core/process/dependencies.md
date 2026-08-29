@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: Always
 target: rules
 paths:
@@ -85,7 +85,7 @@ If `check` is `eslint . --fix && …` — note the `.`, the whole project, not t
 and a PostToolUse hook runs `check` after every edit, then the **first edit after a config change
 applies every newly-enabled autofixable rule across the entire codebase, in one unattended pass.**
 Adding a recommended preset has produced 57 modified files in a single pass: identifier renames, a
-dropped `.toString()`, `split('T')[0]` → `split('T', 1)[0]`, reordered unions.
+dropped `.toString()`, changed `split('T')[0]` to `split('T', 1)[0]`, and reordered the unions.
 
 - **Nobody owns the result.** On a shared branch every session honestly disclaims the files, because
   none of them typed a line of it and any of them could have triggered it. Suspect the toolchain

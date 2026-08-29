@@ -3,7 +3,7 @@
 Audits deployed rules, the project wiki, settings and project hygiene **without deploying templates**.
 Run every few weeks, or when the rule set starts feeling stale or contradictory.
 
-Nothing here writes without asking. Steps 1–11 gather; step 12 proposes; step 13 executes only what the
+Nothing here writes without asking. Steps 1–10 gather; step 11 proposes; step 12 executes only what the
 user approved.
 
 0. **Run preflight check** — see SKILL.md § Requirements. If `.claude/webstack.sha` doesn't exist, warn that `/webstack init` may not have run yet — continue anyway (some checks still work).
@@ -69,7 +69,7 @@ user approved.
    | — | core/testing/e2e | — | 1.1.0 | MISSING |
    | tooling.md | core/process/tooling | 2.2.0 | 2.2.0 | MODIFIED (local edits) |
    ```
-   Report-only. ORPHAN files proposed for removal in step 12.
+   Report-only. ORPHAN files are proposed for removal in step 11.
 
 4. **Project wiki audit** — from the `wiki.sh lint` snapshot (step 1d), report:
 
@@ -82,10 +82,32 @@ user approved.
 
    Report-only. `wiki.sh lint` produces most of this; add the staleness cross-check against installed versions.
 
-5. **Legacy graph check** — if `.memory/graph.jsonl` exists, the project predates the wiki and still holds
-   un-migrated Knowledge Graph knowledge. Report it and offer `kg-to-wiki.sh` (see update step 7). Report-only.
+   **Then run the distillation pass:**
 
-6. **Rule contradiction detection** — analyze all rule files in `.claude/rules/` plus `CLAUDE.md` for conflicting instructions:
+   ```bash
+   node .claude/scripts/wiki-review.ts      # verdicts: RETIRE? / FIX / MERGE / REVIEW
+   node .claude/scripts/ste-check.ts        # language violations in project pages
+   node .claude/scripts/dupe-check.ts       # two pages that say the same thing
+   ```
+
+   `wiki-review.ts` is the tool that keeps the wiki from growing without limit. It flags a page whose
+   `paths:` match no file, a page behind its `verified-against:` major, a page nobody has reviewed in
+   180 days, an oversized page, a `superseded` page with no successor, a pitfall with no
+   trip-task, and a pitfall whose `proof:` shows it changes nothing.
+
+   **Propose one action per verdict. Never act without the user's approval.**
+
+   | Verdict | Proposal |
+   |---------|----------|
+   | `PROVE` | Run `node .claude/scripts/pitfall-eval.ts --case <slug> --n 8`, then write the `proof:` line |
+   | `RETIRE?` | Confirm the cause, then set `status: archived` with `archived-reason`, and move the file to `.claude/rules/project/archive/` |
+   | `FIX` | Repair the frontmatter |
+   | `MERGE` | One page owns the fact. Archive the other with `superseded-by:` |
+   | `REVIEW` | Re-verify the fact against the official source, then set `last-reviewed:` |
+
+   `core/knowledge-base` § Review and retire holds the retirement test. **Never retire on age alone.**
+
+5. **Rule contradiction detection** — analyze all rule files in `.claude/rules/` plus `CLAUDE.md` for conflicting instructions:
 
    **a) Opposing directives** — scan for instruction pairs that commonly conflict:
    - Component exports: `export default` vs `export const` (named)
@@ -112,7 +134,7 @@ user approved.
    ```
    Report-only — user decides precedence.
 
-7. **Stray file detection:**
+6. **Stray file detection:**
    ```bash
    ~/.claude/skills/webstack/scripts/find-strays.sh /path/to/project
    ```
@@ -122,7 +144,7 @@ user approved.
    the script — anything it reports is genuinely outside a managed structure. Report-only; the user decides
    whether to keep it, convert it into a wiki page (`wiki.sh new`), or delete it.
 
-8. **Settings & MCP audit:**
+7. **Settings & MCP audit:**
    ```bash
    ~/.claude/skills/webstack/scripts/audit-settings.sh /path/to/project
    ```
@@ -148,26 +170,27 @@ user approved.
    - `PW9` INFO — `.playwright-mcp/` residue predating the fix. Check the file dates before deleting;
      it is also the tell that the wiring was broken at some point.
 
-9. **Context budget analysis:**
+8. **Context budget analysis:**
    ```bash
    ~/.claude/skills/webstack/scripts/context-budget.sh /path/to/project
    ```
    Outputs JSON with `always_loaded` rules, `path_scoped` rules (flagging broad patterns), `claude_md` size, and `totals` (vs 850-line / 20KB budget).
    Informational only.
 
-10. **Cross-page contradiction detection** — find conflicting guidance across wiki pages and vendor rules:
+9. **Cross-page contradiction detection** — find conflicting guidance across wiki pages and vendor rules:
 
    **a) Cross-page contradictions:** For pages in the same domain (shared `tags:`/`paths:`), compare guidance.
    Look for contradicting version requirements, conflicting patterns without a "when to use which," and a
    pitfall page that contradicts a convention page or a vendor rule.
 
-   **b) Context7 pitfall verification** (optional, user-gated): For pitfall pages carrying `verified-against:`,
-   verify against current library docs. Ask first: "Found N verifiable pitfalls. Verify via Context7? (y/n)"
+   **b) Pitfall staleness verification** (optional, user-gated): for a pitfall page that carries
+   `verified-against:`, check the fact against the official source at the installed version. Ask first:
+   "Found N verifiable pitfalls. Verify against the official docs? (y/n)"
    ```
    For each pitfall page:
-     resolve-library-id → library ID for the package in verified-against
-     query-docs → search for the pitfall's topic
-     Compare: still valid in the current version? If FIXED, propose status: superseded.
+     Read the installed version of the package named in verified-against.
+     Fetch that library's docs or release notes at that version tag (core/mcp-tools step 3).
+     Compare: is the fact still true? If the upstream fixed it, propose status: archived.
    ```
 
    Output:
@@ -177,20 +200,20 @@ user approved.
    |--------|--------|-------|----------|
    | pitfalls/clientloader-ssr.md | conventions/data-loading.md | clientLoader | contradicting SSR behavior |
 
-   ### Stale Pitfalls (Context7 verified)
+   ### Stale Pitfalls (verified against the official source)
    | Page | Pitfall | Current Status |
    |------|---------|---------------|
    | pitfalls/btn-ghost-color.md | "btn-ghost needs explicit color in v5" | FIXED in 5.7.0 → supersede |
    ```
-   Report-only. Stale pitfalls proposed for `status: superseded` in step 12.
+   Report-only. A stale pitfall is proposed for `status: archived` in step 11.
 
-11. **CLAUDE.md drift check:**
+10. **CLAUDE.md drift check:**
     ```bash
     ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project
     ```
     Same checks as update step 1 but standalone. Offer to auto-fix MISSING sections with `bootstrap-claude-md.sh`.
 
-12. **Remediation proposals** — aggregate all findings into a unified health report:
+11. **Remediation proposals** — aggregate all findings into a unified health report:
 
     **Auto-fixable** (after blanket user approval):
     - Regenerate `WIKI.md` + backlinks (`wiki.sh sync`) if stale (step 1d/4)
@@ -201,11 +224,10 @@ user approved.
     **User-decision required:**
     - Remove orphaned rule files from `.claude/rules/core/`,`vendor/` (steps 2c, 3)
     - Fix wiki schema errors / add missing `paths:` / split colliding or bloated pages (step 4)
-    - Migrate a legacy `.memory/graph.jsonl` via `kg-to-wiki.sh` (step 5)
-    - Resolve rule/page contradictions — decide which takes precedence (steps 6, 10)
-    - Handle stray files — convert to a wiki page (`wiki.sh new`) or delete (step 7)
-    - Stale MCP server references → propose removal (step 8b)
-    - `status: superseded` for stale pitfalls verified by Context7 (step 10b)
+    - Resolve rule/page contradictions — decide which takes precedence (steps 5, 9)
+    - Handle stray files — convert to a wiki page (`wiki.sh new`) or delete (step 6)
+    - Stale MCP server references are proposed for removal (step 7b)
+    - `status: archived` for a pitfall the upstream fixed (step 9b), with `archived-reason`
 
     **Informational** (no action, awareness only):
     - Version drift between templates and deployed rules → recommend `/webstack update` (step 2a)
@@ -216,7 +238,7 @@ user approved.
 
     Ask: "Apply auto-fixes? (WIKI.md regen, CLAUDE.md sections, MCP wildcards, stale hooks)"
 
-13. **Execute fixes and final report:**
+12. **Execute fixes and final report:**
 
     Execute approved auto-fixes:
     - `wiki.sh sync` to regenerate `WIKI.md` + backlinks

@@ -1,5 +1,5 @@
 ---
-version: 2.11.0
+version: 2.12.0
 applies: Always
 target: rules
 priority: high
@@ -10,15 +10,16 @@ tags: [engineering, process, planning, verification, discipline, workflow]
 
 ## Library Doc Lookup — unconditional
 
-**CRITICAL:** If the task touches library code, run the 3-step lookup in `core/mcp-tools` **before writing any code**. Every task — trivial, simple, or complex. No exceptions.
+If the task touches library code, run the 3-step lookup in `core/mcp-tools` **before writing any code**. Every task — trivial, simple, or complex. No exceptions.
 
 ## Domain Pattern Lookup — before implementing features
 
 Before implementing a feature, identify the business domain it belongs to (e.g., e-commerce, authentication, content management, search, billing, notifications). Established domains have implementation patterns refined across the industry — use them instead of inventing new approaches.
 
 1. **Identify the domain** — what business area does this feature serve?
-2. **Research established patterns** — Context7 + web search for how this is conventionally built in the domain. Search for `"<domain> <feature> implementation pattern"`, not just the library API.
-3. **IMPORTANT: Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
+2. **Research established patterns** — search for how the domain conventionally builds this. Query
+   `"<domain> <feature> implementation pattern"`, never the library API alone.
+3. **Follow the standard approach** — use the proven pattern as your architecture. Adapt it to the project's libraries, but don't redesign the flow itself.
 
 ```
 # Wrong: invent a checkout — single-page form that charges on submit
@@ -29,13 +30,16 @@ This applies to any domain with established conventions (cart/inventory, OAuth/O
 
 ## Task Assessment
 
-**First classify the ask's shape** — it decides what "done" produces:
+**First classify the ask's shape.** The shape decides what "done" produces.
 
-- **Question / assessment** ("why is X slow?", "what do you think?", user thinks out loud) → findings and a recommendation. Change nothing.
-- **Task** ("fix", "build", "change", "make") → the completed change, verified.
-- **Plan-first** (ambiguous scope, an irreversible or outward-facing action, or the user asked for a plan) → a plan with your recommendation; stop for approval.
+| Shape | The user says | What you deliver |
+|-------|---------------|------------------|
+| **Question / assessment** | "why is X slow?", "what do you think?", or the user thinks out loud | Findings and a recommendation. Change nothing |
+| **Task** | "fix", "build", "change", "make" | The completed change, verified |
+| **Plan-first** | The scope is ambiguous, the action is irreversible or outward-facing, or the user asked for a plan | A plan with your recommendation. Stop for approval |
 
-A mixed ask ("why is it failing, and can you fix it?") is a Task whose report also answers the question. Genuinely unsure between Task and Plan-first → choose Plan-first.
+A mixed ask is a Task whose report also answers the question. "Why is it failing, and can you fix it?" is
+one example. When you cannot decide between Task and Plan-first, choose Plan-first.
 
 **Then size the work** using the table below.
 
@@ -45,11 +49,17 @@ A mixed ask ("why is it failing, and can you fix it?") is a Task whose report al
 | **Simple** | Clear scope, single file | Read context, implement, verify |
 | **Complex** | >3 files, changes exports, unknown root cause, or crosses workspace boundaries | Full assessment below |
 
-A task is **complex** when any of these are true: it touches more than 3 files, changes an exported interface, has an unknown root cause, or crosses package/workspace boundaries. When in doubt, treat it as complex.
+A task is **complex** when any one of four conditions holds. It touches more than 3 files. It changes an
+exported interface. It has an unknown root cause. It crosses a package or workspace boundary. Treat the
+task as complex when you are unsure.
 
 ## Gather Evidence Before Deciding
 
-- **Primary sources beat memory.** Any fact you'd write from recall — an API signature, endpoint, config key, env var name, magic constant, price, or figure — is not evidence. Open its source before you use it, or write it and label it unverified. For library APIs this is mandatory and hook-enforced (see Library Doc Lookup); for everything else it's on you. Catching yourself about to type a fact from memory re-opens evidence gathering.
+- **Primary sources beat memory.** A fact you write from recall is not evidence. This covers an API
+  signature, an endpoint, a config key, an environment variable name, a magic constant, a price, and a
+  figure. Open the source before you use the fact, or label the fact unverified. A hook enforces this
+  for library APIs (see Library Doc Lookup). For every other fact the discipline is yours. When you
+  notice that you are about to type a fact from memory, open the source instead.
 - **Orient before reading.** Enumerate what exists — list the directory, glob the project — before picking files to read. You can't choose the right files from memory of what a project usually contains.
 - **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on. Run `trace_call_path` on the symbol for its callers and callees, and `search_graph` to locate it. Grep is the fallback for literal text (`core/mcp-tools` § Code discovery). Edge cases and breakage live at these seams, not in the file you opened first.
 - **Surprises route the work.** Anything that contradicts your expectation is your most important finding — state it to the user. If it changes what "done" means, revise it; if it changes what the user is actually asking for, re-classify the ask. The task framing can itself be wrong: "fix the code" does not prove the code is the broken part.
@@ -63,15 +73,21 @@ A task is **complex** when any of these are true: it touches more than 3 files, 
 
 ## Planning
 
-**IMPORTANT: Default to plan mode.** Use it for anything beyond trivial fixes — new features, multi-file changes, unclear scope, or any task where you'd otherwise start coding and discover problems mid-way.
+**Default to plan mode.** Use plan mode for any task beyond a trivial fix. This covers a new feature, a
+multi-file change, and an unclear scope. Use it whenever you would otherwise start to code and find the
+problems halfway through.
 
-**Before finalizing a plan, surface recorded pitfalls and past decisions for the areas you'll touch.** Pitfalls/decisions for files in scope auto-load as path-scoped rules once you read those files. For areas the plan spans that you haven't opened, run `.claude/scripts/wiki.sh find "<topic>"` (see `core/process/knowledge-base`). This is separate from the library doc lookup (which runs before writing code) — it catches architectural constraints early.
+**Surface the recorded pitfalls before you finalize a plan.** A pitfall or a decision for a file in
+scope auto-loads as a path-scoped rule when you read that file. For an area the plan spans but you did
+not open, run `.claude/scripts/wiki.sh find "<topic>"` (see `core/knowledge-base`). This step is
+separate from the library doc lookup, which runs before you write code. This step catches an
+architectural constraint early.
 
 Incorporate findings into the plan — flag risks, reference specific pitfalls, and choose approaches that avoid known issues. A plan that repeats a documented mistake is worse than no plan.
 
 ### Self-review before presenting
 
-**IMPORTANT:** Before presenting a plan, challenge it — the user's review should be a strategic alignment check, not QA:
+Before presenting a plan, challenge it — the user's review should be a strategic alignment check, not QA:
 
 - Does this actually address what the user asked, or did I drift?
 - What edge cases or failure modes exist?
@@ -91,7 +107,13 @@ For any non-trivial task, reason to a committed approach *before* the first edit
 APPROACH: goal <what done looks like>; evidence <the 2-3 sources that shaped it>; approach <the one chosen; alternatives dismissed in a line>; risks <edge cases, integration points, what could break>
 ```
 
-Filling `evidence` forces you to read before deciding; filling `risks` forces you past the happy path into edge cases and integration seams. This does **not** stop for approval — it's for reversible, task-shaped work you'll proceed on, and the load-bearing parts (chosen approach, main risks) surface in what you tell the user, not as step scaffolding. Plan-first tasks (ambiguous scope, or an irreversible/outward action) use plan mode instead, and stop. Trivial tasks are exempt.
+The `evidence` slot forces you to read before you decide. The `risks` slot forces you past the success
+path into the edge cases and the integration seams.
+
+This artifact does **not** stop for approval. It applies to reversible, task-shaped work that you
+proceed on. Report the chosen approach and the main risks to the user as part of your answer. Never
+report them as step scaffolding. A Plan-first task uses plan mode instead, and stops. A trivial task is
+exempt.
 
 ## Verification Discipline
 
@@ -105,7 +127,14 @@ Read error messages literally — don't pattern-match to what you expect.
 <fieldset className="fieldset">  // DaisyUI 5 replacement
 ```
 
-**Verify by observation, not inference.** Confirm the done criterion actually ran, rendered, or counted — reading the code and concluding it should work is not verification. Both halves must hold: the specific criterion passes, *and* the surrounding build/tests/lint for the touched area stay green (a green targeted check on a broken build is a failed verification). If something genuinely can't be verified — no runtime, needs credentials, needs human eyes — say exactly that. Never let an unverified claim pass as verified.
+**Verify by observation, not by inference.** Confirm that the done criterion ran, rendered or counted.
+A read of the code and a conclusion that it should work is not verification.
+
+Both halves must hold. The specific criterion passes, *and* the build, the tests and the lint for the
+touched area stay green. A green targeted check on a broken build is a failed verification.
+
+Some criteria you cannot verify: there is no runtime, the check needs credentials, or it needs human
+eyes. Say exactly that. Never let an unverified claim pass as verified.
 
 ## Change Classification
 
@@ -128,29 +157,39 @@ Before implementing, classify the change to determine required safeguards.
 *Safe* to implement directly. Verify with checks.
 
 **Refactor** — same external behavior, different internals:
-- Restructuring within a module
-- Extracting helpers, renaming locals, reorganizing files
-- Performance improvements with identical output
+- A restructure inside one module
+- An extracted helper, a renamed local, a reorganized file
+- A performance improvement with identical output
 
 *Required:* Verify tests pass. Confirm no exported interface changes. Run `search_graph` on the symbol if uncertain.
 
 **How to decide:**
-- Is the symbol exported from a module boundary? → Potentially breaking
-- Does anyone import or call it? → Check with `trace_call_path`
-- Does only the current file use it? → Safe refactor
-- Does the database schema change? → Always treat as breaking
+
+| Question | Answer |
+|----------|--------|
+| Does a module boundary export the symbol? | Treat the change as potentially breaking |
+| Does anything import or call it? | Check with `trace_call_path` |
+| Does only the current file use it? | The change is a safe refactor |
+| Does the database schema change? | Always treat the change as breaking |
 
 ## Authorization Gate
 
-Before any **irreversible or outward-facing action** — one another person or system can observe before you could undo it: push, publish, deploy, send, delete shared data, payment, permission change — write the line:
+Write the line below before any **irreversible or outward-facing action**. An action is outward-facing
+when another person or system can observe it before you could undo it. The list covers a push, a
+publish, a deploy, a send, a delete of shared data, a payment, and a permission change.
 
 ```
 AUTH: user said "<their exact words>"
 ```
 
-No quote in the conversation authorizing it → don't act; put the action in the report as a proposed next step. Project docs saying a deploy "must follow" your change make it documented, never authorized — the standing prohibitions in `core/tooling` still bind. Local working-tree changes are reversible and need no AUTH.
+**No quote in the conversation authorizes the action, so do not act.** Put the action in your report as
+a proposed next step instead. A project document that says a deploy "must follow" your change makes the
+deploy documented, never authorized. The standing prohibitions in `core/tooling` still bind. A local
+working-tree change is reversible and needs no AUTH line.
 
-This is a forced artifact: writing the line forces you to find the authorizing quote, and the token stays greppable. Two more forced artifacts — **INTENT** (before a behavior-changing edit) and **TWINS** (after fixing a defect) — load from `core/code-change-gates` when you are editing code.
+This is a forced artifact. The act of writing the line forces you to find the authorizing quote, and the
+token stays greppable. Two more forced artifacts load from `core/code-change-gates` when you edit code.
+**INTENT** runs before a behavior-changing edit. **TWINS** runs after you fix a defect.
 
 ## Implementation Process
 
@@ -158,11 +197,13 @@ This is a forced artifact: writing the line forces you to find the authorizing q
 2. **One logical change at a time** — don't bundle unrelated changes
 3. **Verify between steps** — `yarn check` runs automatically via hook after each Edit/Write; read its output before continuing
 4. **Single-variable changes** — change one thing, check. Changing three things and having it break means you don't know which one caused it.
-5. **Rollback readiness** — before complex changes, commit the current working state:
+5. **Rollback readiness** — before a risky change, commit the files you are about to edit, by name:
    ```bash
-   git add -A && git commit -m "checkpoint: before refactoring auth middleware"
+   git commit --only src/auth/middleware.ts -m "checkpoint: before refactoring auth middleware"
    ```
-   If the change fails, `git diff HEAD~1` shows exactly what broke.
+   If the change fails, `git diff HEAD~1` shows exactly what broke. Add a file git has never seen with
+   `git add <path>` first, because `--only` cannot resolve an untracked pathspec. Never sweep the tree:
+   `git add -A` takes a peer's work with you (`core/tooling` § Shared Branch Safety).
 
 ## Review Gate — before reporting a code change complete
 
@@ -176,10 +217,22 @@ After `yarn check` passes and before you tell the user the work is done, delegat
 Skip it for single-file fixes, typos, copy changes, and test-only edits — the review costs more than
 it returns there.
 
-`code-reviewer` runs read-only (`disallowedTools: Edit, Write, NotebookEdit`) and returns a
-prioritized report. Fix everything it marks CRITICAL or HIGH before reporting done; list MEDIUM and
-LOW in your summary so the user decides. Do not treat "the reviewer found nothing" as a pass without
-reading its report — an empty return is a failure, not a clean bill.
+**Pass your gate lines with the task.** The subagent never sees this conversation. Include the changed
+paths, the task, and every `INTENT:`, `TWINS:`, `FALSIFY:` and `AUTH:` line you wrote. Name the gates you
+judged not applicable, and why. The reviewer verifies each line against the source, and reports a gate
+you owed but did not write.
+
+`code-reviewer` runs read-only (`disallowedTools: Edit, Write, NotebookEdit`) on Fable 5. It reviews in
+two passes: it builds a case against the change, then it tries to falsify each finding with a `FALSIFY:`
+line. Every reported finding carries a category, a severity, a concrete failure scenario, and a verdict
+of `CONFIRMED` or `PLAUSIBLE`.
+
+- Fix every `CRITICAL` and `HIGH` finding before you report done.
+- List `MEDIUM` and `LOW` in your summary so the user decides.
+- Treat a `PLAUSIBLE` verdict as a question, not a defect. Settle it with the evidence the reviewer names.
+- **Read the report before you accept it.** A report with no Findings section and no "Dropped in
+  verification" section means the review did not run. That is a failure, not a clean bill. A report that
+  drops findings with named evidence is a real pass.
 
 The user's own `/code-review` is a separate, heavier pass they trigger. It does not replace this gate,
 and this gate does not replace it.
@@ -216,7 +269,7 @@ This applies to subagents too — when delegating, include "ask the parent agent
 
 **When you can proceed without asking:**
 - The codebase has an established pattern and you're following it
-- Documentation (Context7, vendor docs) confirms the approach
+- The official documentation or an auto-loaded vendor doc confirms the approach
 - The task is a direct, unambiguous instruction ("rename X to Y")
 
 ## Failure Protocol
@@ -241,3 +294,18 @@ After 2-3 failed attempts at the same approach:
 - **Premature implementation** — coding before understanding the problem. Read time should be proportional to complexity.
 - **Tunnel vision** — fixating on one area when the problem is elsewhere. If your hypothesis doesn't explain the error, it's wrong — widen the search.
 - **Scope creep during fixes** — "while I'm here, let me also..." Fix the issue, create a separate task for improvements.
+
+## Avoid Over-Engineering
+
+Make only the changes the task asked for, or the changes it clearly needs. Keep the solution simple and
+narrow. The right amount of complexity is the minimum the current task needs.
+
+| Area | The rule |
+|------|----------|
+| **Scope** | Do not add features, refactor code, or make improvements beyond the ask. A bug fix does not need the surrounding code cleaned up. A simple feature does not need extra configurability |
+| **Documentation** | Do not add docstrings, comments or type annotations to code you did not change. Add a comment only where the logic is not self-evident (`core/code-review` § Comments) |
+| **Defensive coding** | Do not add error handling, a fallback, or validation for a case that cannot happen. Trust internal code and framework guarantees. Validate at system boundaries only: user input and external APIs |
+| **Abstractions** | Do not create a helper, a utility or an abstraction for a single use. Do not design for a requirement nobody has stated |
+
+This rule does not license a partial delivery. Finish the whole task the user asked for. It limits what
+you add on your own initiative, never what you were asked to build.

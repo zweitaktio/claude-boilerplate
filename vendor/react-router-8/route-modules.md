@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [route-module, exports, loader, action, meta, links, handle]
 ---
 
 # Route Modules
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-Route modules are files referenced in `routes.ts` that define automatic code-splitting, data loading, actions, revalidation, error boundaries, and more.
 
 ## Key Exports Overview
 
@@ -235,7 +224,7 @@ export default function CanvasRoute() {
 }
 ```
 
-The `.client.tsx` suffix on the component file excludes it (and its browser-only deps) from the server bundle. During SSR only `HydrateFallback` renders. After hydration, `clientLoader` resolves and the default component renders with full browser API access.
+The `.client.tsx` suffix on the component file excludes it, and its browser-only dependencies, from the server bundle. `vendor/react-router-8/rendering-strategies` § Client-only routes describes the render sequence. It auto-loads with this file.
 
 ## .client Module Convention
 
@@ -254,6 +243,6 @@ app/
 
 ## See Also
 
-- `VendorReactRouter8DataLoading` - Loader patterns
-- `VendorReactRouter8Actions` - Action patterns
-- `VendorReactRouter8ErrorHandling` - Error boundary patterns
+- `vendor/react-router-8/data-loading` - Loader patterns
+- `vendor/react-router-8/actions` - Action patterns
+- `vendor/react-router-8/error-handling` - Error boundary patterns

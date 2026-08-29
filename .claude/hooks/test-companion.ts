@@ -1,11 +1,12 @@
-// version: 1.0.0
+// version: 1.1.0
 // Reminds you once per source file to add its companion .test.ts.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { hasLine, append } from './core/state.mjs'
-import { existsSync } from 'fs'
+import type { HookInput } from './core/hook-types.ts'
+import { existsSync } from 'node:fs'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input } = JSON.parse(await readStdin()) as HookInput
 
 if (tool_name !== 'Write' && tool_name !== 'Edit') pass()
 

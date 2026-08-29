@@ -1,5 +1,5 @@
 ---
-version: 2.0.1
+version: 2.0.2
 applies: dokploy | .github/workflows/*dokploy* | .github/workflows/*deploy*
 target: rules
 domain: cicd
@@ -202,7 +202,7 @@ No `pull_policy: always` needed — each deploy uses a unique SHA-based tag.
 
 ## Required Secrets
 
-Set in GitHub → Settings → Secrets and variables → Actions → Secrets:
+Set these in GitHub, under `Settings / Secrets and variables / Actions / Secrets`:
 
 | Secret | Description |
 |--------|-------------|
@@ -213,7 +213,7 @@ Set in GitHub → Settings → Secrets and variables → Actions → Secrets:
 
 ## Required Variables
 
-Set in GitHub → Settings → Secrets and variables → Actions → Variables:
+Set these in GitHub, under `Settings / Secrets and variables / Actions / Variables`:
 
 | Variable | Description |
 |----------|-------------|

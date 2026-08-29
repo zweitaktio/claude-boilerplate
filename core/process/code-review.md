@@ -1,5 +1,5 @@
 ---
-version: 1.10.0
+version: 1.10.1
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, comments, ste, best-practices]
@@ -85,7 +85,7 @@ if (retries >= 3) return fail(err)
 
 ### Comment language and length
 
-A comment is technical documentation. `core/process/interaction.md` § Language governs it.
+A comment is technical documentation. `core/interaction` § Language governs it.
 
 - **Write Simplified Technical English.** Use a complete sentence, with a subject, a verb, and the
   articles. Use the active voice and a simple tense. Never use a metaphor, an idiom, or a hedge.
@@ -114,7 +114,13 @@ A comment is technical documentation. `core/process/interaction.md` § Language 
 **Backend:** See `core/security-checklist` for input validation. Database operations use the ORM/CMS API, never raw SQL. Error responses have consistent shape. Bulk operations bounded (pagination, limits). Every pure function (no side effects, no DB/network calls) must have a unit test — see `core/unit-testing` for conventions.
 
 **Shared:**
-- **`key: cond ? value : maybeUndefined` handed to a library that merges over defaults is an override, not "no opinion".** What matters to a spread merge is the key being *present*: `{ ...defaults, duration: undefined }` replaces the default with `undefined` and the library runs on that. Write the conditional as a key instead — `...(cond ? { duration: 0 } : {})` — placed after `...opts` if it should win over a caller. It type-checks (`duration?: number` accepts `undefined`), lints clean, and usually degrades silently rather than throwing, so read the merged option back from the running library rather than from the diff
+- **A conditional value is an override, never "no opinion".** `key: cond ? value : maybeUndefined`
+  passed to a library that merges over defaults is an override. A spread merge cares that the key is
+  *present*. `{ ...defaults, duration: undefined }` replaces the default with `undefined`, and the
+  library runs on that value. Write the conditional as a key instead: `...(cond ? { duration: 0 } : {})`.
+  Place it after `...opts` when it must win over a caller. The wrong form type-checks, because
+  `duration?: number` accepts `undefined`. It also lints clean, and it degrades in silence instead of a
+  throw. Therefore read the merged option back from the running library, never from the diff
 - Errors handled or intentionally propagated, never silently swallowed
 - Async fetch calls use AbortController for cancellation. Timers use cleanup functions. See `vendor/react-hooks` (auto-loaded) for patterns
 - External service calls have error handling (not just happy path)

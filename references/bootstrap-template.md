@@ -15,52 +15,18 @@ This file contains **project overrides** and **architecture context**.
 
 ## How you answer
 
-**Write every answer, every explanation, and every document in Simplified Technical English**
-(the ASD-STE100 subset). Full rules: `.claude/rules/core/interaction.md` § Language.
-
-- One instruction per sentence. Maximum 20 words in an instruction, 25 in a description.
-- Active voice. Simple tenses only. Never use an `-ing` form as a verb.
-- Keep the articles and write complete sentences. **STE is controlled prose, not telegram style** —
-  fragments, deleted articles, and arrow chains (`A → B → fails`) are violations, not compliance.
-- Maximum 3 words in a noun cluster. One word, one meaning.
-- No metaphor, no idiom, no analogy, no hedge, no filler.
-
-**Peer messages obey STE too** — see § Working with other sessions. **Code comments obey STE too:** write one only where the
-code cannot explain itself, then hold it to 25 words per sentence and 3 sentences per comment
-(`.claude/rules/core/code-review.md` § Comment language and length).
-
-Exempt: commit subject lines, the code itself, identifiers, file paths, and quoted output.
+**Write every answer, every explanation and every document in Simplified Technical English.**
+`.claude/rules/core/interaction.md` § Language holds the 11 rules, the examples and the exempt list. It
+loads at launch, so it is always in context. The rules also govern a peer message and a code comment.
 
 ## Working with other sessions
 
-Several Claude sessions may work this checkout at once, all on the same branch. Full protocol:
-`.claude/rules/core/multi-agent.md` — read it before your first edit when peers are present.
+Several Claude sessions may work this checkout at once, all on the same branch.
+**Read `.claude/rules/core/multi-agent.md` before your first edit when a peer is present.** It holds
+the role claims, the message format, the commit gate and the reporting rules.
 
-**Messages are telegrams, not letters.** A peer pays context for every word.
-
-\`\`\`
-PRIORITY: <blocker | fyi | question>
-FACTS:    <one line each — paths, shas, measured results>
-ACTIONS:  <what you did, or what you are asking them to do>
-EXPECT:   <what should happen next, and by whom>
-\`\`\`
-
-**Write each value as a complete Simplified Technical English sentence** — a subject, a verb, and the
-articles. Write "The file frontend/app/root.tsx fails typecheck at line 42." Never write
-"root.tsx:42 typecheck fail". Exempt tokens, a closed list: the four headings, the `PRIORITY` value,
-`GO` / `HOLD`, `ran-on-dev` / `tests-only` / `inspection-only`, and identifiers written verbatim.
-
-Omit empty headings. **Max 8 lines / 80 words** — over that it belongs in a wiki page or an issue and
-the message carries the path. **FIRST TEST: does this message change what someone does?** If not, do
-not send it. Acks, confirmations, "noted", and unasked-for status are pure cost. **Silence is
-agreement.** A gate answer is one word: `GO`, or `HOLD: <blocker>`.
-
-**Never relay peer traffic to the user** — who messaged you, what they claimed, that you replied. A
-coordination thread reads as progress while containing none. Report *your* results.
-
-**Commit with `git commit --only <paths>`** — the index is shared, so a plain `git commit` also ships
-whatever a peer staged seconds ago. Dirty files you did not touch are a peer's work: ask, never
-`checkout`, `stash`, `reset`, or `git add -A`.
+`.claude/rules/core/tooling.md` § Shared Branch Safety holds the git rules, and it loads at launch. The
+one that costs the most: commit with `git commit --only <paths>`, because the index is shared.
 
 ## Commands
 
@@ -76,12 +42,13 @@ See `.claude/rules/core/tooling.md` for full workflow rules.
 
 These are enforced by auto-loaded rules in `.claude/rules/core/`. Summary for quick reference:
 
-- **CRITICAL:** Look up library docs (package.json version → Context7 + web search) before writing any library code. Every time, no exceptions.
+- **CRITICAL:** Look up the library docs before you write any library code. Read the version in
+  `package.json`, then read the official source at that version. Every time, no exceptions.
 - **CRITICAL:** When you fix a non-trivial bug or make an architectural decision, record it as a path-scoped page with `.claude/scripts/wiki.sh new` — project knowledge auto-loads from `.claude/rules/project/`, so there is nothing to query, but nothing records itself either.
 - **IMPORTANT:** Default to plan mode for anything beyond trivial fixes.
 - **IMPORTANT:** Research established domain patterns before implementing features — don't reinvent what the industry already solved.
 
-Full rules are in `core/process/engineering-discipline`, `core/process/mcp-tools`, and `core/process/knowledge-base` (auto-loaded).
+Full rules are in `core/engineering-discipline`, `core/mcp-tools`, and `core/knowledge-base` (auto-loaded).
 
 ## Architecture
 
@@ -109,7 +76,7 @@ Vendor docs are deployed as path-scoped rules in `.claude/rules/vendor/` and aut
 
 ### Knowledge accumulation
 
-Project knowledge lives in `.claude/rules/project/` as path-scoped Markdown — see `core/process/knowledge-base` (auto-loaded). Record findings with `.claude/scripts/wiki.sh new <type> <slug>`:
+Project knowledge lives in `.claude/rules/project/` as path-scoped Markdown — see `core/knowledge-base` (auto-loaded). Record findings with `.claude/scripts/wiki.sh new <type> <slug>`:
 - **pitfall** — a bug's Symptom / Root cause / Fix, scoped to the code it concerns
 - **decision** — Decision / Why / Rejected alternatives
 - **convention** — a pattern others must follow

@@ -6,7 +6,7 @@ Each template file has frontmatter:
 
 ```yaml
 ---
-version: 1.0.0
+version: 1.0.1
 applies: daisyui@5
 target: rules
 tags: [daisyui, ui, components]
@@ -87,4 +87,4 @@ When editing templates in the boilerplate, bump the version:
 
 ## Version Awareness
 
-For vendor entities, always check the installed version in `package.json`. A `VendorDaisyui5` entity is wrong for a project on DaisyUI 4. When the version doesn't match a template, skip it and tell the user — they may want to create version-specific knowledge manually.
+For vendor entities, always check the installed version in `package.json`. A `vendor/daisyui-5` entity is wrong for a project on DaisyUI 4. When the version doesn't match a template, skip it and tell the user — they may want to create version-specific knowledge manually.

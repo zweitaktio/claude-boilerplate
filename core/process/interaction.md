@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.3.2
 applies: Always
 target: rules
 priority: high
@@ -28,6 +28,7 @@ Rule 6 forbids that. Compression is a violation, not compliance.
 | 8 | Maximum 3 words in a noun cluster. Rewrite a longer cluster with "of" or "for". | Count the nouns in a row. |
 | 9 | No metaphor, no idiom, no analogy, no rhetorical question, no hedge. | Find "basically", "under the hood", "it seems", "a bit of a". |
 | 10 | One word, one meaning. Never alternate between synonyms for one concept. | Find two names for the same thing. |
+| 11 | Keep an intensifier, a frequency adverb or a qualifier only when it changes the technical outcome. | Delete the word. Re-read the sentence. Keep the word only if the meaning changed. |
 
 ### Examples
 
@@ -56,16 +57,27 @@ the route loader error boundary state
 the error state of the route loader boundary
 ```
 
+```
+# Bad — the qualifier changes nothing. Delete it and the instruction is identical.
+The route simply does not exist. The Edit tool works normally on a space-indented file.
+
+# Good — the word carries the meaning, so it stays.
+Commit only the files you changed, not just the ones you staged.
+```
+
+Rule 11 is a deletion test, never a word ban. "just" that means "only" earns its place. "simply" that
+only softens a statement does not.
+
 ### Scope
 
 **Applies to:**
 - Answers and explanations to the user.
 - Rule files, wiki pages, plans, requirement documents, issue bodies, and pull request bodies.
 - Peer messages between sessions. The brevity caps hold as well, and STE governs each sentence inside
-  the telegram frame. `core/process/multi-agent.md` § Message format lists the exempt tokens.
+  the telegram frame. `core/multi-agent` § Message format lists the exempt tokens.
 - Code comments. A comment is technical documentation. Write it only where the code cannot explain
   itself, then hold it to 25 words per sentence and 3 sentences per comment — see
-  `core/process/code-review` § Comment language and length.
+  `core/code-review` § Comment language and length.
 
 **Exempt:**
 - Commit subject lines, the code itself, identifiers, file paths, and quoted tool output.
@@ -92,7 +104,8 @@ AskUserQuestion(question: "...", options: [...])
 reply in free-form text. The wizard renders selectable choices. The wizard is faster and unambiguous.
 
 **How to apply:**
-- Any clarification with discrete options (yes/no, A/B/C, scope choices, version bump kind) → `AskUserQuestion`.
+- Use `AskUserQuestion` for any clarification with discrete options. This covers a yes or no answer, a
+  choice between A, B and C, a scope choice, and a version bump level.
 - One question per call when possible. Batch only when the answers are independent.
 - Reserve plain-text questions for free-form input where multiple-choice does not fit.
 
@@ -112,7 +125,7 @@ Remove from the message to the user:
 - **Intent narration** — "I'll now check X" *before* you do it. Report what you found, not what you plan. (A brief progress update during long multi-step work is the exception.)
 - **Restatement** of the request, or a recap of output the user just saw.
 - **Postamble** — "let me know if you need anything else", and a follow-up offer that did not emerge from the work.
-- **Hedges** — "it seems", "I think", "possibly". § Language rule 9 bans them outright, with no
+- **Hedges** — "it seems", "I think", "possibly". § Language rule 9 bans them outright, with no <!-- ste-check-ignore: quotes the banned words -->
   evidence escape. State the fact, or state that you do not know it. Never soften the gap with a hedge.
 
 Density never means compression. § Language rule 6 forbids the dropped article and the arrow chain,

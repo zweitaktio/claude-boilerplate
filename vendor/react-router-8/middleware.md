@@ -1,5 +1,5 @@
 ---
-version: 2.0.1
+version: 2.0.2
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,15 +8,6 @@ tags: [middleware, context, auth, request, response, headers]
 ---
 
 # Middleware & Context API
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
 
 ## Middleware is Built In (v8)
 
@@ -28,7 +19,9 @@ Middleware is stable and enabled by default in React Router 8 — no config flag
 
 ## Overview
 
-Middleware runs code before and after response generation. Executes in a nested chain: parent → child on the way down, child → parent on the way up.
+Middleware runs code before and after the server generates the response. It executes in a nested chain.
+The chain runs from the parent to the child on the way down. It runs from the child to the parent on the
+way up.
 
 ```
 Root middleware start

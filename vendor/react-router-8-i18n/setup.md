@@ -1,5 +1,5 @@
 ---
-version: 2.0.1
+version: 2.0.2
 applies: remix-i18next@8 & react-router@8
 target: rules
 domain: i18n
@@ -19,18 +19,22 @@ Internationalization for React Router 8 SSR apps using **remix-i18next v8** (mid
 | i18next docs | https://www.i18next.com/overview/getting-started | Core i18n library |
 | react-i18next | https://react.i18next.com | React bindings |
 | i18next-cli | https://github.com/i18next/i18next-cli | Key extraction + type generation |
-| Context7 | `/i18next/i18next` | Good coverage |
 
 ## What Changed in v8
 
 - **remix-i18next v8 is middleware-based.** `createI18nextMiddleware` replaces the old `new RemixI18Next(...)` server instance. It returns `[middleware, getLocale, getInstance]`.
 - **Locale detection runs in RR8 route middleware**, not in `entry.server.tsx`. Middleware is on by default in v8 — no `future` flag.
-- **`useChangeLanguage` was removed.** Sync the language with a `useEffect` (see `VendorReactRouter8I18nUsage`).
+- **`useChangeLanguage` was removed.** Sync the language with a `useEffect` (see `vendor/react-router-8-i18n/usage`).
 - **Resources are bundled TS modules** and served to the browser by a resource route + `i18next-fetch-backend` — no `i18next-fs-backend` / `i18next-http-backend`.
 
 > **Pitfall — v8 subpath exports dropped:** remix-i18next v8 exposes only the `.` entry. Old imports like `remix-i18next/middleware` or `remix-i18next/react` no longer resolve — import `createI18nextMiddleware` from the bare `'remix-i18next'`.
 
-> **Pitfall — `findLocale` param is now an args object, not a bare `Request`:** in v8 it receives `LanguageDetectorArgs` (RR8 `MiddlewareArgs`, which has both `request` and a normalized `url`). Writing `async findLocale(request)` errors TS7006 (implicit any). Destructure the field you need: `async findLocale({ url })` for path-based detection, `async findLocale({ request })` for cookie / `Accept-Language`.
+> **Pitfall: the `findLocale` parameter is now an args object, never a bare `Request`.** In v8 it
+> receives `LanguageDetectorArgs`. That type is the RR8 `MiddlewareArgs`, which holds both `request` and
+> a normalized `url`. `async findLocale(request)` fails with TS7006, an implicit any.
+>
+> Destructure the field you need. Use `async findLocale({ url })` for path-based detection. Use
+> `async findLocale({ request })` for a cookie or `Accept-Language`.
 
 ## Dependencies
 
@@ -151,7 +155,7 @@ export const [i18nextMiddleware, getLocale, getInstance] = createI18nextMiddlewa
 
 ## Register Middleware in root.tsx
 
-Middleware is enabled by default in RR8 — just export it. Read the locale from `context` (not `request`):
+RR8 enables middleware by default. Export it. Read the locale from `context`, never from `request`:
 
 ```typescript
 import { getLocale, i18nextMiddleware } from '~/middleware/i18next'

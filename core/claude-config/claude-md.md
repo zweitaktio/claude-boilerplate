@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: Always
 target: rules
 paths:
@@ -17,13 +17,24 @@ Best practices for writing and maintaining CLAUDE.md files based on [official Cl
 
 | Type | Location | Purpose | Shared With |
 |------|----------|---------|-------------|
-| **Managed policy** | `/Library/Application Support/ClaudeCode/CLAUDE.md` | Org-wide standards | All users |
+| **Managed policy** | macOS: `/Library/Application Support/ClaudeCode/CLAUDE.md`<br>Linux/WSL: `/etc/claude-code/CLAUDE.md`<br>Windows: `C:\Program Files\ClaudeCode\CLAUDE.md` | Org-wide standards | All users |
+| **Managed policy (inline)** | the `claudeMd` key in `managed-settings.json` | Same as above, without a separate file | All users |
 | **Project memory** | `./CLAUDE.md` or `./.claude/CLAUDE.md` | Team instructions | Team (git) |
 | **Project rules** | `./.claude/rules/*.md` | Modular topic rules | Team (git) |
 | **User memory** | `~/.claude/CLAUDE.md` | Personal preferences | Just you |
+| **User rules** | `~/.claude/rules/*.md` | Personal topic rules, all projects | Just you |
 | **Project local** | `./CLAUDE.local.md` | Personal project prefs | Just you |
 
-Files higher in hierarchy take precedence. Local files are auto-added to `.gitignore`.
+**Files do not override each other — they concatenate.** Claude Code loads `CLAUDE.md` and
+`CLAUDE.local.md` from the working directory and every directory above it. The order runs from the
+filesystem root down to the working directory, so the closest file is read last. Within one directory,
+`CLAUDE.local.md` follows `CLAUDE.md`. A managed policy file loads before user and project files.
+
+Priority applies to rules, not to concatenation order: user rules in `~/.claude/rules/` load before
+project rules, which gives project rules the higher priority. A rule without `paths:` carries the same
+priority as `.claude/CLAUDE.md`.
+
+Local files are auto-added to `.gitignore`.
 
 ## What to Include
 
@@ -47,6 +58,18 @@ Files higher in hierarchy take precedence. Local files are auto-added to `.gitig
 - Write clean code
 ```
 
+## Size
+
+Target **under 200 lines** per CLAUDE.md file. A longer file consumes more context and reduces
+adherence. Claude Code loads a file up to 4 MiB in full and skips a larger one.
+
+When the file grows past the target, move content into path-scoped rules under `.claude/rules/`. Do not
+reach for `@path` imports: they expand at launch and cut nothing.
+
+Run `/doctor` on a checked-in CLAUDE.md. It proposes cuts for content Claude can derive from the
+codebase, such as directory layouts, dependency lists and architecture overviews. It keeps pitfalls and
+rules.
+
 ## What to Avoid
 
 - **Bloat** — For each line, ask: "Would removing this cause mistakes?" If not, cut it
@@ -68,9 +91,13 @@ Personal prefs: @~/.claude/my-project-prefs.md
 ```
 
 - Relative paths resolve from the file containing the import
-- Max depth: 5 hops
+- Max depth: 4 hops
 - Not evaluated inside code blocks/spans
 - First import triggers approval dialog (one-time per project)
+
+**An import does not reduce context.** Imported files expand and load at launch, alongside the CLAUDE.md
+that references them. Use imports to organize. Use `paths:` on a rule to make content load only when
+Claude opens a matching file — that is the only mechanism that cuts the startup cost.
 
 ## Modular Rules (`.claude/rules/`)
 
@@ -126,7 +153,7 @@ paths:
 ## Project Docs (`.claude/docs/`)
 
 For heavy architecture docs, ADRs, and reference material too long for a rule, use `.claude/docs/`.
-This is the Tier-3 layer of the knowledge model — **`core/process/knowledge-base` is the authority** on
+This is the Tier-3 layer of the knowledge model — **`core/knowledge-base` is the authority** on
 the full model (pitfalls/decisions/conventions, domain maps, and these on-demand docs). Summary:
 
 ```
@@ -159,6 +186,47 @@ paths: ["**/routes/checkout/**", "**/services/cart/**"]
 # Checkout domain
 Before modifying checkout: read `.claude/docs/systems/checkout-flow.md`. Cart pitfalls auto-load.
 ```
+
+## Auto Memory — the second memory system
+
+Claude Code carries knowledge across sessions two ways. You write CLAUDE.md files. Claude writes auto
+memory. Both load at the start of every conversation, and Claude treats both as context, never as
+enforced configuration.
+
+| | CLAUDE.md and rules | Auto memory |
+|---|---|---|
+| Who writes it | You | Claude |
+| Content | Instructions and rules | Learnings from your corrections |
+| Location | `./CLAUDE.md`, `.claude/rules/` | `~/.claude/projects/<project>/memory/` |
+| Loaded at start | The whole file, up to 4 MiB | The first 200 lines or 25 KB of `MEMORY.md` |
+
+**How auto memory loads.** `MEMORY.md` is an index. Claude Code loads its first 200 lines, or its first
+25 KB, whichever comes first. Content past that threshold never loads. Topic files such as
+`feedback_testing.md` do not load at startup; Claude reads them on demand.
+
+**The `<project>` path comes from the git repository.** All worktrees and subdirectories of one repo
+share a single auto memory directory.
+
+**Subagents do not inherit it.** The main conversation's auto memory does not reach a subagent. A fork is
+the exception, because it inherits the parent conversation. A subagent with its own `memory` field gets a
+separate directory.
+
+**Turning it off.** Auto memory is on by default. The `/memory` command has a toggle that writes
+`autoMemoryEnabled` to `~/.claude/settings.json`. Set `autoMemoryEnabled: false` in a project's settings
+to disable it for that project only. The environment variable `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1` does
+the same.
+
+### Auto memory is not the project wiki
+
+Keep the two apart. They answer different questions.
+
+| Put it in | When |
+|-----------|------|
+| `.claude/rules/project/` (the wiki) | The fact belongs to the code and must reach whoever opens that code — a pitfall, a decision, a convention. It is committed and shared |
+| Auto memory | The fact belongs to your working relationship with Claude — a preference, a correction, session progress. It is local and personal |
+
+A bug's root cause is a pitfall page, not a memory. "This user wants single-line commits" is a memory,
+not a rule file. `core/knowledge-base` is the authority on the wiki side.
 
 ## Structure Template
 
@@ -198,40 +266,15 @@ Brief description of tech stack and project structure.
 
 ## Emphasis and Compliance
 
-### Compliance hierarchy
-
-Not all enforcement mechanisms are equal. Use the strongest tool that fits:
-
-| Mechanism | Reliability | When to use |
-|-----------|-------------|-------------|
-| **Hooks (deny)** | Highest — hard block | Rules with 0% voluntary compliance (tool ordering, unsafe Bash) |
-| **Hooks (inject)** | High — timed reminder | Rules that need reinforcement at specific moments |
-| **Forced artifact (required output line)** | High — makes compliance checkable, and hook-enforceable | Unverifiable "did you consider X" rules: demand a literal line (e.g. `INTENT:`, `TWINS:`, `AUTH:`) and grep for it |
-| **Position (top of file)** | High — primacy effect | The most important rules in each file |
-| **Structure (headings, XML)** | Medium-high | Organizing rules so they're scannable |
-| **Emphasis keywords** | Medium — works through contrast | 3-5 rules max per instruction set |
-| **Plain text** | Baseline | Everything else |
-
-### Forced artifacts
-
-Some rules ask the agent to *think* something ("confirm the spec before changing behavior") — invisible, and impossible to check. Rewrite the rule to require *writing* a specific line, and it becomes both self-forcing and enforceable:
-
-```markdown
-# Weak — an internal check nobody can verify
-Before changing behavior, make sure the code, test, and spec agree.
-
-# Strong — a forced artifact
-Before a behavior-changing edit, write:
-`INTENT: code does <X>; the check expects <Y>; the spec says <Z>`
-```
-
-Two things happen. The agent cannot fill `<Z>` without opening the spec, so the skipped step becomes impossible to skip silently. And the literal token is greppable, so a hook can check for its presence. This is the rung that turns an unenforceable rule into a hook-enforceable one — reach for it before adding another `CRITICAL`. (Live examples: the `INTENT:`/`TWINS:`/`FALSIFY:` gates in `core/code-change-gates`, and `AUTH:` in `core/engineering-discipline`.)
-
-The strongest slot is the one the agent cannot fill from what it already believes. `FALSIFY: … that outcome was reachable because <Z>` works for exactly that reason — `<Z>` demands evidence the check *could* have failed, which is unanswerable without looking. When designing a forced artifact, put that slot last and make it the one that hurts.
+**`core/writing-rules` is the authority** on the compliance hierarchy, forced artifacts and the
+escalation path. This section covers only the emphasis budget, because that is what a CLAUDE.md gets
+wrong most often.
 
 ### Emphasis keywords
 
-`CRITICAL` and `IMPORTANT` improve adherence when used sparingly. They work through *contrast* — if everything is emphasized, nothing is.
+`CRITICAL` and `IMPORTANT` improve adherence when used sparingly. They work through *contrast*. The
+official guidance is explicit: when one instruction keeps getting skipped, add emphasis to that line
+alone, because emphasis on many lines makes none of them stand out.
 
 ```markdown
 # Regular rule
@@ -244,34 +287,45 @@ The strongest slot is the one the agent cannot fill from what it already believe
 - **CRITICAL:** All API endpoints must validate authentication
 ```
 
-**Budget:** 3-5 CRITICAL/IMPORTANT markers per instruction set. Beyond that, each additional marker dilutes the rest.
+`core/writing-rules` § Making Rules Stick holds the budget, the mechanism table and the escalation path.
+Two consequences apply to a CLAUDE.md:
 
-**When emphasis alone won't work:** If a rule is consistently ignored despite CRITICAL markers, promote it to a hook. Emphasis reminds; hooks enforce.
-
-**Position matters more than keywords.** A plain rule at the top of a file gets more attention than a CRITICAL rule buried mid-document. Place the most important rules first in each file — the primacy and recency effects (U-shaped attention curve) are stronger than any keyword.
+- Count the markers across the whole always-loaded set, never per file. A CLAUDE.md shares that budget
+  with every rule that loads at launch.
+- A rule Claude keeps ignoring is lost, not under-emphasized. Make it specific first. Check whether
+  another file contradicts it. Reach for a marker after those two.
 
 ## Maintenance Checklist
 
 Review CLAUDE.md when:
 
-- [ ] **Things go wrong** — Claude ignored a rule? First try repositioning it (top of file). Then add emphasis. If still ignored, promote to a hook.
+- [ ] **Things go wrong** — Claude ignored a rule? First make it more specific. Then reposition it. Then add emphasis to that one line. If it is still ignored, promote it to a hook.
 - [ ] **Project evolves** — New patterns, deprecated approaches
 - [ ] **New team members join** — What do they need to know?
+- [ ] **The file passes 200 lines** — run `/doctor` and take the cuts it proposes
 - [ ] **Quarterly review** — Prune outdated rules, consolidate duplicates, check emphasis budget
 
 **Signs your CLAUDE.md needs attention:**
-- Claude frequently ignores instructions → Rule is buried, too vague, or needs hook enforcement
-- Claude asks obvious questions → Missing essential context
-- CLAUDE.md is unfocused or repetitive → Move domain knowledge to path-scoped rules or `.claude/docs/` (length alone isn't the issue — attention dilution is)
-- Rules contradict each other → Audit and consolidate
-- More than 5 rules marked CRITICAL → Emphasis is diluted, demote or promote to hooks
+
+| Sign | What it means | What to do |
+|------|---------------|------------|
+| Claude ignores an instruction | The file is too long. The rule is lost | Make the rule specific. Enforce it with a hook |
+| Claude asks a question the file answers | The phrasing is ambiguous | Rewrite the rule as one observable action |
+| The file repeats itself | Domain knowledge sits in the wrong layer | Move it to a path-scoped rule or `.claude/docs/` |
+| Two rules disagree | Claude picks one arbitrarily | Audit and consolidate |
+| More than 5 rules marked CRITICAL | The emphasis is diluted | Demote most of them, or promote them to hooks |
+
+**Verify what actually loaded.** Run `/context` and read the list under **Memory files**. A file missing
+there is a file Claude cannot see.
 
 ## Commands
 
 | Command | Purpose |
 |---------|---------|
 | `/init` | Bootstrap CLAUDE.md from codebase analysis |
-| `/memory` | Open memory file in editor, see loaded files |
+| `/doctor` | Propose cuts for a checked-in CLAUDE.md |
+| `/context` | List which memory files loaded this session |
+| `/memory` | Open memory file in editor, browse auto memory |
 | `#` key | Quick-add a memory during conversation |
 
 ## See Also

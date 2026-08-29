@@ -40,19 +40,19 @@ hand. Regenerate after adding or rescoping a template:
 <!-- generated:budget -->
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
-| `process/code-review` | 140 | 7994 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
-| `process/engineering-discipline` | 243 | 15165 | engineering, process, planning, verification, discipline, workflow |
-| `process/interaction` | 120 | 6210 | interaction, language, ste, asd-ste100, questions, wizard, density |
-| `process/issue-tracking` | 108 | 8510 | issue-tracking, github, gh, workflow, process, definition-of-done |
-| `process/knowledge-base` | 93 | 4808 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 105 | 5206 | mcp, context7, codebase-memory, code-discovery, knowledge-base, tools, workflow |
-| `process/requirements-engineering` | 93 | 4267 | requirements, planning, process |
+| `process/code-review` | 146 | 8049 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
+| `process/engineering-discipline` | 311 | 17767 | engineering, process, planning, verification, discipline, workflow |
+| `process/interaction` | 133 | 6933 | interaction, language, ste, asd-ste100, questions, wizard, density |
+| `process/issue-tracking` | 141 | 8595 | issue-tracking, github, gh, workflow, process, definition-of-done |
+| `process/knowledge-base` | 260 | 13182 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
+| `process/mcp-tools` | 115 | 5539 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
+| `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
-| `process/tooling` | 214 | 12025 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1177** | **66210** (~64 KB) | per-turn baseline |
+| `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
+| **Total** | **1515** | **79630** (~77 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 45730 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 59150 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -74,7 +74,7 @@ Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
 | `process/monorepo` | `packages/**, apps/**, services/**, backend/**, frontend/**, scripts/**, docker-compose*, dev.sh, install.sh` |
 | `process/multi-agent` | `.claude/rules/core/multi-agent.md` |
 | `process/payload-api` | `backend/**` |
-| `process/scripting` | `scripts/**, **/*.sh` |
+| `process/scripting` | `scripts/**, **/*.sh, .claude/hooks/**` |
 | `testing/browser-verification` | `**/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/routes/**, **/routes.ts` |
 | `testing/e2e-testing` | `**/*.test.*, **/*.spec.*, **/tests/**, **/e2e/**, **/playwright*, backend/**, frontend/**, **/api/**, **/routes/**` |
 | `testing/e2e-validation` | `**/*.spec.*, **/e2e/**, **/playwright*, backend/**, frontend/**, **/routes/**` |
@@ -107,7 +107,6 @@ Verify each by attempting a lightweight call. If any fails, show the missing ser
 
 | Server | Verify with | Purpose | Install |
 |--------|------------|---------|---------|
-| Context7 | `resolve-library-id` with query `"react"` | Version-specific library documentation | `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp` |
 | codebase-memory-mcp | Any `mcp__codebase-memory-mcp__*` tool available | Structural code discovery — `search_graph`, `trace_call_path` | Register in the project `.mcp.json`, not with `claude mcp add`. See `core/claude-config/mcp-servers` § codebase-memory-mcp |
 | Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp` |
 
@@ -127,7 +126,7 @@ Run once per developer machine to install shared plugins and MCP servers:
 ~/.claude/skills/webstack/scripts/setup-user-env.sh
 ```
 
-This installs user-scoped tools (context-mode, memory, context7) and the global npm binary
+This installs user-scoped tools (context-mode, memory) and the global npm binary
 `codebase-memory-mcp`. Project-scoped servers (Playwright, Payload MCP, codebase-memory-mcp) are
 registered during `/webstack init` — the script only puts the binary on PATH.
 
@@ -136,7 +135,6 @@ registered during `/webstack init` — the script only puts the binary on PATH.
 Run this at the start of every `/webstack init` or `/webstack update`:
 
 1. Run `scripts/preflight.sh` — if exit code is non-zero, report missing CLI tools with install commands and stop
-2. Call `resolve-library-id` with query `"react"` — if the tool is not available, report "Context7 MCP server not configured. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude mcp add context7 --scope user -- npx -y @upstash/context7-mcp`" and stop
 3. Check whether **any** `mcp__plugin_context-mode_context-mode__*` tool is available — if none is, report "context-mode plugin not installed. Run `~/.claude/skills/webstack/scripts/setup-user-env.sh` or: `claude plugin install context-mode@context-mode`" and stop
 
    Match on the server prefix, never on a specific tool name. context-mode has renamed its tools before (`__execute` → `__ctx_execute`), and a hardcoded name turns a working install into a hard stop at step 0.
@@ -155,7 +153,7 @@ Run this at the start of every `/webstack init` or `/webstack update`:
    into 43 global agent surfaces. The skill does not manage `.mcp.json`, so offer the block and let the
    user apply it.
 
-The Knowledge Graph / `memory` MCP server is **no longer required** — project knowledge lives in path-scoped Markdown under `.claude/rules/project/` (see `core/process/knowledge-base`). `setup-user-env.sh` may still install the `memory` server for unrelated uses, but webstack does not depend on it.
+The Knowledge Graph and its `memory` MCP server are **retired** — project knowledge lives in path-scoped Markdown under `.claude/rules/project/` (see `core/process/knowledge-base`). `setup-user-env.sh` may still install the `memory` server for unrelated uses, but webstack does not depend on it.
 
 If all checks pass, continue with the init/update flow.
 
@@ -198,7 +196,7 @@ how updates are compared. That mapping is the thing worth knowing; the file list
 | `vendor/` | `.claude/rules/vendor/` | frontmatter `version:` | Path preserved. Conditional on `applies:` |
 | `agents/` | `.claude/agents/` | checksum | Subagent definitions |
 | `.claude/hooks/` | `.claude/hooks/` | `// version:` comment | Dispatched via `run.sh`; see Hooks below |
-| `scripts/wiki.sh`, `kg-to-wiki.sh` | `.claude/scripts/` | checksum | The wiki tooling the project itself runs |
+| `scripts/wiki.sh`, `wiki-review.ts`, `ste-check.ts`, `dupe-check.ts` | `.claude/scripts/` | checksum | The wiki tooling the project itself runs |
 | `scaffold/.editorconfig` | project root | no-clobber | Always deployed — every project gets one |
 | `scaffold/` (rest) | project root | no-clobber | Optional; needs `--group scaffold`; never overwrites |
 | `core/playwright-mcp.config.json` | `.claude/` | overwrite | |
@@ -217,29 +215,27 @@ one-sentence description, which is where the Purpose column below comes from.
 <!-- generated:hooks -->
 | Hook | File | Event / Matcher | Purpose |
 |------|------|-----------------|---------|
-| auto-check | `auto-check.mjs` | PostToolUse / `Edit\|Write` | Runs `yarn check` after a code edit, resolving the nearest workspace in a monorepo. |
-| bash-guard | `bash-guard.mjs` | PreToolUse / `Bash` | Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git. |
-| code-guard | `code-guard.mjs` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate. |
-| compact-preservation | `compact-preservation.mjs` | PreCompact / `—` | Tells the compaction summary what to keep: requirements, decisions and rationale, risks. |
+| auto-check | `auto-check.ts` | PostToolUse / `Edit\|Write` | Runs `yarn check` after a code edit, resolving the nearest workspace in a monorepo. |
+| bash-guard | `bash-guard.ts` | PreToolUse / `Bash` | Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git. |
+| code-guard | `code-guard.ts` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate. |
+| compact-preservation | `compact-preservation.ts` | PreCompact / `—` | Tells the compaction summary what to keep: requirements, decisions and rationale, risks. |
 | completion-gate | `completion-gate.ts` | Stop / `—` | Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files. |
-| context7-guard | `context7-guard.mjs` | PostToolUse / `mcp__context7__resolve-library-id` | Enforces resolve-library-id before query-docs, so docs are fetched for a real library ID. |
-| context7-guard | `context7-guard.mjs` | PreToolUse / `mcp__context7__query-docs` | Enforces resolve-library-id before query-docs, so docs are fetched for a real library ID. |
-| dep-change-reminder | `dep-change-reminder.mjs` | PostToolUse / `Bash` | Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up. |
-| edit-review | `edit-review.mjs` | PostToolUse / `Edit\|Write` | Non-blocking self-review nudge after each code edit, debounced per file. |
-| failure-protocol | `failure-protocol.mjs` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |
-| i18n-extract-reminder | `i18n-extract-reminder.mjs` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
-| migration-guard | `migration-guard.mjs` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
-| payload-guard | `payload-guard.mjs` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
-| peer-message-guard | `peer-message-guard.mjs` | PostToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
-| peer-message-guard | `peer-message-guard.mjs` | PreToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
-| prompt-context | `prompt-context.mjs` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
-| requirements-gate | `requirements-gate.mjs` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
-| research-gate | `research-gate.mjs` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, Context7, WebSearch. |
+| dep-change-reminder | `dep-change-reminder.ts` | PostToolUse / `Bash` | Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up. |
+| edit-review | `edit-review.ts` | PostToolUse / `Edit\|Write` | Non-blocking self-review nudge after each code edit, debounced per file. |
+| failure-protocol | `failure-protocol.ts` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |
+| i18n-extract-reminder | `i18n-extract-reminder.ts` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
+| migration-guard | `migration-guard.ts` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
+| payload-guard | `payload-guard.ts` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
+| peer-message-guard | `peer-message-guard.ts` | PostToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
+| peer-message-guard | `peer-message-guard.ts` | PreToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
+| prompt-context | `prompt-context.ts` | UserPromptSubmit / `—` | On a review request, injects the code files edited this session (session state ∩ git diff) to scope it. |
+| requirements-gate | `requirements-gate.ts` | PreToolUse / `EnterPlanMode` | Before plan mode, injects the requirements questions to settle with the user first (core/process/requirements-engineering). |
+| research-gate | `research-gate.ts` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, official docs, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
 | screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
-| session-context | `session-context.mjs` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start. |
-| subagent-review | `subagent-review.mjs` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
-| test-companion | `test-companion.mjs` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
+| session-context | `session-context.ts` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start. |
+| subagent-review | `subagent-review.ts` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
+| test-companion | `test-companion.ts` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
 | wiki-discipline | `wiki-discipline.ts` | PostToolUse / `Edit\|Write` | Reminds you to record durable knowledge as a path-scoped wiki page after several code edits. |
 <!-- /generated:hooks -->
 
@@ -248,7 +244,7 @@ dispatched in `.claude/settings.json` does not run and will not appear here.
 
 ## Storage Taxonomy
 
-Everything is Markdown loaded natively by path-scoped `paths:` frontmatter. There is no Knowledge Graph.
+Everything is Markdown loaded natively by path-scoped `paths:` frontmatter.
 
 | Category | Owner | Location | Loads | Lifecycle |
 |----------|-------|----------|-------|-----------|
@@ -262,7 +258,7 @@ Everything is Markdown loaded natively by path-scoped `paths:` frontmatter. Ther
 
 - **Rules** (core + vendor) survive context compression — re-injected at full fidelity. They are upstream-owned and pruned on `/webstack update`.
 - **The project wiki** (`.claude/rules/project/` + `.claude/docs/`) is project-owned and never touched by updates. Pitfalls/decisions/conventions auto-load in full when you read a file matching their `paths:` — zero recall, no query. The three tiers (domain map → detail rule → on-demand doc) keep context cost bounded. See `core/process/knowledge-base`.
-- **No Knowledge Graph.** The `search_nodes` replacement is `.claude/scripts/wiki.sh find`, plus auto-load for anything you're actually editing.
+- **No graph, no query step.** The lookup is `.claude/scripts/wiki.sh find`, plus auto-load for anything you're actually editing.
 
 ### Vendor doc loading
 
@@ -317,7 +313,7 @@ In addition to per-template version comparison, the skill records the boilerplat
    ```
    Do NOT manually write any files that this command handles. It deploys rules, hooks, configs, merges settings, and records `.claude/webstack.sha`.
 
-   **MCP scope note:** Playwright MCP is project-scoped (installed here). Context7 and plugins are user-scoped — see "User Environment Setup" above. `sync.sh apply` also deploys `wiki.sh`/`kg-to-wiki.sh` to `.claude/scripts/` (the `wiki-scripts` group) and the subagent definitions to `.claude/agents/` (the `agents` group).
+   **MCP scope note:** Playwright MCP is project-scoped (installed here). Plugins are user-scoped — see "User Environment Setup" above. `sync.sh apply` also deploys `wiki.sh`, `wiki-review.ts`, `ste-check.ts` and `dupe-check.ts` to `.claude/scripts/` (the `wiki-scripts` group) and the subagent definitions to `.claude/agents/` (the `agents` group).
 
    **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
    ```bash
@@ -366,21 +362,6 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
 
-0a. **Detect knowledge mode and guard the update.** The full update deploys KG-free rules that tell the
-    agent "knowledge is in the wiki." If the project still has un-migrated Knowledge-Graph knowledge, that
-    knowledge goes dark. Classify by the state of `.memory/graph.jsonl`:
-
-    - **Non-empty `.memory/graph.jsonl`** (regardless of whether `.claude/rules/project/` exists) → the
-      graph may hold **un-migrated** knowledge. Do **NOT** run a full update until you confirm it's
-      migrated. Note that a partial wiki (a few pages) does NOT mean the graph was migrated — a project
-      can be hybrid. Verify: has `kg-to-wiki.sh` been run and the graph archived to `.jsonl.migrated`?
-      If not, migrate first (update step 7), review `MIGRATION-REPORT.md`, then archive the graph. Only
-      then proceed. As an interim, a **vendor-only update** is always safe: `sync.sh apply /path/to/project --group vendor`.
-    - **No graph, or graph renamed to `.memory/graph.jsonl.migrated`** → **wiki mode** — proceed to step 1.
-
-    Only proceed to a full update once the graph is empty/archived (or the user explicitly overrides,
-    accepting that KG-only knowledge will no longer auto-load).
-
 1. **Run CLAUDE.md drift check:**
    ```bash
    ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project
@@ -404,11 +385,10 @@ In addition to per-template version comparison, the skill records the boilerplat
    Outputs JSON action table. Present it to the user as a formatted table.
 
 3. **The project wiki is preserved automatically.** Everything under `.claude/rules/project/` and
-   `.claude/docs/` is project-owned files that `sync.sh apply` never prunes — there is nothing to
-   detect or migrate. If a legacy `.memory/graph.jsonl` exists, the project predates the wiki: offer an
-   opt-in migration (see step 7).
+   `.claude/docs/` is project-owned files that `sync.sh apply` never prunes. There is nothing to
+   detect or migrate.
 
-4. **Lint the project wiki** (knowledge health, replaces the old KG entity-match check):
+4. **Lint the project wiki** (knowledge health):
    ```bash
    /path/to/project/.claude/scripts/wiki.sh lint --root /path/to/project
    ```
@@ -425,27 +405,16 @@ In addition to per-template version comparison, the skill records the boilerplat
 
    **Safe directories:** `.claude/rules/project/` is never touched — pruning is scoped to `core/` and `vendor/` only. Project-specific rules are always preserved.
 
-7. **Legacy graph migration (only if `.memory/graph.jsonl` exists).** Vendor docs are file-deployed by
-   `sync.sh apply` — there are no entities to register or reconcile. If the project still has a KG from
-   the pre-wiki era, offer a one-shot, opt-in migration:
-   ```bash
-   ~/.claude/skills/webstack/scripts/kg-to-wiki.sh --root /path/to/project            # dry-run plan
-   ~/.claude/skills/webstack/scripts/kg-to-wiki.sh --root /path/to/project --apply     # write pages
-   ```
-   It never overwrites existing pages and writes `MIGRATION-REPORT.md` (pages needing `paths:`, entities
-   flagged `multi-fact` to split). After `--apply`, fix paths and run `wiki.sh lint`, then `wiki.sh sync`.
-   Leave `.memory/graph.jsonl` in place; archive it to `.jsonl.migrated` once satisfied.
-
-8. **Regenerate the wiki index:**
+7. **Regenerate the wiki index:**
    ```bash
    /path/to/project/.claude/scripts/wiki.sh sync --root /path/to/project
    ```
    Refreshes `WIKI.md` and backlinks from the project pages' frontmatter.
 
-9. **Cleanup legacy artifacts:** rules and hooks are pruned automatically by `sync.sh apply` (action
+8. **Cleanup legacy artifacts:** rules and hooks are pruned automatically by `sync.sh apply` (action
    `PRUNE`). `.claude/rules/project/` and `.claude/docs/` are never pruned. No manual KG cleanup exists.
 
-10. **Scan for backport candidates** — knowledge worth contributing back to the skill. `core/process/backporting`
+9. **Scan for backport candidates** — knowledge worth contributing back to the skill. `core/process/backporting`
     tells the working agent to flag generalizable findings with `backport: true` frontmatter. Find them:
     ```bash
     # Candidates are pages flagged for backport that have NOT already been carried upstream.

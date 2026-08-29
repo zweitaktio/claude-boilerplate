@@ -1,5 +1,5 @@
 ---
-version: 1.0.0
+version: 1.0.1
 applies: eslint-plugin-unicorn
 target: rules
 domain: tooling
@@ -22,7 +22,11 @@ tags: [eslint, unicorn, linting, config, major-upgrade, recommended]
 
 ## Major-version upgrades: curate `unicorn/recommended`, don't mechanically fix
 
-Each major bump expands `unicorn/configs/recommended` with new rules — a single bump can add ~25 rules and surface hundreds of errors across the codebase. **Extend the config's disable block with reasoned comments; do not mechanically "fix" every new error.** Many newly-added rules are opinionated or unsafe for React / library-heavy code:
+Each major bump adds new rules to `unicorn/configs/recommended`. One bump can add about 25 rules, and
+surface hundreds of errors across the codebase.
+
+**Extend the config's disable block, and give a reason in a comment. Never "fix" every new error
+mechanically.** Many new rules are opinionated, or unsafe for React and library-heavy code:
 
 | Rule | Why disable or warn |
 |------|---------------------|

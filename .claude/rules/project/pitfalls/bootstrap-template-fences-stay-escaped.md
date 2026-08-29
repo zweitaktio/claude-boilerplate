@@ -8,6 +8,11 @@ paths:
   - "scripts/bootstrap-claude-md.sh"
   - "references/bootstrap-template.md"
 tags: [bash, awk, sed, bootstrap, claude-md, fences, escaping]
+trip-task: scripts/bootstrap.sh must read references/template.md, take the document body that sits inside its ```markdown fence, and write that body to CLAUDE.md so it renders correctly. Write the extraction command. Reply with the command only.
+defect: ^(?![\s\S]*(unescape|s\|\\\\|sed 's/\\\\))[\s\S]*(awk|sed -n)[\s\S]*```markdown
+defect-flags: ""
+on-task: markdown
+proof: "none 0/8, full 8/8, claude-sonnet-5, 2026-08-29 (task rewritten, no leak)"
 ---
 
 # Bootstrap template fences reach CLAUDE.md still escaped

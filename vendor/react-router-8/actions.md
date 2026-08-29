@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [action, forms, Form, useFetcher, mutations, submit]
 ---
 
 # Actions and Form Handling
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-Actions handle data mutations (create, update, delete). After an action completes, all loaders on the page automatically revalidate.
 
 ## Choosing the Right Pattern
 
@@ -248,10 +237,8 @@ function FavoriteButton({ itemId, isFavorite }) {
 }
 ```
 
-**Why fetcher.formData?**
-- Instant feedback — UI updates immediately on click
-- No loading spinners needed — the optimistic state IS the loading state
-- Automatic rollback — if action fails, loaders revalidate and reset
+**Why fetcher.formData?** See `vendor/react-router-8/pending-ui` § Optimistic UI, which auto-loads with
+this file.
 
 ### Typing useFetcher
 

@@ -108,7 +108,7 @@ EXISTING=$(cat "$CLAUDE_MD")
 
 # Vendor Knowledge aliases
 vk_found="false"
-for alias in "## Vendor Knowledge" "## Knowledge Graph" "## KG Entities" "## Vendor Docs"; do
+for alias in "## Vendor Knowledge" "## Vendor Docs"; do
   if echo "$EXISTING" | grep -q "^${alias}"; then
     vk_found="true"
     break

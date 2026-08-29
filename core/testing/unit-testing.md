@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: vitest
 target: rules
 paths:
@@ -35,9 +35,9 @@ test("calculateTotal sums items", () => {
 
 ## Test the registration, not only the function
 
-A config-registered handler is two things: a function, and a line registering it. Tests import the
-function directly, so **deleting the registration breaks nothing they can see** — the function still
-passes every test it has; it simply never runs.
+A config-registered handler is two things. It is a function, and a line that registers the function.
+A test imports the function directly. **A deleted registration therefore breaks nothing the test can
+see.** The function still passes every test it has, and it never runs.
 
 ```typescript
 import { Users } from '@/collections/Users/users'

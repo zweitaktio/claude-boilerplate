@@ -1,6 +1,8 @@
 #!/bin/bash
-# Dispatch a hook by name. Prefers a .ts file (run via bun, or node --experimental-strip-types),
-# falling back to .mjs during the TS transition. bun is recommended; node >= 22.6 runs .ts via strip-types.
+# Dispatch a hook by name. Prefers a .ts file (run via bun, or node --experimental-strip-types).
+# Every hook in this repository is .ts. The .mjs branch stays for a target project that still holds
+# a deployed .mjs hook from before the migration; sync.sh prunes those on the next update.
+# bun is recommended; node >= 22.6 runs .ts via strip-types.
 HOOK_DIR="$(cd "$(dirname "$0")" && pwd)"
 NAME="$1"
 if [ -f "$HOOK_DIR/$NAME.ts" ]; then

@@ -1,12 +1,13 @@
-// version: 1.0.0
+// version: 1.1.0
 // Non-blocking self-review nudge after each code edit, debounced per file.
 // Forms a review loop: review the change → fix inline → the fix re-triggers this hook.
 // Debouncing means a burst of edits to one file reviews once, not per keystroke.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { write, ageSeconds } from './core/state.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input } = JSON.parse(await readStdin()) as HookInput
 if (tool_name !== 'Write' && tool_name !== 'Edit') pass()
 
 const file = tool_input?.file_path ?? ''
@@ -16,7 +17,7 @@ const file = tool_input?.file_path ?? ''
 if (!/\.(ts|tsx|js|jsx|py|go|rs)$/.test(file) || /\.(test|spec)\./.test(file)) pass()
 
 // Per-file debounce: rapid successive edits to the same file are one logical change.
-const key = 'editreview-' + file.replace(/[^a-zA-Z0-9]/g, '_')
+const key = 'editreview-' + file.replaceAll(/[^a-zA-Z0-9]/g, '_')
 if (ageSeconds(key) < 45) pass()
 write(key, '1')
 

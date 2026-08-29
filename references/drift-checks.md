@@ -18,8 +18,6 @@ On `/webstack update`, step 1 runs drift detection against the bootstrap templat
 ## Vendor Knowledge Heading Aliases
 
 Accept as equivalent to `## Vendor Knowledge`:
-- `## Knowledge Graph`
-- `## KG Entities`
 - `## Vendor Docs`
 
 If an alias is found, treat S1 as PASS and note the non-standard name as INFO.
@@ -47,9 +45,8 @@ when the heading is absent, so a project that already carries an older `## Worki
 keeps it forever. On a C7 WARN, replace that managed section's body with the bootstrap template's copy.
 Never edit the surrounding project-owned sections.
 
-**C3 is retired.** It checked that each vendor entry matched a Knowledge Graph entity; the KG → wiki
-migration removed the entities, so the check had nothing to compare. The ID is not reused — see
-`KNOWN-ISSUES.md` § 1.
+**C3 is retired.** It checked a vendor entry against a graph entity. The graph is gone, so the check
+had nothing to compare. The ID is not reused. See `KNOWN-ISSUES.md` § 1.
 
 **Not checked (intentionally):** exact wording of managed sections, empty project-specific sections, section ordering, HTML comment placeholders.
 

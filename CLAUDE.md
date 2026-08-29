@@ -25,8 +25,8 @@ Templates deploy as rule files based on their `target` frontmatter field:
 | `agents/` | — | `.claude/agents/` in target project | Available as subagent types |
 
 A rule with no `paths:` frontmatter is auto-loaded every turn; a rule with `paths:` loads only when you
-touch a matching file. That one key is the whole mechanism. There is no Knowledge Graph — project
-knowledge is Markdown under `.claude/rules/project/`, found by auto-load or `wiki.sh find`.
+touch a matching file. That one key is the whole mechanism. Project knowledge is Markdown under
+`.claude/rules/project/`, found by auto-load or `wiki.sh find`.
 
 `manifest.json` is the authority on what deploys where. The inventories in SKILL.md are generated from
 disk by `scripts/gen-inventory.sh` — edit the templates, then run `gen-inventory.sh --write`, never

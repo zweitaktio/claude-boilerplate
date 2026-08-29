@@ -1,15 +1,15 @@
-// version: 2.2.0
+// version: 2.3.0
 // Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
-import { execSync } from 'child_process'
-import { existsSync, readdirSync, realpathSync } from 'fs'
-import { basename, dirname, join } from 'path'
+import { execSync } from 'node:child_process'
+import { existsSync, readdirSync, realpathSync } from 'node:fs'
+import { basename, dirname, join } from 'node:path'
 
 await readStdin()
 
 const projectDir = process.env.CLAUDE_PROJECT_DIR ?? '.'
-const run = (cmd) => {
+const run = (cmd: string): string => {
   try {
     return execSync(cmd, { encoding: 'utf8', stdio: 'pipe' }).trim()
   } catch {
@@ -32,7 +32,7 @@ try {
 }
 
 // --- project knowledge wiki summary (makes the wiki present at session start) ---
-const countMd = (dir) => {
+const countMd = (dir: string): number => {
   try {
     return readdirSync(dir).filter((f) => f.endsWith('.md') && f !== 'index.md' && f !== 'INDEX.md')
       .length
@@ -40,10 +40,11 @@ const countMd = (dir) => {
     return 0
   }
 }
-const countDocs = (dir) => {
+const countDocs = (dir: string): number => {
   try {
     let n = 0
-    for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const entries = readdirSync(dir, { withFileTypes: true })
+    for (const e of entries) {
       if (e.isDirectory()) n += countMd(join(dir, e.name))
       else if (e.name.endsWith('.md') && e.name !== 'INDEX.md') n += 1
     }
@@ -87,17 +88,18 @@ const ownSocket = process.env.CLAUDE_CODE_MESSAGING_SOCKET ?? ''
 
 // A live pid is not enough: pids get recycled, and a dev server that inherited a dead session's
 // number sits in this same project dir and would read as a peer.
-const isClaudeSession = (pid) => {
+const isClaudeSession = (pid: number): boolean => {
   try {
     process.kill(pid, 0)
-  } catch (e) {
-    if (e.code !== 'EPERM') return false // gone; EPERM means alive but not ours to signal
+  } catch (error) {
+    // gone; EPERM means alive but not ours to signal
+    if ((error as NodeJS.ErrnoException).code !== 'EPERM') return false
   }
   return /claude/.test(run(`ps -o comm= -p ${pid}`))
 }
 
 // Linux exposes cwd via /proc; macOS needs lsof. Both stay quiet when the pid is gone.
-const pidCwd = (pid) => {
+const pidCwd = (pid: number): string => {
   try {
     return realpathSync(`/proc/${pid}/cwd`)
   } catch {
@@ -118,7 +120,9 @@ try {
     const peers = readdirSync(sockDir)
       .filter((f) => f.endsWith('.sock') && f !== ownFile)
       .map((f) => Number.parseInt(f.slice(0, -5), 10))
-      .filter((pid) => Number.isInteger(pid) && isClaudeSession(pid) && pidCwd(pid) === projectReal)
+      .filter(
+        (pid) => Number.isSafeInteger(pid) && isClaudeSession(pid) && pidCwd(pid) === projectReal,
+      )
 
     if (peers.length > 0) {
       const protocol = '.claude/rules/core/multi-agent.md'

@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: payload@3
 target: rules
 domain: full-stack
@@ -17,7 +17,13 @@ tags: [payload, live-preview, csp, iframe, postMessage, deployment]
 
 # Payload CMS 3 — Live Preview Caveats
 
-Live preview embeds the frontend inside an iframe in the Payload admin and pushes form-state updates via `window.postMessage`. The end-to-end path crosses three concerns — **CSP/headers**, **environment URLs**, and **draft-mode data fetching** — and a wrong default in any one of them breaks preview silently. This doc collects every pitfall observed in production with copy-paste fixes.
+Live preview embeds the frontend inside an iframe in the Payload admin. It pushes form-state updates
+through `window.postMessage`.
+
+The end-to-end path crosses three concerns: **CSP and headers**, **environment URLs**, and **draft-mode
+data fetching**. A wrong default in any one of them breaks the preview in silence.
+
+This document collects every pitfall observed in production, with a fix you can copy.
 
 ## Documentation
 
@@ -400,16 +406,16 @@ function LivePreviewInner<T extends object>({
 
 Walk through these in a real browser when wiring up live preview on a new project or environment:
 
-- [ ] Open the page in Payload admin → live-preview tab loads the iframe (no `Refused to load` error)
-- [ ] Open browser devtools in the iframe context → no CSP `connect-src` violations on `/api/{collection}/{id}` POSTs
+- [ ] Open the page in the Payload admin. The live-preview tab loads the iframe, with no `Refused to load` error
+- [ ] Open the browser devtools in the iframe context. No CSP `connect-src` violation appears on an `/api/{collection}/{id}` POST
 - [ ] Safari: no `Unable to post message to <url>. Recipient has origin <other>` warning
-- [ ] Edit a field in the admin → iframe content updates without a full reload
-- [ ] Reload the iframe → loader fetches the draft, content matches admin form
-- [ ] Save the page as a draft → preview reflects the saved draft on next load
-- [ ] Publish → preview reflects published content
-- [ ] Create a brand-new page (no save yet) → preview iframe shows the empty layout shell, no 500s in network tab
-- [ ] Rename the slug in the form → preview URL updates, content still loads (because `id=` carries through)
-- [ ] After deploying a Caddyfile change → preview headers reflect the new config (`docker compose ps caddy` should show recently-restarted)
+- [ ] Edit a field in the admin. The iframe content updates without a full reload
+- [ ] Reload the iframe. The loader fetches the draft, and the content matches the admin form
+- [ ] Save the page as a draft. The preview shows the saved draft on the next load
+- [ ] Publish the page. The preview shows the published content
+- [ ] Create a new page, and do not save it. The preview iframe shows the empty layout shell, with no 500 in the network tab
+- [ ] Rename the slug in the form. The preview URL updates, and the content still loads, because `id=` carries through
+- [ ] Deploy a Caddyfile change. The preview headers show the new config, and `docker compose ps caddy` shows a recent restart
 
 ## Backport
 

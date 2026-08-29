@@ -9,6 +9,11 @@ paths:
   - "scripts/sync.sh"
   - ".claude/hooks/**"
 tags: [manifest, sync, glob, dotfiles, deployment]
+trip-task: Here is the listing of .claude/hooks/ : auto-check.mjs, bash-guard.mjs, code-guard.mjs, run.sh, package.json, tsconfig.json, .prettierrc.mjs, node_modules/. A deploy tool copies the hook files from this directory into a target project. Write the find command it should use to enumerate them. Reply with the command only.
+defect: ^(?![\s\S]*(!\s*-name|-not\s+-name|grep\s+-v|\[!\.\]|\^\\\.))[\s\S]*-name\s*['\"]?\*\.mjs
+defect-flags: ""
+on-task: find
+proof: "none 8/8, full 8/8, claude-sonnet-5, 2026-08-29 (task rewritten, no leak)"
 ---
 
 # manifest include globs match dotfiles, so config files ship as payload

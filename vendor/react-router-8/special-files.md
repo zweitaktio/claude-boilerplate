@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [root, config, entry, server-only, client-only, special-files]
 ---
 
 # Special Files
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-React Router framework mode uses several special files with specific purposes.
 
 ## Quick Reference
 
@@ -280,4 +269,4 @@ app/
 
 **Don't create a separate layout just for nav/footer** — put global UI in `root.tsx`.
 
-**Don't use flat routes when nesting makes sense** — see `VendorReactRouter8Routing` for proper nested route patterns.
+**Don't use flat routes when nesting makes sense** — see `vendor/react-router-8/routing` for proper nested route patterns.

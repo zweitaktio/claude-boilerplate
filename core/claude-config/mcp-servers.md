@@ -1,5 +1,5 @@
 ---
-version: 5.1.0
+version: 5.1.1
 applies: Always
 target: rules
 paths:
@@ -7,7 +7,7 @@ paths:
   - "**/*mcp*"
   - "**/*playwright*"
   - "**/.cbmignore"
-tags: [mcp, context-mode, context7, playwright, codebase-memory, configuration, setup]
+tags: [mcp, context-mode, playwright, codebase-memory, configuration, setup]
 ---
 
 # MCP Server & Plugin Setup
@@ -19,7 +19,6 @@ For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/
 
 | Server / Plugin | Docs | Notes |
 |-----------------|------|-------|
-| Context7 | [GitHub](https://github.com/upstash/context7) | Library doc lookup |
 | Playwright | [GitHub](https://github.com/microsoft/playwright-mcp) | Browser automation |
 | context-mode | [GitHub](https://github.com/claude-context-mode/context-mode) | Large output handling (plugin) |
 | codebase-memory-mcp | [GitHub](https://github.com/DeusData/codebase-memory-mcp) | Structural code discovery (global npm binary, project-scoped data) |
@@ -27,10 +26,6 @@ For **tool usage rules**, see `core/mcp-tools` (auto-loaded from `.claude/rules/
 ## Setup Commands
 
 ```bash
-# Context7 — project-scoped
-# API key optional but recommended for higher rate limits (get at context7.com/dashboard)
-claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp
-
 # Playwright — PROJECT-SCOPED. Both paths MUST be absolute, and the version MUST be pinned.
 # See "The output directory must be absolute" below for why relative paths silently misroute.
 claude mcp add playwright --scope project -- npx @playwright/mcp@0.0.78 \
@@ -135,7 +130,6 @@ hashes. Close the other project's sessions before you index this one.
 
 | Tool | Scope | Reason |
 |------|-------|--------|
-| Context7 (`context7`) | **project** | Set up per-project during `/webstack init` |
 | context-mode | **user** | Plugin, user is the default scope |
 | Playwright (`playwright`) | **project** | Uses project-local `--config .claude/playwright-mcp.config.json` |
 | Payload (`payload`) | **project** | HTTP transport to project-specific Payload backend URL |
@@ -208,14 +202,6 @@ defaults without raising. Validate with `jq -e . .claude/playwright-mcp.config.j
 }
 ```
 
-## Context7 with API Key
-
-For higher rate limits, get a free key at [context7.com/dashboard](https://context7.com/dashboard):
-
-```bash
-claude mcp add context7 --scope project -- npx -y @upstash/context7-mcp --api-key $CONTEXT7_API_KEY
-```
-
 ## Playwright CLI Options
 
 | Option | Example | Purpose |
@@ -234,6 +220,19 @@ claude mcp list
 claude plugin list
 ```
 
-`context7` and `playwright` (and optionally `payload`) show at project scope. The context-mode plugin should show as installed.
+`playwright` (and optionally `payload`) shows at project scope. The context-mode plugin should show as installed.
 
-A `memory` server may appear at user scope on older machines. It is a general-purpose Knowledge Graph server that webstack no longer uses — project knowledge is Markdown under `.claude/rules/project/`. Leaving it installed is harmless; nothing here depends on it.
+A `memory` server may appear at user scope on an older machine. Webstack retired it. Project knowledge is Markdown under `.claude/rules/project/`. Remove it with `claude mcp remove memory`.
+
+## Retired: Context7
+
+Webstack used the `context7` MCP server for library documentation. It is retired.
+
+In practice the model reached for it rarely, and its index lags the library. The lookup rule now reads
+the official source at the installed version tag — see `core/mcp-tools` § Library Doc Lookup.
+
+Remove it from a project that still has it:
+
+```bash
+claude mcp remove context7
+```

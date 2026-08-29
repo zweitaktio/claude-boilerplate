@@ -1,13 +1,14 @@
-// version: 1.2.0
+// version: 1.3.0
 // Runs `yarn check` after a code edit, resolving the nearest workspace in a monorepo.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { write } from './core/state.mjs'
-import { execSync } from 'child_process'
-import { existsSync, readFileSync } from 'fs'
-import { dirname, basename, join } from 'path'
+import type { HookInput } from './core/hook-types.ts'
+import { execSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
+import { dirname, basename, join } from 'node:path'
 
-const input = JSON.parse(await readStdin())
+const input = JSON.parse(await readStdin()) as HookInput
 const file = input.tool_input?.file_path
 
 if (!file) pass()
@@ -48,11 +49,13 @@ const pm =
           : 'yarn' // default for legacy projects with no lockfile detected
 
 try {
-  execSync(`${pm} run check`, { cwd: workspace, timeout: 120000, stdio: 'pipe' })
+  execSync(`${pm} run check`, { cwd: workspace, timeout: 120_000, stdio: 'pipe' })
   write('last-check-result', 'pass')
-} catch (err) {
+} catch (error) {
   write('last-check-result', 'fail')
-  const output = (err.stdout?.toString() || '') + (err.stderr?.toString() || '')
+  // execSync throws an Error carrying the child's captured streams.
+  const e = error as { stdout?: Buffer; stderr?: Buffer }
+  const output = (e.stdout?.toString() ?? '') + (e.stderr?.toString() ?? '')
   inject('PostToolUse', `${pm} run check failed in ${basename(workspace)}/:\n\n${output}`)
 }
 

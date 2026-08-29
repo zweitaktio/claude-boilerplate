@@ -1,5 +1,5 @@
 ---
-version: 1.2.0
+version: 1.2.1
 applies: Always
 target: rules
 priority: high
@@ -15,6 +15,8 @@ Write every answer, every explanation, and every document in Simplified Technica
   and never arrow chains such as `A → B → fails`.
 - Maximum 3 words in a noun cluster.
 - No metaphor, no idiom, no analogy, no hedge, no filler.
+- Keep an intensifier, a frequency adverb or a qualifier only when it changes the technical outcome.
+  Delete the word, re-read the sentence, and keep it only if the meaning changed.
 
 Peer messages between sessions obey STE too. Their brevity caps hold as well, and
 `core/process/multi-agent.md` § Message format lists the exempt tokens.

@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: react
 target: rules
 domain: frontend
@@ -17,7 +17,6 @@ tags: [react, hooks, useEffect, cleanup, race-conditions, stale-closures, type-g
 |--------|-----|-------|
 | React docs | https://react.dev/reference/react | Hooks API reference |
 | GitHub | https://github.com/facebook/react | Source, issues |
-| Context7 | `/facebook/react` | Good coverage |
 
 ## API Type Guard Factory
 
@@ -96,7 +95,7 @@ useEffect(() => {
 ### Cleanup Functions
 - Always clean up subscriptions, timers, event listeners
 - Cleanup runs before next effect and on unmount
-- Strict Mode runs setup → cleanup → setup to verify correctness
+- Strict Mode runs the setup, then the cleanup, then the setup again. This sequence verifies correctness
 
 ```tsx
 useEffect(() => {

@@ -1,10 +1,11 @@
-// version: 1.0.0
+// version: 1.1.0
 // After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
 import { read, write, ageSeconds } from './core/state.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name } = JSON.parse(await readStdin())
+const { tool_name } = JSON.parse(await readStdin()) as HookInput
 
 // Time-based decay: reset counter if last failure was >5 min ago
 const age = ageSeconds('failure-count')

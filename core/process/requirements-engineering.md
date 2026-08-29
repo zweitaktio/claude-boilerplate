@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: Always
 target: rules
 priority: high
@@ -53,7 +53,7 @@ Do not ask about areas that clearly don't apply (e.g., skip i18n for a CLI scrip
 Explicitly confirm with the user:
 - **In scope**: list what this feature includes
 - **Out of scope**: list what it does NOT include, especially things that seem related
-- **Future considerations**: things that might be added later and should not be blocked by current design
+- **Future considerations**: the features that a later release adds. The current design must not block them
 
 State scope boundaries in the plan. When implementation reveals scope creep, stop and re-confirm with the user.
 
@@ -87,7 +87,7 @@ Ask the user: "How will we verify this works?" Then define:
 Before designing, identify and present all risks to the user:
 - **Unknowns** — "I don't know if the API supports X" — verify before committing to an approach
 - **Assumptions** — state them explicitly: "I'm assuming the user table has an email column"
-- **Technical risks** — areas where the implementation might be harder than expected
+- **Technical risks** — the areas where the implementation costs more than the estimate states
 - **Reversibility** — can this be rolled back? If not, flag it as high-risk
 
 Present every identified risk with mitigation options. Do not proceed to design with unacknowledged risks.

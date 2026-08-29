@@ -134,25 +134,22 @@ EOF
           hook_name=$(echo "$hook_command" | sed -n 's|.*\.claude/hooks/run\.sh \([^ ]*\).*|\1|p' 2>/dev/null || true)
 
           if [ -n "$hook_name" ]; then
-            check_path="$PROJECT/.claude/hooks/${hook_name}.mjs"
-            if [ ! -f "$check_path" ]; then
-              # Also check without .mjs extension (might be the run.sh itself)
-              local run_sh="$PROJECT/.claude/hooks/run.sh"
-              if [ ! -f "$run_sh" ]; then
-                stale="true"
-                check_path="run.sh + ${hook_name}.mjs"
-              else
-                check_path="$PROJECT/.claude/hooks/${hook_name}.mjs"
-                if [ ! -f "$check_path" ]; then
-                  stale="true"
-                  check_path="${hook_name}.mjs"
-                fi
-              fi
+            # run.sh resolves <name>.ts first, then <name>.mjs. Accept either.
+            if [ -f "$PROJECT/.claude/hooks/${hook_name}.ts" ]; then
+              check_path="$PROJECT/.claude/hooks/${hook_name}.ts"
+            elif [ -f "$PROJECT/.claude/hooks/${hook_name}.mjs" ]; then
+              check_path="$PROJECT/.claude/hooks/${hook_name}.mjs"
+            elif [ ! -f "$PROJECT/.claude/hooks/run.sh" ]; then
+              stale="true"
+              check_path="run.sh + ${hook_name}.ts"
+            else
+              stale="true"
+              check_path="${hook_name}.ts"
             fi
           else
-            # Pattern 2: direct .sh or .mjs path
+            # Pattern 2: direct .sh, .mjs or .ts path
             local direct_path
-            direct_path=$(echo "$hook_command" | grep -oE '[^ ]*\.(sh|mjs)' | head -1 || true)
+            direct_path=$(echo "$hook_command" | grep -oE '[^ ]*\.(sh|mjs|ts)' | head -1 || true)
 
             if [ -n "$direct_path" ]; then
               # Expand $CLAUDE_PROJECT_DIR

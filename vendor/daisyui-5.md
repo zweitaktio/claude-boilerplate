@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.3.2
 applies: daisyui@5
 target: rules
 domain: styling
@@ -15,18 +15,16 @@ tags: [daisyui, ui, components, tailwind, styling, themes]
 |--------|-----|-------|
 | llms.txt | https://daisyui.com/llms.txt | **Preferred** — fetch via WebFetch |
 | Official docs | https://daisyui.com/docs | Component reference |
-| Context7 | `/saadeghi/daisyui` | May return v4 docs — verify `fieldset` class exists |
 | GitHub | https://github.com/saadeghi/daisyui | Source, issues, changelog |
 
 ## Documentation Lookup
 
 **IMPORTANT:** Always verify the installed version in `package.json` before using this memory. DaisyUI 4 and 5 have breaking differences (form classes, syntax).
 
-For up-to-date documentation:
-1. **Preferred:** Fetch https://daisyui.com/llms.txt directly via WebFetch
-2. **Alternative:** Use Context7 with `/saadeghi/daisyui` but verify it returns v5 docs (check for `fieldset` class — v4 uses `form-control`)
+For current documentation, fetch https://daisyui.com/llms.txt with `ctx_fetch_and_index`.
 
-**Do NOT use Context7 blindly** — it may return v4 documentation which will cause errors on v5 projects.
+**Check that the source is v5 before you trust it.** A v5 source uses the `fieldset` class. A v4 source
+uses `form-control`. A v4 answer on a v5 project produces classes that do not exist.
 
 ## Installation & Config (Tailwind CSS v4)
 
@@ -55,7 +53,11 @@ Always use DaisyUI component classes (badge, btn, card, alert, etc.) instead of 
 
 ### All Available Themes
 
-light, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine, halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk, autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk
+```
+light, dark, cupcake, bumblebee, emerald, corporate, synthwave, retro, cyberpunk, valentine,
+halloween, garden, forest, aqua, lofi, pastel, fantasy, wireframe, black, luxury, dracula, cmyk,
+autumn, business, acid, lemonade, night, coffee, winter, dim, nord, sunset, caramellatte, abyss, silk
+```
 
 ## Key Components
 
@@ -235,7 +237,7 @@ Use `data-theme` attribute on `<html>` or `theme-controller` class:
 
 ## Base UI Integration
 
-DaisyUI is CSS-only. For components that need focus management, keyboard navigation, or ARIA state management, use Base UI (`@base-ui/react`) for behavior and DaisyUI classes/theme tokens for styling. See `VendorBaseUiReact` for patterns.
+DaisyUI is CSS-only. For components that need focus management, keyboard navigation, or ARIA state management, use Base UI (`@base-ui/react`) for behavior and DaisyUI classes/theme tokens for styling. See `vendor/base-ui-react` for patterns.
 
 **Do NOT use these DaisyUI CSS-only patterns in production:**
 - `<dialog class="modal">` — no focus trap, no programmatic open/close
@@ -288,5 +290,5 @@ Source: https://daisyui.com/llms.txt (DaisyUI 5 official LLM reference)
 | **drawer** | parts: `drawer-toggle/drawer-content/drawer-side/drawer-overlay` · placement: `drawer-end` · modifier: `drawer-open` · variant: `is-drawer-open:/is-drawer-close:` |
 
 ## Known Issues
-- v4 → v5 migration: all `form-control`, `label-text`, `input-bordered` classes must be replaced
+- The migration from v4 to v5 replaces every `form-control`, `label-text` and `input-bordered` class
 - `bordered` variant removed from inputs — inputs are bordered by default in v5

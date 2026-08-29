@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.4.1
 applies: Always
 target: rules
 priority: high
@@ -16,7 +16,14 @@ tags: [gates, intent, twins, falsify, forced-artifact, code-change, verification
 
 # Code-Change Gates
 
-Three forced artifacts guard the riskiest parts of changing code. Each requires a literal line, written where it belongs in the flow (never as visible step scaffolding). The act of writing it forces the work it names — you can't fill the slots without doing the lookup, the search, or the check — and the code review at completion asks for these gates. Keep the wording exact so it stays greppable. (The authorization gate for outward actions lives in `core/engineering-discipline`.)
+Three forced artifacts guard the most dangerous parts of a code change. Each one requires a literal
+line. Write that line where it belongs in the flow, never as visible step scaffolding.
+
+The act of writing the line forces the work it names. You cannot fill the slots without the lookup, the
+search or the check. The `code-reviewer` agent audits these gates at completion. Keep the wording exact,
+so the token stays greppable.
+
+The authorization gate for an outward action lives in `core/engineering-discipline`.
 
 ## INTENT — before any behavior-changing edit
 
@@ -26,7 +33,14 @@ A failing check has two possible culprits: the code, or the check itself. Open t
 INTENT: code does <X>; the check expects <Y>; the spec says <Z>
 ```
 
-If X, Y, and Z disagree, that contradiction *is* the finding — surface it; never silently edit one side to match another. Authority when they conflict: an explicit user statement > the spec > the tests > current code behavior. "Fix the code" or "make the tests pass" is a task, not a statement of intended behavior — it does not promote the tests above the spec.
+When X, Y and Z disagree, that contradiction *is* the finding. Report it. Never edit one side silently to
+match another.
+
+Authority runs in this order when they conflict. An explicit user statement wins. The spec comes next,
+then the tests, then the current code behavior.
+
+"Fix the code" and "make the tests pass" are tasks, never statements of intended behavior. Neither one
+promotes the tests above the spec.
 
 ## TWINS — after fixing a defect
 
@@ -45,11 +59,12 @@ a twin you found and left is a known defect with nobody assigned (`core/issue-tr
 "Fixed everywhere" with no search behind it is not verification.
 
 **A grep returning 0 is not evidence of absence until you check the command.** The classic is an
-unquoted `--include`: the shell globs the whole word `--include=*.ts`, looking for a file literally
-named that, so the pattern matches nothing and the search silently covers zero files. Measured on the
-same tree: `--include=*.ts` → **0 hits**, `--include='*.ts'` → **953**. Worse, only some shells tell
-you — one prints `no matches found`, another drops the argument in silence, so "re-run it in a
-different tool" works only by accident. **Quote the glob**, and re-run any zero-hit search without the
+unquoted `--include`. The shell globs the whole word `--include=*.ts` and looks for a file with that
+literal name. The pattern then matches nothing, and the search covers zero files in silence. Measured on the
+same tree, `--include=*.ts` returned **0 hits** and `--include='*.ts'` returned **953**. Only some
+shells report the problem. One prints `no matches found`, and another drops the argument in silence.
+A re-run in a different tool therefore works by accident. **Quote the glob**, and re-run any zero-hit
+search without the
 filter before concluding the construct is absent.
 
 ## FALSIFY — before reporting a pass or asserting a mechanism
@@ -60,9 +75,19 @@ Before reporting a verification pass, concluding from a negative result, or asse
 FALSIFY: claim <X>; it would have failed if <Y>; that outcome was reachable because <Z>
 ```
 
-`<Z>` is the load-bearing slot: it forces you to show the subject existed, the control passed, or a second case discriminated between causes. A test that could not have come out any other way is not evidence. The recurring shapes are a privacy assertion with no record to bind to, a leak check against a fixture holding no bytes, a `grep` that silently matched nothing, and a mechanism inferred from the single incident it was built to explain — all four read as clean passes.
+`<Z>` is the load-bearing slot. It forces you to show one of three things. The subject existed. The
+control passed. A second case separated the causes. A test that could not have come out any other way is
+not evidence.
 
-**If `<Z>` cannot be filled, say "unverifiable"** and name what would make it verifiable. Do not report the item met — and never manufacture the condition to get a pass.
+Four shapes recur, and all four read as clean passes:
+
+- A privacy assertion with no record to bind to.
+- A leak check against a fixture that holds no bytes.
+- A `grep` that matched nothing in silence.
+- A mechanism inferred from the single incident that it explains.
+
+**If you cannot fill `<Z>`, say "unverifiable".** Then name what would make the item verifiable. Never
+report the item as met, and never manufacture the condition to get a pass.
 
 ### The two shapes that produce a confident false pass
 

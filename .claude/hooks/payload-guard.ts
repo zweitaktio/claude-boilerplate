@@ -1,9 +1,10 @@
-// version: 1.0.0
+// version: 1.1.0
 // Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const input = JSON.parse(await readStdin())
+const input = JSON.parse(await readStdin()) as HookInput
 const toolName = input.tool_name ?? ''
 const toolInput = input.tool_input
 if (!toolInput) pass()
@@ -21,7 +22,7 @@ if ('data' in toolInput) {
 }
 
 // Check 2: empty objects {} (recursive)
-function hasEmptyObject(val) {
+function hasEmptyObject(val: unknown): boolean {
   if (val && typeof val === 'object') {
     if (!Array.isArray(val) && Object.keys(val).length === 0) return true
     for (const v of Object.values(val)) {
@@ -35,7 +36,7 @@ if (hasEmptyObject(toolInput)) {
 }
 
 // Check 3: null values (recursive)
-function hasNull(val) {
+function hasNull(val: unknown): boolean {
   if (val === null) return true
   if (val && typeof val === 'object') {
     for (const v of Object.values(val)) {
@@ -49,8 +50,10 @@ if (hasNull(toolInput)) {
 }
 
 // Check 4: SEO field length limits
-const seoTitle = toolInput.seoTitle ?? toolInput.meta?.title
-const seoDesc = toolInput.seoSummary ?? toolInput.seoDescription ?? toolInput.meta?.description
+// The payload shape is caller-defined, so read the SEO fields through an index signature.
+const seo = toolInput as Record<string, unknown> & { meta?: Record<string, unknown> }
+const seoTitle = seo.seoTitle ?? seo.meta?.title
+const seoDesc = seo.seoSummary ?? seo.seoDescription ?? seo.meta?.description
 if (typeof seoTitle === 'string' && seoTitle.length > 60) {
   warnings.push(`seoTitle is ${seoTitle.length} chars — max 60. Truncate or rewrite.`)
 }
@@ -76,7 +79,7 @@ for (const [key, val] of Object.entries(toolInput)) {
   }
 }
 
-if (warnings.length) {
+if (warnings.length > 0) {
   inject(
     'PreToolUse',
     warnings.join('\n\n') + '\n(core/process/payload-api.md § Payload Validation)',

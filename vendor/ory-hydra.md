@@ -1,5 +1,5 @@
 ---
-version: 1.2.1
+version: 1.2.2
 applies: "@ory/hydra-client" | "@ory/client"
 target: rules
 domain: auth
@@ -128,7 +128,7 @@ adminOrScopeOrOwner(scope, field)     // + owned records
 
 ## M2M Token Acquisition
 
-Server-to-server token for frontend → API calls:
+A server-to-server token for a call from the frontend to the API:
 
 ```typescript
 const response = await fetch(`${HYDRA_PUBLIC_URL}/oauth2/token`, {

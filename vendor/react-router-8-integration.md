@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -10,7 +10,7 @@ tags: [conform, zod, oauth2, feature-modules, auth, validation, known-issues]
 
 # React Router 8 Integration
 
-Project-specific patterns for integrating React Router 8 with our stack. For core RR8 reference, see `VendorReactRouter8Index`.
+Project-specific patterns for integrating React Router 8 with our stack. For core RR8 reference, see `vendor/react-router-8/_index`.
 
 ## Documentation Sources
 
@@ -18,47 +18,15 @@ Project-specific patterns for integrating React Router 8 with our stack. For cor
 |--------|-----|-------|
 | Official docs | https://reactrouter.com/ | v8 docs |
 | API reference | https://api.reactrouter.com | Type definitions |
-| Context7 | `/remix-run/react-router` | Good coverage |
 | GitHub | https://github.com/remix-run/react-router | Source, issues, examples |
 
 ## Form Handling
 
-See `VendorConformZod` for complete Conform + Zod form handling patterns, examples, and DaisyUI 5 styling.
+`vendor/conform-zod` owns every Conform and Zod pattern: the schema shapes, the checkbox coercion, the
+dynamic form id for data restoration, and the DaisyUI 5 styling. It auto-loads on any `.tsx` file, so it
+is in context wherever you write a form.
 
-### Checkbox Boolean Handling
-
-HTML checkboxes send string values. Conform's `parseWithZod` from `@conform-to/zod/v4` auto-coerces `"on"` → `true`, absence → `false`.
-
-```typescript
-// ✅ Schema — plain z.boolean(), Conform handles coercion
-acceptTerms: z.boolean().refine((val) => val === true, {
-  message: t('validation.acceptTerms', 'You must accept the terms'),
-})
-
-// ❌ Don't use z.preprocess — breaks TypeScript types (returns unknown)
-acceptTerms: z.preprocess((val) => val === 'true', z.boolean())
-```
-
-```tsx
-// ✅ Checkbox — no value attribute (let browser send "on")
-<input {...getInputProps(field, { type: 'checkbox' })} key={field.key} />
-
-// ❌ Don't set value="true" — sends string "true", not coerced correctly
-<input {...getInputProps(field, { type: 'checkbox' })} value="true" />
-```
-
-### Dynamic Form ID (Data Restoration)
-
-When navigating back to a form with server data, `defaultValue` may not re-apply (React only applies it on initial mount). Force re-initialization with a dynamic `id`:
-
-```tsx
-const [form, fields] = useForm({
-  // Dynamic ID forces re-initialization when data changes
-  id: record?.id ? `form-${record.id}` : 'form-new',
-  defaultValue: { /* from server data */ },
-  // ...
-})
-```
+Never restate those patterns here. This file covers only what the router adds to them.
 
 ## Protected Route Pattern
 

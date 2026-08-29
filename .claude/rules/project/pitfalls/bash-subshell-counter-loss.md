@@ -10,6 +10,9 @@ paths:
 tags: [bash, shell, subshell, portability, macos]
 links:
   - core/process/scripting
+trip-task: Write a bash script for macOS that reads every .md file under docs/ and counts how many contain the word TODO. Feed the file list into a while loop with a pipe. Print the total at the end. Reply with the script only, in one bash code block.
+defect: \|[^|\n]*while[\s\S]{0,400}?(\+\+|\+ *1|n=\$\(\(|count=\$\(\()[\s\S]{0,400}?(echo|printf)[^\n]*\$\{?(n|count|total)
+proof: "none 8/8, full 8/8, claude-sonnet-5, 2026-08-29"
 ---
 
 # A pipeline's `while` body runs in a subshell — counters don't survive

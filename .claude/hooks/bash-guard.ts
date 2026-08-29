@@ -1,17 +1,18 @@
-// version: 1.2.0
+// version: 1.3.0
 // Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_input } = JSON.parse(await readStdin())
+const { tool_input } = JSON.parse(await readStdin()) as HookInput
 const command = tool_input?.command ?? ''
 const trimmed = command.trimStart()
-const warnings = []
+const warnings: string[] = []
 
-function block(msg) {
+function block(msg: string): never {
   deny('PreToolUse', msg)
 }
-function warn(msg) {
+function warn(msg: string): void {
   warnings.push(msg)
 }
 
@@ -20,7 +21,7 @@ const SECRET_PATTERN =
   /\$(PASSWORD|SECRET|TOKEN|API_KEY|PRIVATE_KEY|DATABASE_URL|DB_URL|AUTH|CREDENTIAL)/i
 const SECRET_GUIDANCE =
   'Do not pass secrets via variable expansion — create a wrapper script that reads from .env internally.'
-const cleaned = command.replace(/\\\$/g, '')
+const cleaned = command.replaceAll(String.raw`\$`, '')
 if (SECRET_PATTERN.test(cleaned))
   block(`Command expands a secret/credential variable. ${SECRET_GUIDANCE}`)
 
@@ -55,7 +56,7 @@ if (/\bxargs\b/.test(trimmed))
 // --- Pipe chains (5+) ---
 // Count only shell-level pipes; ignore | inside quotes (grep "a\|b" alternation, jq '..|..' filters).
 // Short chains are normal shell usage; only long chains signal unauditable processing.
-const shellLevel = command.replace(/'[^']*'/g, '').replace(/"[^"]*"/g, '')
+const shellLevel = command.replaceAll(/'[^']*'/g, '').replaceAll(/"[^"]*"/g, '')
 const pipeCount = (shellLevel.match(/\|/g) || []).length
 if (pipeCount >= 5)
   block(
@@ -154,5 +155,5 @@ if (/\bcurl\b.*\/api\//.test(trimmed) && /\-X\s*(POST|PATCH|DELETE|PUT)/.test(tr
 }
 
 // --- Emit accumulated warnings ---
-if (warnings.length) inject('PreToolUse', warnings.join('\n\n'))
+if (warnings.length > 0) inject('PreToolUse', warnings.join('\n\n'))
 pass()

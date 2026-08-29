@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: "@base-ui/react@1"
 target: rules
 domain: styling
@@ -273,7 +273,7 @@ Props: `indeterminate` for mixed state (parent checkbox in hierarchical selectio
 
 ## CVA Wrapper Pattern
 
-All project wrappers use CVA + twMerge for typed variants. See `VendorTailwind4` for the full CVA pattern.
+All project wrappers use CVA + twMerge for typed variants. See `vendor/tailwind-4` for the full CVA pattern.
 
 ```tsx
 import { cva, type VariantProps } from 'class-variance-authority'

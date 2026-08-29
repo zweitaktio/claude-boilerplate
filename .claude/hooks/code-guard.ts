@@ -1,22 +1,23 @@
-// version: 1.3.0
+// version: 1.4.0
 // Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
 import { append, hasLine, read, write } from './core/state.mjs'
+import type { HookInput } from './core/hook-types.ts'
 
-const { tool_name, tool_input } = JSON.parse(await readStdin())
+const { tool_name, tool_input } = JSON.parse(await readStdin()) as HookInput
 
 if (tool_name !== 'Write' && tool_name !== 'Edit') pass()
 
 const file = tool_input?.file_path ?? ''
 const content = tool_name === 'Write' ? (tool_input?.content ?? '') : (tool_input?.new_string ?? '')
 const oldContent = tool_name === 'Edit' ? (tool_input?.old_string ?? '') : ''
-const warnings = []
+const warnings: string[] = []
 
-function block(msg) {
+function block(msg: string): never {
   deny('PreToolUse', msg)
 }
-function warn(msg) {
+function warn(msg: string): void {
   warnings.push(msg)
 }
 
@@ -40,18 +41,20 @@ if (/\.(test|spec)\.ts$/.test(file)) {
 
   // Weakened-check detection (Edit only): a test loosened to pass is a fraud signal.
   if (tool_name === 'Edit' && oldContent) {
-    const asserts = (s) => (s.match(/\b(expect|assert)\s*\(/g) || []).length
-    const disables = (s) => /\b(it|test|describe)\.skip\b|\bx(it|describe)\b|\.only\b/.test(s)
-    const loose = (s) =>
+    const asserts = (s: string): number => (s.match(/\b(expect|assert)\s*\(/g) ?? []).length
+    const isDisabled = (s: string): boolean =>
+      /\b(it|test|describe)\.skip\b|\bx(it|describe)\b|\.only\b/.test(s)
+    const isLoose = (s: string): boolean =>
       /\btoBe(Truthy|Falsy|Defined|GreaterThan|LessThan|CloseTo)\b|expect\.any\(/.test(s)
-    const mocks = (s) => /\b(vi|jest)\.mock\(|mockResolvedValue|mockReturnValue\b/.test(s)
+    const isMocked = (s: string): boolean =>
+      /\b(vi|jest)\.mock\(|mockResolvedValue|mockReturnValue\b/.test(s)
 
-    const nowDisabled = disables(content) && !disables(oldContent)
-    const fewerAsserts = asserts(content) < asserts(oldContent)
-    const nowLoose = loose(content) && !loose(oldContent)
-    const nowMocked = mocks(content) && !mocks(oldContent)
+    const isNowDisabled = isDisabled(content) && !isDisabled(oldContent)
+    const isFewerAsserts = asserts(content) < asserts(oldContent)
+    const isNowLoose = isLoose(content) && !isLoose(oldContent)
+    const isNowMocked = isMocked(content) && !isMocked(oldContent)
 
-    if (nowDisabled || fewerAsserts || nowLoose || nowMocked) {
+    if (isNowDisabled || isFewerAsserts || isNowLoose || isNowMocked) {
       warn(
         'This edit weakens a test — assertions removed or loosened, a test skipped/narrowed to .only, or a real call replaced by a mock. A changed test is guilty until its justification traces to the spec: confirm the spec changed, not just the test. (code-review.md)',
       )
@@ -131,14 +134,14 @@ if (/\.(ts|tsx|js|jsx|mjs|cjs|go|rs)$/.test(file)) {
     if (m && !DIRECTIVE.test(line)) {
       run.push(m[1])
     } else {
-      if (run.length) blocks.push(run.join(' '))
+      if (run.length > 0) blocks.push(run.join(' '))
       run = []
     }
   }
-  if (run.length) blocks.push(run.join(' '))
+  if (run.length > 0) blocks.push(run.join(' '))
 
   const words = blocks.map((b) => b.split(/\s+/).filter(Boolean).length)
-  const longest = words.length ? Math.max(...words) : 0
+  const longest = words.length > 0 ? Math.max(...words) : 0
 
   // 75 = the 3-sentences × 25-words cap. Under it, no sentence split is needed, so no false positive
   // from a path or an abbreviation that contains a period.
@@ -171,7 +174,7 @@ if (
 }
 
 // Inject accumulated warnings
-if (warnings.length) {
+if (warnings.length > 0) {
   inject('PreToolUse', warnings.join('\n\n'))
 }
 pass()

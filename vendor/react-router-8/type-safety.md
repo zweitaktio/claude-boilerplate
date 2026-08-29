@@ -1,5 +1,5 @@
 ---
-version: 2.2.0
+version: 2.2.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,17 +8,6 @@ tags: [types, typescript, typegen, href, Route, typesafe]
 ---
 
 # Route Module Types
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
-
-React Router generates route-specific types that provide type inference for URL params, loader data, action data, and more.
 
 ## Is Typegen Set Up?
 
@@ -32,7 +21,9 @@ Check for these indicators:
 
 ## Importing Types
 
-Import the `Route` namespace as `./+types/<routeName>` — **always this relative form, never `../+types/` or a deeper path.** It's `./+types/` + the route file's basename, no matter where the file sits.
+Import the `Route` namespace as `./+types/<routeName>`. **Always use this relative form. Never use
+`../+types/` or a deeper path.** The specifier is `./+types/` plus the basename of the route file. The
+location of the file does not change it.
 
 ```tsx
 import type { Route } from "./+types/my-route"
@@ -42,7 +33,9 @@ import type { Route } from "../+types/my-route"
 import type { Route } from "../../app/+types/my-route"
 ```
 
-If that import errors with "cannot find module `./+types/...`", the types just haven't been generated yet — **run `react-router typegen` (or the project's `typecheck` script); don't "fix" it by changing the import path.**
+That import can fail with "cannot find module `./+types/...`". The cause is missing generated types.
+**Run `react-router typegen`, or the project's `typecheck` script. Never change the import path to
+"fix" it.**
 
 ## Available Types
 
@@ -65,8 +58,8 @@ If that import errors with "cannot find module `./+types/...`", the types just h
 Types are inferred from your route configuration:
 
 - **URL params**: From dynamic segments (`:id`, `:slug`)
-- **Loader data**: From `loader` return → `ComponentProps.loaderData`
-- **Action data**: From `action` return → `ComponentProps.actionData`
+- **Loader data**: the `loader` return type becomes `ComponentProps.loaderData`
+- **Action data**: the `action` return type becomes `ComponentProps.actionData`
 - **Parent data**: Matches include typed data from parent routes
 
 ## Example

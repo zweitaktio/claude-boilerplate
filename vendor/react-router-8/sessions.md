@@ -1,5 +1,5 @@
 ---
-version: 2.0.0
+version: 2.0.1
 applies: react-router@8
 target: rules
 domain: routing
@@ -8,15 +8,6 @@ tags: [sessions, cookies, auth, login, logout, flash]
 ---
 
 # Sessions & Cookies
-
-## Documentation
-
-| Source | URL | Notes |
-|--------|-----|-------|
-| React Router docs | https://reactrouter.com/ | Official docs, v8 |
-| API reference | https://api.reactrouter.com/v8/ | v8 API reference |
-| GitHub | https://github.com/remix-run/react-router | Source, issues, discussions |
-| Context7 | `/remix-run/react-router` | Good coverage |
 
 ## Overview
 
@@ -303,4 +294,4 @@ secrets: ["new-secret", "old-secret"];
 ## See Also
 
 - [React Router Sessions & Cookies Documentation](https://reactrouter.com/explanation/sessions-and-cookies)
-- `VendorReactRouter8Middleware` - Middleware patterns for auth
+- `vendor/react-router-8/middleware` - Middleware patterns for auth

@@ -1,7 +1,7 @@
-// version: 1.0.0
+// version: 1.1.0
 // Tells the compaction summary what to keep: requirements, decisions and rationale, risks.
 import { readStdin } from './core/stdin.mjs'
-import { inject, pass } from './core/output.mjs'
+import { inject } from './core/output.mjs'
 
 await readStdin()
 

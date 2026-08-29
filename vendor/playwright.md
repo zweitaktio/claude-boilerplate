@@ -1,5 +1,5 @@
 ---
-version: 1.1.0
+version: 1.1.1
 applies: "@playwright/test@1"
 target: rules
 domain: testing
@@ -27,7 +27,6 @@ API gotchas, setup patterns, and reliability practices specific to Playwright. P
 | Fixtures | https://playwright.dev/docs/test-fixtures | `test.extend`, scoping |
 | Parallelism | https://playwright.dev/docs/test-parallel | Workers, serial, fullyParallel |
 | Trace viewer | https://playwright.dev/docs/trace-viewer | Post-mortem debugging |
-| Context7 | `/microsoft/playwright` | Good coverage |
 | GitHub issues | https://github.com/microsoft/playwright/issues | Search before filing |
 
 ## Quick Reference — APIs that bite
@@ -182,7 +181,7 @@ page.getByRole('button', { name: /^berlin,\s/i })   // finds none — same page,
 
 Keep the pattern loose and disambiguate another way, or use a `data-testid`. **Before believing a
 locator's `element(s) not found`, prove the element is findable by some other locator** — print what
-actually matches rather than reasoning about it. The cost is not the failed run, it's the wrong
+actually matches. Never reason about it instead. The cost is not the failed run. The cost is the wrong
 conclusion: repeated red runs read as "the app is still broken" and can bury a fix that already works.
 
 ```typescript
