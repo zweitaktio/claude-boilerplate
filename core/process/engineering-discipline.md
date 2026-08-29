@@ -1,5 +1,5 @@
 ---
-version: 2.12.0
+version: 2.12.1
 applies: Always
 target: rules
 priority: high
@@ -222,7 +222,7 @@ paths, the task, and every `INTENT:`, `TWINS:`, `FALSIFY:` and `AUTH:` line you 
 judged not applicable, and why. The reviewer verifies each line against the source, and reports a gate
 you owed but did not write.
 
-`code-reviewer` runs read-only (`disallowedTools: Edit, Write, NotebookEdit`) on Fable 5. It reviews in
+`code-reviewer` runs read-only (`disallowedTools: Edit, Write, NotebookEdit`) on Opus 5. It reviews in
 two passes: it builds a case against the change, then it tries to falsify each finding with a `FALSIFY:`
 line. Every reported finding carries a category, a severity, a concrete failure scenario, and a verdict
 of `CONFIRMED` or `PLAUSIBLE`.

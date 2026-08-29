@@ -41,18 +41,18 @@ hand. Regenerate after adding or rescoping a template:
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
 | `process/code-review` | 146 | 8049 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
-| `process/engineering-discipline` | 311 | 17767 | engineering, process, planning, verification, discipline, workflow |
+| `process/engineering-discipline` | 311 | 17766 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 133 | 6933 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 141 | 8595 | issue-tracking, github, gh, workflow, process, definition-of-done |
-| `process/knowledge-base` | 260 | 13182 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 115 | 5539 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
+| `process/knowledge-base` | 284 | 14450 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
+| `process/mcp-tools` | 117 | 5775 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1515** | **79630** (~77 KB) | per-turn baseline |
+| **Total** | **1541** | **81133** (~79 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 59150 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 60653 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -220,6 +220,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | code-guard | `code-guard.ts` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate. |
 | compact-preservation | `compact-preservation.ts` | PreCompact / `—` | Tells the compaction summary what to keep: requirements, decisions and rationale, risks. |
 | completion-gate | `completion-gate.ts` | Stop / `—` | Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files. |
+| ctx-guard | `ctx-guard.ts` | PreToolUse / `mcp__plugin_context-mode_context-mode__ctx_(execute\|batch_execute)` | Applies the graph-first lookup policy to the context-mode sandbox. |
 | dep-change-reminder | `dep-change-reminder.ts` | PostToolUse / `Bash` | Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up. |
 | edit-review | `edit-review.ts` | PostToolUse / `Edit\|Write` | Non-blocking self-review nudge after each code edit, debounced per file. |
 | failure-protocol | `failure-protocol.ts` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |

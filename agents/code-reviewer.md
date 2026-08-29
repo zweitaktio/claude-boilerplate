@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Reviews a completed code change adversarially and returns verified findings. Never writes or modifies code. Use it before you report a change complete when the change touches auth, payments, user data or an API boundary, spans 3 or more files, adds a module, route or collection, or changes a symbol exported across a module boundary. Do not use it for single-file fixes, typos, copy changes or test-only edits.
-model: fable
+model: opus
 disallowedTools: Edit, Write, NotebookEdit
 ---
 
