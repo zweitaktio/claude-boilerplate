@@ -72,14 +72,16 @@ from a mention, it cannot follow a call, and it dumps raw bytes into your contex
 | Task | Tool |
 |------|------|
 | Locate a symbol — a function, a class, a route | **`search_graph`** with a `name_pattern` and a `label` |
-| Find the callers or the callees of a symbol | **`trace_call_path`** with a `function_name` and a `direction` |
+| Find the callers or the callees of a symbol | **`trace_path`** with a `function_name`, a `project` and a `direction` |
 | Read the exact source of a symbol you located | **`get_code_snippet`** |
 | Orient yourself in an unfamiliar area | **`get_architecture`** |
 | Ask a multi-hop structural question | **`query_graph`** (Cypher) |
 | Find a literal string, a config value, a comment marker, a `TODO` | **Grep** — text the graph does not model |
 
-The tool is `trace_call_path`, not `trace_path`. Full tool list and config:
-`core/mcp-servers` § codebase-memory-mcp.
+The tool is `trace_path`, not `trace_call_path`. Verified against codebase-memory-mcp 0.10.8:
+`codebase-memory-mcp cli trace_call_path --help` answers `unknown tool`. The package's own bundled
+README names `trace_call_path` and is wrong, so check the binary, never the README. Full tool list and
+config: `core/mcp-servers` § codebase-memory-mcp.
 
 **Scope every query to the workspace you own.** Pass `file_pattern` in a monorepo. Without it a query
 returns matches from a sibling package you did not mean to touch, and a short identifier collides

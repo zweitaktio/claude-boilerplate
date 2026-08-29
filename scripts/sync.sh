@@ -385,6 +385,23 @@ for (const [k, v] of Object.entries(src)) {
 }
 merged.hooks = mergedHooks;
 
+// permissions is a union, never a replacement. The loop above copies a source key only
+// when the target lacks it, so a project that already has a permissions block would drop
+// every entry the skill ships. A target entry is never removed.
+if (src.permissions && typeof src.permissions === "object") {
+  const base = merged.permissions && typeof merged.permissions === "object" ? merged.permissions : {};
+  const mp = Object.assign({}, base);
+  for (const list of ["allow", "deny", "ask"]) {
+    const from = src.permissions[list];
+    if (!Array.isArray(from)) continue;
+    const into = Array.isArray(mp[list]) ? mp[list] : [];
+    const fresh = from.filter(x => !into.includes(x));
+    stats.added += fresh.length;
+    mp[list] = into.concat(fresh);
+  }
+  merged.permissions = mp;
+}
+
 if (dryRun !== "true") {
   fs.writeFileSync(tgtFile, JSON.stringify(merged, null, 2) + "\n");
 }

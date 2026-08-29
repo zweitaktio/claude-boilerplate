@@ -1,4 +1,4 @@
-// version: 1.0.0
+// version: 1.1.0
 // Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat.
 // Mirrors code-guard's inline approach so it needs no deployed script. Full lint
 // (collisions, orphans, links) runs via scripts/wiki.sh in CI/maintenance.

@@ -1,0 +1,1 @@
+The template body sits in a ```markdown fence and its inner fences are escaped as \`\`\`. Extract with awk, then unescape with `sed 's/\\`/`/g'` — after extraction, never before, because the awk exits on ^```$.

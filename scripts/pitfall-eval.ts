@@ -23,7 +23,10 @@ const specArg = process.argv.indexOf('--spec')
 const ROOT = rootArg >= 0 ? (process.argv[rootArg + 1] ?? SELF) : SELF
 const SPEC = specArg >= 0 ? (process.argv[specArg + 1] ?? '') : join(SELF, 'scripts/pitfall-eval-cases.json')
 const PITFALLS = join(ROOT, '.claude/rules/project/pitfalls')
-const VARIANTS = join(SELF, 'scripts/pitfall-variants')
+// A target project owns its variants. Fall back to the skill's own directory, which
+// is where a variant lives while the skill itself is under measurement.
+const ROOT_VARIANTS = join(ROOT, 'scripts/pitfall-variants')
+const VARIANTS = existsSync(ROOT_VARIANTS) ? ROOT_VARIANTS : join(SELF, 'scripts/pitfall-variants')
 
 type Case = {
   id: string

@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.2.0
 applies: Always
 target: rules
 priority: high
@@ -194,14 +194,38 @@ to the same place: a person decides.
 
 ### Shrink only what passed
 
-Compression is the second question. Answer "does this page do anything" first, and delete what ties.
+Compression is the second question. Answer "does this page do anything" first, and delete what ties. A
+compressed page that had no effect still has no effect. Both arms tie, and the run measures nothing.
 
-On the one page that passed, measured at 8 runs per arm, a two-sentence version scored the same 8/8 as
-the 1003-byte original. It saved 75% of the bytes. Put a candidate in
-`scripts/pitfall-variants/<slug>.<name>.md` and the harness picks it up as another arm.
+**State the compression rule before you write the variant.** A variant written with the `defect:` regex
+in view keeps whatever the scorer checks. The result then proves nothing about how to write the next
+page, because a real page is written before anyone knows its regex. Write the rule down, apply it, and
+do not re-read the regex while you cut.
 
-Keep the facts. Drop the prose around them. A table, a labelled field and a commented code block all
-carry a fact without the sentence structure that makes prose long.
+The rule this repository applies:
+
+| Keep | Drop |
+|------|------|
+| The symptom, in one sentence | The narrative around the symptom |
+| The cause, in one sentence | The discovery story and the ticket numbers |
+| The fix, as code or an exact token | The measurements, the rationale and the related links |
+
+**Add a `nofix` arm.** It states the symptom and the cause, and it removes the fix. A page that still
+scores full marks without its fix works by topic salience, not by teaching the answer. A short variant
+then proves less than it appears to prove.
+
+Two pages, 8 runs per arm, `claude-sonnet-5`:
+
+| Page | none | full | fields | oneline |
+|------|------|------|--------|---------|
+| `hook-testing-inline-json-pipes` | 0/8 | 8/8 (1003 B) | 8/8 | 8/8 (253 B) |
+| `bootstrap-template-fences-stay-escaped` | 0/8 | 8/8 (1294 B) | 8/8 (533 B) | 8/8 (210 B) |
+
+**Read this as "no loss detectable at 8 runs", never as "the same effect".** Every page arm sits at the
+ceiling, so the test has no headroom to show a loss. At 8 runs a perfect score is consistent with a true
+pass rate near 0.65. Raise `--n` when the decision needs a tighter bound.
+
+Put a candidate in `scripts/pitfall-variants/<slug>.<name>.md` and the harness picks it up as an arm.
 
 ## Review and retire
 

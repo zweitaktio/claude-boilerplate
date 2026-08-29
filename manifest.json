@@ -9,7 +9,8 @@
         "*.ts"
       ],
       "exclude": [
-        ".prettierrc.mjs"
+        ".prettierrc.mjs",
+        "[^/]*\\.test\\.ts"
       ],
       "versioning": "comment",
       "chmod": true,
@@ -21,10 +22,15 @@
       "dest": ".claude/hooks",
       "include": [
         "run.sh",
-        "core/*.mjs"
+        "core/*.mjs",
+        "core/*.ts"
+      ],
+      "exclude": [
+        "[^/]*\\.test\\.ts"
       ],
       "versioning": "checksum",
-      "chmod": true
+      "chmod": true,
+      "_comment": "core/*.ts carries graph-policy.ts, which hooks import at runtime. A value import must deploy or every target crashes on load. Tests are excluded: they are toolchain files, not hooks."
     },
     {
       "name": "agents",
@@ -77,7 +83,8 @@
       "dest": ".claude/settings.json",
       "versioning": "merge",
       "mergeKeys": [
-        "hooks"
+        "hooks",
+        "permissions"
       ]
     },
     {

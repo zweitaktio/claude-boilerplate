@@ -9,7 +9,8 @@
     "lint:fix": "eslint --fix .",
     "format": "prettier --write --list-different .",
     "format:check": "prettier --check .",
-    "check": "bun run typecheck && bun run lint && bun run format:check"
+    "test": "node --test --experimental-strip-types core/*.test.ts",
+    "check": "bun run typecheck && bun run lint && bun run format:check && bun run test"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

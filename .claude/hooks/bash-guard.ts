@@ -1,10 +1,12 @@
-// version: 1.3.0
+// version: 1.4.0
 // Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git.
+// Also routes source-code lookup to the code graph instead of shell text search.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
+import { graphPolicyViolation } from './core/graph-policy.ts'
 import type { HookInput } from './core/hook-types.ts'
 
-const { tool_input } = JSON.parse(await readStdin()) as HookInput
+const { cwd, tool_input } = JSON.parse(await readStdin()) as HookInput
 const command = tool_input?.command ?? ''
 const trimmed = command.trimStart()
 const warnings: string[] = []
@@ -141,6 +143,13 @@ if (/\$\{[^}]+(,,|^^)\}/.test(command))
   block(
     '${var,,}/${var^^} (case conversion) requires Bash 4+ — not available on macOS 3.2. Use tr instead. (tooling.md § Shell Scripts)',
   )
+
+// --- Graph-first code lookup ---
+// Source discovery goes through the code graph, not shell text search. grep and a pager dump raw
+// bytes into context and cannot show call-graph structure. core/graph-policy.ts owns the decision,
+// so this hook and ctx-guard cannot drift apart.
+const graphViolation = graphPolicyViolation(command, cwd ?? '')
+if (graphViolation) block(`${graphViolation} (core/mcp-tools § Code discovery)`)
 
 // --- Payload-specific ---
 if (/payload-api\.sh/.test(trimmed)) {
