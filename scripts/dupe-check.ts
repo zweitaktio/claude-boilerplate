@@ -5,14 +5,23 @@
 // Duplication only costs there, so this reports only those pairs.
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname, basename } from 'node:path'
+
+// This script lives in <repo>/scripts/ here and in <project>/.claude/scripts/ once
+// deployed. The deployed layout needs one extra level up. Without it the root is
+// .claude/, the scan finds no rule file, and the tool reports a clean pass.
+function derivedRoot(): string {
+  const own = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
+  const parent = dirname(own)
+  return basename(parent) === '.claude' ? dirname(parent) : parent
+}
 
 // All three review tools take the same --root flag, so they can be pointed at a
 // target project from the skill checkout.
 function pickRoot(envVar: string): string {
   const i = process.argv.indexOf('--root')
   if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1] as string
-  return process.env[envVar] ?? new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+  return process.env[envVar] ?? derivedRoot()
 }
 
 const ROOT = pickRoot('DUPE_ROOT')
@@ -124,6 +133,16 @@ const shingles = (ws: string[], n = 4): Set<string> => {
 }
 
 const targets = [...DIRS.flatMap(walk), ...FILES]
+
+// A scan over zero files is a failure to run, never a pass. Report the root that
+// produced it, so a wrong root is visible instead of silent.
+if (targets.length === 0) {
+  console.error(`DUPES: no files to check under ${ROOT}`)
+  console.error(`  searched: ${DIRS.join(', ')}`)
+  console.error(`  Pass --root <project> or set DUPE_ROOT.`)
+  process.exit(2)
+}
+
 const items: Item[] = []
 for (const file of targets) {
   const text = readFileSync(join(ROOT, file), 'utf8')
@@ -159,7 +178,7 @@ for (const { jac, a, b } of hits) {
 }
 console.log(
   `DUPES: ${hits.length} near-duplicate blocks between files that load together ` +
-    `(threshold ${THRESHOLD}, ${targets.length} files)`,
+    `(threshold ${THRESHOLD}, ${targets.length} files) — root ${ROOT}`,
 )
 console.log('Merge, extract, or keep — see core/writing-rules § Never State One Instruction Twice.')
 

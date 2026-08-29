@@ -11,16 +11,22 @@
 //   node scripts/pitfall-eval.ts --case <id> --dry-run   # print the prompts, call nothing
 
 import { readFileSync, existsSync, readdirSync, statSync, appendFileSync, mkdtempSync } from 'node:fs'
-import { join } from 'node:path'
+import { join, dirname, basename } from 'node:path'
 import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 
+// SELF is the directory that holds scripts/. It is the repository root here, and
+// <project>/.claude once deployed. The spec file and the run log sit beside the
+// script, so they resolve against SELF in both layouts.
 const SELF = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+// The project root is one level above SELF in the deployed layout. Without that
+// step the pitfall directory resolves inside .claude/ and no page is ever found.
+const DERIVED_ROOT = basename(SELF) === '.claude' ? dirname(SELF) : SELF
 // --root points the run at another project. --spec supplies cases for pages that
 // carry no trip-tasks yet, which is how a corpus gets sampled before it is edited.
 const rootArg = process.argv.indexOf('--root')
 const specArg = process.argv.indexOf('--spec')
-const ROOT = rootArg >= 0 ? (process.argv[rootArg + 1] ?? SELF) : SELF
+const ROOT = rootArg >= 0 ? (process.argv[rootArg + 1] ?? DERIVED_ROOT) : DERIVED_ROOT
 const SPEC = specArg >= 0 ? (process.argv[specArg + 1] ?? '') : join(SELF, 'scripts/pitfall-eval-cases.json')
 const PITFALLS = join(ROOT, '.claude/rules/project/pitfalls')
 // A target project owns its variants. Fall back to the skill's own directory, which
@@ -71,6 +77,13 @@ function casesFromPages(): Case[] {
       else if (e.endsWith('.md')) acc.push(p)
     }
     return acc
+  }
+  // An absent pitfall directory means the root is wrong, not that the corpus is
+  // empty. Fail loudly, because an empty case list otherwise reads as a clean run.
+  if (!existsSync(PITFALLS)) {
+    console.error(`pitfall-eval: no pitfall directory at ${PITFALLS}`)
+    console.error(`  Pass --root <project>.`)
+    process.exit(2)
   }
   for (const file of walkDir(PITFALLS)) {
     const fm = /^---\n([\s\S]*?)\n---\n/.exec(readFileSync(file, 'utf8'))?.[1] ?? ''

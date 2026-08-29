@@ -1,5 +1,5 @@
 ---
-version: 1.3.0
+version: 1.4.0
 applies: Always
 target: rules
 paths:
@@ -180,8 +180,12 @@ write, so every rule of that section governs it.
 - Keep an intensifier or a frequency adverb only when it changes the technical outcome (rule 11).
 - Quote a violation when the rule needs the example. Mark that line with `ste-check-ignore`.
 
-`scripts/ste-check.ts` checks the three mechanical rules and exits non-zero on a violation. Run it
-before you commit a template. `--filler` lists rule 11 candidates, which need your judgment.
+`.claude/scripts/ste-check.ts` checks the three mechanical rules and exits non-zero on a violation. Run
+it before you commit a template. `--filler` lists rule 11 candidates, which need your judgment.
+
+The tool resolves the project root from its own location, so it needs no flag. It prints that root in
+the summary line. It exits 2 when it finds no file to check, because a scan over zero files is a
+failed run and never a pass. `--root <dir>` overrides the root.
 
 **This does not shorten a rule.** Splitting a sentence and restoring an article both add words.
 Measured on this repository, an STE pass grew the prose by 1.9%. Write for the reader, never for the

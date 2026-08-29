@@ -5,14 +5,23 @@
 // Run `node scripts/ste-check.ts` to list them, `--count` for totals only.
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
-import { join, relative } from 'node:path'
+import { join, relative, dirname, basename } from 'node:path'
+
+// This script lives in <repo>/scripts/ here and in <project>/.claude/scripts/ once
+// deployed. The deployed layout needs one extra level up. Without it the root is
+// .claude/, the scan finds no rule file, and the tool reports a clean pass.
+function derivedRoot(): string {
+  const own = new URL('.', import.meta.url).pathname.replace(/\/$/, '')
+  const parent = dirname(own)
+  return basename(parent) === '.claude' ? dirname(parent) : parent
+}
 
 // All three review tools take the same --root flag, so they can be pointed at a
 // target project from the skill checkout.
 function pickRoot(envVar: string): string {
   const i = process.argv.indexOf('--root')
   if (i >= 0 && process.argv[i + 1]) return process.argv[i + 1] as string
-  return process.env[envVar] ?? new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+  return process.env[envVar] ?? derivedRoot()
 }
 
 // Two layouts. In the webstack skill repository the templates live in core/ and
@@ -88,6 +97,16 @@ function prose(text: string): Array<[number, string]> {
 }
 
 const targets = [...DIRS.flatMap(walk), ...FILES]
+
+// A scan over zero files is a failure to run, never a pass. Report the root that
+// produced it, so a wrong root is visible instead of silent.
+if (targets.length === 0) {
+  console.error(`STE: no files to check under ${ROOT}`)
+  console.error(`  searched: ${DIRS.join(', ')}`)
+  console.error(`  Pass --root <project> or set STE_ROOT.`)
+  process.exit(2)
+}
+
 const findings: Finding[] = []
 const fillerHits: FillerHit[] = []
 
@@ -128,7 +147,7 @@ if (!countOnly) {
 
 console.log(
   `STE: ${findings.length} violations across ${targets.length} files ` +
-    `(arrows=${totals.arrow} hedges=${totals.hedge} long=${totals.long})`,
+    `(arrows=${totals.arrow} hedges=${totals.hedge} long=${totals.long}) — root ${ROOT}`,
 )
 console.log('Mark a deliberate quoted example with an ste-check-ignore comment.')
 

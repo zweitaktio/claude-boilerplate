@@ -41,7 +41,9 @@ Every template you edit deploys to another project. A defect here reaches every 
 | `cd .claude/hooks && bun run check` | The hooks and `scripts/*.ts` typecheck, lint and format |
 
 All three review tools take `--root <dir>`, so you can run them against a target project from this
-checkout.
+checkout. Without the flag each tool resolves the root from its own location, and it prints that root
+in the summary line. Read that line. `ste-check.ts` and `dupe-check.ts` exit 2 when they find no file,
+because a scan over zero files is a failed run and never a pass.
 
 **Never detect `paths:` with a plain grep over a whole file.** A fenced frontmatter example contains a
 `paths:` line, and the grep then reports an always-loaded file as path-scoped. That error hid
