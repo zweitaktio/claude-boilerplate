@@ -28,7 +28,16 @@ const rootArg = process.argv.indexOf('--root')
 const specArg = process.argv.indexOf('--spec')
 const ROOT = rootArg >= 0 ? (process.argv[rootArg + 1] ?? DERIVED_ROOT) : DERIVED_ROOT
 const SPEC = specArg >= 0 ? (process.argv[specArg + 1] ?? '') : join(SELF, 'scripts/pitfall-eval-cases.json')
-const PITFALLS = join(ROOT, '.claude/rules/project/pitfalls')
+// A decision carries trip-tasks too, and its defect regex matches the rejected approach
+// (core/knowledge-base § Every pitfall and decision carries two trip-tasks). Scan both
+// directories, or wiki-review flags a decision UNPROVEN and names a tool that cannot see it.
+const CASE_DIRS = [
+  join(ROOT, '.claude/rules/project/pitfalls'),
+  join(ROOT, '.claude/rules/project/decisions'),
+]
+// id comes from the filename, so one page file backs each case. pageText resolves the
+// full arm through this map rather than by rejoining a directory it can no longer assume.
+const PAGE_PATH = new Map<string, string>()
 // A target project owns its variants. Fall back to the skill's own directory, which
 // is where a variant lives while the skill itself is under measurement.
 const ROOT_VARIANTS = join(ROOT, 'scripts/pitfall-variants')
@@ -78,14 +87,17 @@ function casesFromPages(): Case[] {
     }
     return acc
   }
-  // An absent pitfall directory means the root is wrong, not that the corpus is
-  // empty. Fail loudly, because an empty case list otherwise reads as a clean run.
-  if (!existsSync(PITFALLS)) {
-    console.error(`pitfall-eval: no pitfall directory at ${PITFALLS}`)
+  // Neither directory present means the root is wrong, not that the corpus is empty.
+  // Fail loudly, because an empty case list otherwise reads as a clean run. One of the
+  // two may legitimately be absent in a young project.
+  const presentDirs = CASE_DIRS.filter((d) => existsSync(d))
+  if (presentDirs.length === 0) {
+    console.error(`pitfall-eval: no pitfall or decision directory under ${ROOT}`)
+    for (const d of CASE_DIRS) console.error(`  searched ${d}`)
     console.error(`  Pass --root <project>.`)
     process.exit(2)
   }
-  for (const file of walkDir(PITFALLS)) {
+  for (const file of presentDirs.flatMap((d) => walkDir(d))) {
     const fm = /^---\n([\s\S]*?)\n---\n/.exec(readFileSync(file, 'utf8'))?.[1] ?? ''
     const get = (k: string): string | null =>
       new RegExp(`^${k}:\\s*(.+)$`, 'm').exec(fm)?.[1]?.trim().replace(/^["']|["']$/g, '') ?? null
@@ -104,6 +116,16 @@ function casesFromPages(): Case[] {
     const defect = get('defect')
     if (tasks.length === 0 || !defect || /^TODO\b/.test(defect)) continue
     const id = file.slice(file.lastIndexOf('/') + 1, -3)
+    // Two directories now feed one flat id space. A collision would measure whichever
+    // page came first and read as a clean result, so name it instead.
+    const seen = PAGE_PATH.get(id)
+    if (seen) {
+      console.error(`pitfall-eval: duplicate case id "${id}"`)
+      console.error(`  keeping ${seen}`)
+      console.error(`  ignoring ${file}`)
+      continue
+    }
+    PAGE_PATH.set(id, file)
     out.push({
       id,
       tasks,
@@ -134,8 +156,21 @@ function variantsFor(id: string): string[] {
 
 function pageText(id: string, arm: string): string {
   if (arm === 'none') return ''
-  const file =
-    arm === 'full' ? join(PITFALLS, `${id}.md`) : join(VARIANTS, `${id}.${arm}.md`)
+  let file: string
+  if (arm === 'full') {
+    // A --spec case has no page file. Name the id and the directories searched, because
+    // an undefined path reaches join() as a TypeError that names neither.
+    const found = PAGE_PATH.get(id)
+    if (!found) {
+      console.error(`pitfall-eval: no page file for case "${id}", so the full arm cannot run.`)
+      for (const d of CASE_DIRS) console.error(`  searched ${d}`)
+      console.error(`  A --spec case measures only against a page that exists.`)
+      process.exit(2)
+    }
+    file = found
+  } else {
+    file = join(VARIANTS, `${id}.${arm}.md`)
+  }
   const raw = readFileSync(file, 'utf8')
   // Strip frontmatter: the model sees the body, which is what auto-load injects.
   return raw.replace(/^---\n[\s\S]*?\n---\n/, '').trim()

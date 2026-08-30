@@ -9,12 +9,16 @@
   `scripts/** **/*.sh `
 - [Bootstrap template fences reach CLAUDE.md still escaped](.claude/rules/project/pitfalls/bootstrap-template-fences-stay-escaped.md)
   `scripts/bootstrap-claude-md.sh references/bootstrap-template.md `
+- [A gate that names a remediation tool must read the same corpus that tool reads](.claude/rules/project/pitfalls/gate-and-measurer-read-different-corpora.md)
+  `scripts/** `
 - [A grep that matches nothing inside $(...) aborts the script under set -e](.claude/rules/project/pitfalls/grep-in-command-substitution-aborts.md)
   `scripts/** **/*.sh `
 - [bash-guard blocks inline "echo JSON | run.sh hook" test commands](.claude/rules/project/pitfalls/hook-testing-inline-json-pipes.md)
   `.claude/hooks/** `
 - [manifest include globs match dotfiles, so config files ship as payload](.claude/rules/project/pitfalls/manifest-glob-matches-dotfiles.md)
   `manifest.json scripts/sync.sh .claude/hooks/** `
+- [A Stop hook that scans the final report fires on the report that documents it, unless it strips code spans first](.claude/rules/project/pitfalls/stop-guard-fires-on-its-own-documentation.md)
+  `.claude/hooks/** `
 - [sync.sh treated any version difference as UPDATE and downgraded targets](.claude/rules/project/pitfalls/sync-downgrades-a-target-that-is-ahead.md)
   `scripts/sync.sh manifest.json `
 
