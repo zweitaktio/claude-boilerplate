@@ -24,14 +24,23 @@ function pickRoot(envVar: string): string {
   return process.env[envVar] ?? derivedRoot()
 }
 
-// Two layouts. In the webstack skill repository the templates live in core/ and
-// vendor/. In a target project they are deployed under .claude/rules/, where only
-// project/ is yours to edit. Detect which one we are in.
+// Three layouts. In the webstack skill repository the templates live in core/ and
+// vendor/. In a managed project they are deployed under .claude/rules/, where only
+// project/ is yours to edit. An unmanaged project keeps its own rules at
+// .claude/rules/*.md and has no project/ wiki, so scanning project/ finds nothing and
+// the check silently covers no file.
 const ROOT = pickRoot('STE_ROOT')
 const IS_SKILL_REPO = existsSync(join(ROOT, 'manifest.json')) && existsSync(join(ROOT, 'core'))
+const HAS_PROJECT_WIKI = existsSync(join(ROOT, '.claude/rules/project'))
 const DIRS = IS_SKILL_REPO
   ? ['core', 'vendor', '.claude/rules', 'agents']
-  : ['.claude/rules/project']
+  : HAS_PROJECT_WIKI
+    ? ['.claude/rules/project']
+    : ['.claude/rules']
+// An unmanaged project may hold a hand-copied core/ or vendor/. That text is upstream,
+// so a finding there is noise the reader cannot act on.
+const EXCLUDE =
+  IS_SKILL_REPO || HAS_PROJECT_WIKI ? [] : ['.claude/rules/core', '.claude/rules/vendor']
 const FILES = IS_SKILL_REPO ? ['references/bootstrap-template.md'] : []
 
 const ARROW = /(→|(?<![-<=])->(?!>)|=>)/
@@ -63,6 +72,7 @@ function walk(dir: string): string[] {
   }
   for (const e of entries) {
     const rel = join(dir, e)
+    if (EXCLUDE.includes(rel)) continue
     const st = statSync(join(ROOT, rel))
     if (st.isDirectory()) out.push(...walk(rel))
     else if (e.endsWith('.md')) out.push(rel)
