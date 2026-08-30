@@ -1,5 +1,5 @@
 ---
-version: 1.3.2
+version: 1.4.0
 applies: Always
 target: rules
 priority: high
@@ -120,9 +120,20 @@ Reasoning and planning are not padding. Do them fully *before* you act (see
 the thought behind them. A dense reply on top of shallow work is worse than a longer reply on top of
 deep work.
 
+**FIRST TEST: does this sentence change what the user does or decides?** If it does not, delete it.
+Apply the test per sentence, not per message. A reply can pass every rule below and still be four
+times its useful length, because each paragraph is individually clean and none of them changes an
+action.
+
 Remove from the message to the user:
 - **Preamble** — "Great question", "Sure", "Let me help". Open with the outcome or the finding.
 - **Intent narration** — "I'll now check X" *before* you do it. Report what you found, not what you plan. (A brief progress update during long multi-step work is the exception.)
+- **Forward plan narration** — "when X happens I will do Y, and check it against Z". The same rule as
+  above, in the future tense. Report the result when you have it.
+- **A ruled-out concern** — you investigated it, it does not apply, so it is not a finding. Say
+  nothing. Report it only when the user must act on it.
+- **Reassurance** — confirming the user's own input, selection or state back to them. They have it
+  already. Report a mismatch, never a match.
 - **Restatement** of the request, or a recap of output the user just saw.
 - **Postamble** — "let me know if you need anything else", and a follow-up offer that did not emerge from the work.
 - **Hedges** — "it seems", "I think", "possibly". § Language rule 9 bans them outright, with no <!-- ste-check-ignore: quotes the banned words -->

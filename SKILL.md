@@ -42,17 +42,17 @@ hand. Regenerate after adding or rescoping a template:
 |------|-------|-------|------|
 | `process/code-review` | 146 | 8049 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
 | `process/engineering-discipline` | 311 | 17766 | engineering, process, planning, verification, discipline, workflow |
-| `process/interaction` | 133 | 6933 | interaction, language, ste, asd-ste100, questions, wizard, density |
+| `process/interaction` | 144 | 7708 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 141 | 8595 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 284 | 14450 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
 | `process/mcp-tools` | 117 | 5775 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1541** | **81133** (~79 KB) | per-turn baseline |
+| **Total** | **1552** | **81908** (~79 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 60653 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 61428 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
