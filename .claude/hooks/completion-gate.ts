@@ -1,5 +1,5 @@
-// version: 3.3.0
-// Stop gate: checks for TODO/FIXME markers and incomplete-work signals, and triggers review on session-edited files.
+// version: 3.4.0
+// Stop gate: checks for unfinished markers, incomplete-work signals, relayed peer traffic, and triggers review on session-edited files.
 import { readStdin } from './core/stdin.mjs'
 import { pass } from './core/output.mjs'
 import { read, write, readLines } from './core/state.mjs'
@@ -129,6 +129,39 @@ if (!forcedReasons.has('record')) {
   }
 }
 
+// --- Check 5: Peer traffic relayed to the user ---
+// Only self-referential admissions are matched. Third-person relay ("they claimed", "a peer said")
+// reads the same as "the user said" or "the docs claim", so a pattern for it misfires on ordinary
+// prose, and a guard that fires wrongly gets ignored. (core/multi-agent § Reports to the user)
+//
+// Code fences and inline-code spans are stripped first. Quoting a pattern is not relaying one.
+// This check fired on the report that introduced it, which listed the patterns in backticks.
+const proseOnly = message.replaceAll(/```[\s\S]*?```/g, ' ').replaceAll(/`[^`\n]*`/g, ' ')
+if (!forcedReasons.has('relay')) {
+  const relayPatterns: Array<[RegExp, string]> = [
+    [/\bi (?:sent|send) no (?:reply|message|response)\b/i, 'announcing that you sent no message'],
+    [/\bno (?:reply|message) (?:was |is )?sent\b/i, 'announcing that you sent no message'],
+    [/\bsilence is agreement\b/i, 'narrating the protocol back'],
+    [
+      /\bi (?:messaged|replied to|acked|acknowledged|announced to|notified)\s+(?:@|the coordinator|the peer|my peer)/i,
+      'recounting that you messaged a peer',
+    ],
+    [/\bmessage from @/i, 'quoting a peer message'],
+    [/^\s*PRIORITY:\s*(?:blocker|fyi|question)\b/im, 'pasting a peer message body into the report'],
+    [/@[\w-]+\s+(?:said|claimed|told me|reported|asked)\b/i, "recounting a peer's claim"],
+  ]
+  const hits = relayPatterns.filter(([re]) => re.test(proseOnly)).map(([, label]) => label)
+  if (hits.length > 0) {
+    warnings.push(
+      `You relayed peer traffic to the user: ${[...new Set(hits)].join('; ')}.\n` +
+        `The coordination channel runs between sessions. An incoming message changes what you DO, never what you SAY.\n` +
+        `Rewrite the report with your own results only — what you changed, measured, or left open. ` +
+        `If a peer's fact changes a decision the user must make, give the fact alone, never its provenance. ` +
+        `If nothing is left to report, end the turn and write nothing. (core/multi-agent § Reports to the user)`,
+    )
+  }
+}
+
 if (warnings.length === 0) pass()
 
 // Track which reasons we've forced for — avoid re-forcing the same check
@@ -138,6 +171,7 @@ if (warnings.some((w) => w.includes('code files'))) newReasons.add('review')
 if (warnings.some((w) => w.includes('markers') || w.includes('incomplete')))
   newReasons.add('quality')
 if (warnings.some((w) => w.includes('recorded no project knowledge'))) newReasons.add('record')
+if (warnings.some((w) => w.includes('relayed peer traffic'))) newReasons.add('relay')
 
 // Don't force if all warnings are for reasons we've already forced
 const hasNewReasons = [...newReasons].some((r) => !forcedReasons.has(r))

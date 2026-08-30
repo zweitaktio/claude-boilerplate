@@ -1,5 +1,5 @@
 ---
-version: 1.3.1
+version: 1.4.0
 applies: Always
 target: rules
 priority: high
@@ -19,9 +19,10 @@ paths:
 # Working Alongside Other Sessions
 
 **Coordination is not report material.** Never tell the user who messaged you, what a peer claimed,
-that you announced or replied, or how a disagreement resolved. Report what *you* changed, measured, or
-left open. A coordination thread reads as progress while containing none. (Full rule and its one
-exception: § Reports to the user.)
+that you announced or replied, or how a disagreement resolved. **An incoming message changes what you
+do, never what you say** — when it leaves you nothing to do, end the turn and write nothing. Report
+what *you* changed, measured, or left open. A coordination thread reads as progress while containing
+none. (Full rule and its two exceptions: § Reports to the user.)
 
 Several Claude sessions are on this checkout at once, all on the same branch. `core/tooling` forbids
 worktrees, branches and `git stash`, so the *only* thing keeping two sessions from clobbering each
@@ -242,7 +243,19 @@ message carries the path. "This one is important" is why it needs a durable home
 - **No praise, no endorsement, no process commentary, no teaching.** Never re-explain a peer's
   message, and never tell them why their own finding matters.
 
+## Reports to the user
+
 **Reports to the user: same tests, ~6 lines.** Shas, `file:line`, measured numbers, open decisions.
+
+**An incoming peer message does not earn a turn.** The coordination channel runs between sessions. The
+user reads none of it, and the exchange scrolls past whether or not you describe it. So a message that
+arrives changes what you *do*, never what you *say*. Act on it and continue the work. When it leaves
+you nothing to do, end the turn and write nothing. An empty turn costs the user one line. A paragraph
+that explains the empty turn costs a screen.
+
+**Never explain an outbound message either.** Do not say that you will message a peer, what you plan
+to tell them, or what you told them. The send is an action, like a file read. You do not narrate a
+file read.
 
 **Never relay peer traffic to the user.** Do not recount who messaged you, what they claimed, how a
 disagreement was resolved, or that you replied — the user did not ask for a transcript, and a
@@ -250,12 +263,19 @@ coordination thread reads as progress while containing none. Report **your own**
 changed, what you measured, what is still open. A peer's message is an input to your work, not a
 finding. Two narrow exceptions: a fact from a peer that changes what the *user* must decide, stated as
 the fact alone rather than as its provenance, and a coordination problem you cannot resolve and need
-them to settle.
+them to settle. In both, give the fact alone. Never give the exchange that carried it.
 
 **Banned outright, because these are what actually inflate a report:** self-assessment ("a fair
 correction of my behaviour"), narrating a rule back after following it, explaining why you will now
 comply, restating what you already reported, and announcing that you sent no message. **Following a
 rule is invisible; say nothing.** A correction needs one clause, not a paragraph.
+
+```
+Bad  (~40 words)  I own none of those 9 files, and this session has made no edits. I sent no reply,
+                  because silence is agreement in this protocol. No action is open for me. Tell me
+                  what you want me to work on.
+Good (0 words)    (end the turn)
+```
 
 ```
 Bad  (~120 words) Verified — it's real, so I'll follow it. No reply sent, which is the rule applying
