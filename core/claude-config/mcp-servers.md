@@ -1,5 +1,5 @@
 ---
-version: 5.1.1
+version: 6.0.0
 applies: Always
 target: rules
 paths:
@@ -82,7 +82,7 @@ server resolves a relative path against its own working directory, not against `
       "command": "codebase-memory-mcp",
       "args": [],
       "env": {
-        "CBM_CACHE_DIR": "<project-root>/.cbm",
+        "CBM_CACHE_DIR": "<home>/.cache/codebase-memory-mcp",
         "CBM_ALLOWED_ROOT": "<project-root>"
       }
     }
@@ -90,9 +90,19 @@ server resolves a relative path against its own working directory, not against `
 }
 ```
 
-`CBM_CACHE_DIR` holds the graph database and the server's own settings (`_config.db`). Keep it inside
-the repo and add `.cbm` to `.gitignore`. The default root `~/.cache/codebase-memory-mcp` puts index
-data outside the project, so always set this.
+`CBM_CACHE_DIR` holds the graph database and the server's own settings (`_config.db`).
+
+**Use one account-wide cache root for every project.** Write the same absolute path in every
+project's `.mcp.json`. `CBM_ALLOWED_ROOT` stays project-specific, and it is the value that confines
+the server to this repo.
+
+One cache holds many projects. Each tool call carries a `project` argument, and that argument keeps
+the results separate. Verified against codebase-memory-mcp 0.10.8: two projects in one cache answer
+`list_projects` with both names, and a `search_graph` scoped to the first returns no row from the
+second.
+
+A per-project cache root breaks a parallel session. The daemon serves one cache root per account, so
+the second project fails at startup while the first has a live session.
 
 ### 3. Add `.cbmignore` at the repo root
 
@@ -113,18 +123,28 @@ frontend/.react-router/
 .claude/docs/
 ```
 
-### One account, one cache root at a time
+### One account, one cache root
 
-**A hand-run `config` or `cli` command must carry the project's `CBM_CACHE_DIR`.** Without it the
-command reads and writes the default account cache, and the change never reaches the MCP server.
+**A hand-run `config` or `cli` command must carry the same `CBM_CACHE_DIR`.** Without it the command
+reads and writes a different cache, and the change never reaches the MCP server.
 
 ```bash
-CBM_CACHE_DIR="$PWD/.cbm" codebase-memory-mcp cli get_architecture '{}'
+CBM_CACHE_DIR="$HOME/.cache/codebase-memory-mcp" codebase-memory-mcp cli get_architecture '{}'
 ```
 
-**One account uses one canonical cache root at a time.** The daemon rejects a second project with a
-different `CBM_CACHE_DIR` while a session on the first project is live. The error names both cache
-hashes. Close the other project's sessions before you index this one.
+**The daemon serves one cache root per account.** A second cache root fails at startup with this
+error, and the message names both cache hashes:
+
+```
+CBM could not start because the active account daemon uses a different cache directory
+```
+
+The failure is total, not slow. The `bash-guard` and `ctx-guard` hooks deny a shell read of source,
+so a project that cannot reach the graph has no way left to read its own code. Use one cache root and
+the error never appears.
+
+**Remove one project from the shared cache with `delete_project`.** Never delete the cache directory.
+That wipes every other project too.
 
 ## Scope Model
 
