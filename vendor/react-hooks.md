@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.2.0
 applies: react
 target: rules
 domain: frontend
@@ -52,6 +52,25 @@ export const { singular: isProduct, parse: parseProduct } = createTypeGuards<Pro
 - **Expensive calculations:** Use `useMemo` instead of useEffect + setState
 - **Data fetching:** Prefer React Router loaders, TanStack Query, or similar over raw useEffect
 - **Event handlers:** Logic that responds to user actions belongs in handlers, not effects
+
+### setState in an Effect Body Fails the Lint
+
+`eslint-plugin-react-hooks` 7 enables the React Compiler rules as errors in its `recommended` preset.
+The rule `react-hooks/set-state-in-effect` rejects a `setState` that the effect body reaches
+synchronously. The rule also follows a `useCallback` that the effect calls. A fetch hook that runs
+`setIsLoading(true)` before its first `await` fails the check.
+
+`eslint-config-next` 16.3.0 pulls this plugin version. The error appears on code that passed the lint
+before the dependency bump.
+
+Keep the synchronous path free of `setState`:
+
+- Write state only after an `await`. The rule allows the async continuation.
+- Derive `isLoading` and the empty state during render. Stamp each result with its request key. Then
+  compare that key against the current key.
+- Cancel a superseded request with a `cancelled` flag in the effect cleanup. Do not use a ref counter.
+
+Never suppress the rule with `eslint-disable`. The rule reports a real cascading-render bug.
 
 ### Race Condition Prevention
 
