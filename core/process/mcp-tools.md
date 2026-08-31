@@ -1,5 +1,5 @@
 ---
-version: 5.2.2
+version: 5.3.0
 applies: Always
 target: rules
 priority: high
@@ -72,7 +72,7 @@ from a mention, it cannot follow a call, and it dumps raw bytes into your contex
 | Task | Tool |
 |------|------|
 | Locate a symbol — a function, a class, a route | **`search_graph`** with a `name_pattern` and a `label` |
-| Find the callers or the callees of a symbol | **`trace_path`** with a `function_name`, a `project` and a `direction` |
+| Find the callers or the callees of a symbol | **`trace_path`** with a `function_name`, a `project` and a `direction` of `inbound`, `outbound` or `both` |
 | Read the exact source of a symbol you located | **`get_code_snippet`** |
 | Orient yourself in an unfamiliar area | **`get_architecture`** |
 | Ask a multi-hop structural question | **`query_graph`** (Cypher) |
@@ -91,6 +91,13 @@ authority.
 **Scope every query to the workspace you own.** Pass `file_pattern` in a monorepo. Without it a query
 returns matches from a sibling package you did not mean to touch, and a short identifier collides
 across workspaces.
+
+**`trace_path` takes `inbound`, `outbound` or `both`.** It rejects `callers` and `callees`. Verified
+against codebase-memory-mcp 0.10.8.
+
+**Pass a qualified name to `trace_path` in a monorepo.** A bare name such as `loader` matches every
+route module. The tool then answers `status: ambiguous` and returns suggestions instead of a path.
+Run `search_graph` first and copy the `qualified_name` it prints.
 
 **Grep is the fallback, not the alternative.** Use Grep for literal text, for a file type the graph
 does not index, and in a project that has not registered the server yet. Check `.mcp.json`.
