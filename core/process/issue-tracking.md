@@ -1,5 +1,5 @@
 ---
-version: 1.1.1
+version: 1.2.0
 applies: Always
 target: rules
 tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
@@ -79,6 +79,35 @@ An investigation issue with an unknown root cause also needs a DoD. Its DoD name
 documented reproduction, and either the landed fix or the named blocker. Give it a time box so it does
 not run open-ended.
 
+## Comment and pull request length
+
+A comment is a note on a thread, not a report. Cap it at 6 lines and 80 words. A pull request body
+takes the same cap, plus its `Closes #123` line.
+
+Lead with the outcome in one sentence. Follow it with the evidence — the command and its result, or
+the file and the line. Stop there.
+
+Never put these in a comment or a pull request body:
+
+- A heading of any level.
+- A nested bullet. One flat list of 3 items is the limit.
+- A summary table.
+- A "What I did" outline. The diff shows the change.
+- A "Next steps" section. Open an issue and link it.
+
+```
+Fixed in a3f21c9.
+
+`yarn test src/cart` — 42 passed, 0 failed.
+
+The overflow came from an unbounded map in cart-total.ts:88.
+```
+
+The issue body is the exception. It keeps the Context, Scope and Definition of Done structure above.
+
+`core/interaction` § Response Density governs the words. This section adds the caps and the banned
+shapes, because a comment outlives the session that wrote it.
+
 ## Labels
 
 - Every issue carries a **type** and a **priority** label; add area/component labels when the repo defines them.
@@ -103,7 +132,7 @@ Keep two parts together only when each part is meaningless alone, such as a feat
 ## Verifying and closing
 
 - Done means every DoD checkbox is checked **and verified** — run the verification (see `core/engineering-discipline`), don't assert it from memory.
-- Leave a closing comment with evidence: the command run and its result, or a screenshot. "Fixed" with no evidence isn't closed.
+- Leave a closing comment with evidence. "Fixed" with no evidence is not closed. Hold it to the cap in § Comment and pull request length.
 - Prefer letting the merge close the issue (see Linking). Use `gh issue close <n>` manually only for issues resolved without code (won't-fix, obsolete, duplicate) — state which in a comment.
 
 ## Linking in commits and PRs
