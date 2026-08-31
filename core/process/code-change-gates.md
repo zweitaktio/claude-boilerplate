@@ -1,5 +1,5 @@
 ---
-version: 1.4.1
+version: 1.4.2
 applies: Always
 target: rules
 priority: high
@@ -52,7 +52,7 @@ TWINS: searched <pattern> — found <N> other sites: <files, or none>
 
 **Pick the search tool by what the twin is.** A literal wrong construct — a bad string, a wrong flag,
 a copy-pasted expression — is a Grep search, and Grep is correct here. A misused *symbol* is a graph
-search: run `trace_call_path` on it to find every call site (`core/mcp-tools` § Code discovery).
+search: run `trace_path` on it to find every call site (`core/mcp-tools` § Code discovery).
 
 **Fix them.** Listing is the fallback for a site you are genuinely blocked on, not the default —
 a twin you found and left is a known defect with nobody assigned (`core/issue-tracking` § Fix it now).

@@ -1,5 +1,5 @@
 ---
-version: 2.12.1
+version: 2.12.2
 applies: Always
 target: rules
 priority: high
@@ -61,12 +61,12 @@ task as complex when you are unsure.
   for library APIs (see Library Doc Lookup). For every other fact the discipline is yours. When you
   notice that you are about to type a fact from memory, open the source instead.
 - **Orient before reading.** Enumerate what exists — list the directory, glob the project — before picking files to read. You can't choose the right files from memory of what a project usually contains.
-- **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on. Run `trace_call_path` on the symbol for its callers and callees, and `search_graph` to locate it. Grep is the fallback for literal text (`core/mcp-tools` § Code discovery). Edge cases and breakage live at these seams, not in the file you opened first.
+- **Map the integration surface.** For any behavior you change, find who consumes it and what it depends on. Run `trace_path` on the symbol for its callers and callees, and `search_graph` to locate it. Grep is the fallback for literal text (`core/mcp-tools` § Code discovery). Edge cases and breakage live at these seams, not in the file you opened first.
 - **Surprises route the work.** Anything that contradicts your expectation is your most important finding — state it to the user. If it changes what "done" means, revise it; if it changes what the user is actually asking for, re-classify the ask. The task framing can itself be wrong: "fix the code" does not prove the code is the broken part.
 
 **For complex tasks:**
 1. Identify all affected files and modules
-2. Check who consumes what you're changing — `trace_call_path` on the symbol, then `search_graph` for the rest of the surface
+2. Check who consumes what you're changing — `trace_path` on the symbol, then `search_graph` for the rest of the surface
 3. Determine if changes cross package/workspace boundaries
 4. Decompose into incremental, independently verifiable steps before starting
 5. Check existing patterns in the codebase before creating anything new
@@ -147,7 +147,7 @@ Before implementing, classify the change to determine required safeguards.
 - API endpoint changes (path, method, request/response shape)
 - Removed CSS classes or changed component prop interfaces
 
-**CRITICAL:** Find all consumers with `trace_call_path`, not with Grep — Grep cannot tell a call from a mention. Update all call sites. Consider migration path.
+**CRITICAL:** Find all consumers with `trace_path`, not with Grep — Grep cannot tell a call from a mention. Update all call sites. Consider migration path.
 
 **Additive** — extends without breaking existing behavior:
 - New exports, components, routes, endpoints
@@ -168,7 +168,7 @@ Before implementing, classify the change to determine required safeguards.
 | Question | Answer |
 |----------|--------|
 | Does a module boundary export the symbol? | Treat the change as potentially breaking |
-| Does anything import or call it? | Check with `trace_call_path` |
+| Does anything import or call it? | Check with `trace_path` |
 | Does only the current file use it? | The change is a safe refactor |
 | Does the database schema change? | Always treat the change as breaking |
 

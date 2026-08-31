@@ -41,18 +41,18 @@ hand. Regenerate after adding or rescoping a template:
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
 | `process/code-review` | 146 | 8049 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
-| `process/engineering-discipline` | 311 | 17766 | engineering, process, planning, verification, discipline, workflow |
+| `process/engineering-discipline` | 311 | 17746 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 144 | 7708 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 141 | 8595 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 284 | 14450 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 117 | 5775 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
+| `process/mcp-tools` | 122 | 6050 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1552** | **81908** (~79 KB) | per-turn baseline |
+| **Total** | **1557** | **82163** (~80 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 61428 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 61683 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -107,7 +107,7 @@ Verify each by attempting a lightweight call. If any fails, show the missing ser
 
 | Server | Verify with | Purpose | Install |
 |--------|------------|---------|---------|
-| codebase-memory-mcp | Any `mcp__codebase-memory-mcp__*` tool available | Structural code discovery — `search_graph`, `trace_call_path` | Register in the project `.mcp.json`, not with `claude mcp add`. See `core/claude-config/mcp-servers` § codebase-memory-mcp |
+| codebase-memory-mcp | Any `mcp__codebase-memory-mcp__*` tool available | Structural code discovery — `search_graph`, `trace_path` | Register in the project `.mcp.json`, not with `claude mcp add`. See `core/claude-config/mcp-servers` § codebase-memory-mcp |
 | Payload (Payload projects only) | Any `mcp__payload__*` tool available | Payload CMS CRUD operations | `claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp` |
 
 ### Plugins

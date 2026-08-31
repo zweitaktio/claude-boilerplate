@@ -1,5 +1,5 @@
 ---
-version: 5.2.1
+version: 5.2.2
 applies: Always
 target: rules
 priority: high
@@ -82,6 +82,11 @@ The tool is `trace_path`, not `trace_call_path`. Verified against codebase-memor
 `codebase-memory-mcp cli trace_call_path --help` answers `unknown tool`. The package's own bundled
 README names `trace_call_path` and is wrong, so check the binary, never the README. Full tool list and
 config: `core/mcp-servers` § codebase-memory-mcp.
+
+Use the `--help` form to test a tool name. The deprecated raw-JSON form
+(`cli trace_call_path '{}'`) accepts the wrong name and reports a missing argument instead. That
+answer looks like a pass and is a false negative. The `tools/list` response over stdio is the
+authority.
 
 **Scope every query to the workspace you own.** Pass `file_pattern` in a monorepo. Without it a query
 returns matches from a sibling package you did not mean to touch, and a short identifier collides

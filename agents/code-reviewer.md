@@ -59,7 +59,7 @@ A single pass produces confident, wrong findings. Run both passes. Report only w
 
 Read the change first, then the code around it. A defect lives at the seam, not in the line.
 
-1. **Map the change.** Run `search_graph` to locate each changed symbol. Run `trace_call_path` on every
+1. **Map the change.** Run `search_graph` to locate each changed symbol. Run `trace_path` on every
    symbol the change exports or alters, in both directions. Grep is the fallback for literal text
    (`core/mcp-tools` § Code discovery). A caller you did not enumerate is a caller you did not review.
 2. **Read the intent.** Open the spec, the docstring, the type or the test the change claims to satisfy.

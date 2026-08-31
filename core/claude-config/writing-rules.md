@@ -1,5 +1,5 @@
 ---
-version: 1.4.0
+version: 1.4.1
 applies: Always
 target: rules
 paths:
@@ -143,7 +143,7 @@ top, above the query and the instructions. Do not cite an attention curve you ca
 Consider the implications of breaking changes carefully.
 
 # Good
-If a symbol is exported from a module boundary, run `trace_call_path` on it
+If a symbol is exported from a module boundary, run `trace_path` on it
 and update all call sites before changing its signature.
 ```
 
