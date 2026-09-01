@@ -1,5 +1,5 @@
 ---
-version: 1.8.1
+version: 1.9.0
 applies: payload@3
 target: rules
 domain: backend
@@ -578,14 +578,48 @@ export const adminOrScopeOrSelf = (scope: string, idField = 'id'): Access =>
   ({ req, id }) => isAdmin(req) || hasScope(req, scope) && getOAuth2User(req)?.sub === String(id)
 ```
 
-Apply in collection config:
+Apply in collection config. Declare every operation, including `create`:
 ```typescript
 access: {
+  create: adminOnly(),
   read: adminOrScope('payload:customers:read'),
   update: adminOrScopeOrSelf('payload:customers:update'),
   delete: adminOnly(),
 }
 ```
+
+### An undeclared operation falls back to any authenticated user
+
+Payload fills each operation you do not declare with `defaultAccess`. That function returns
+`Boolean(user)`. A collection that declares `read`, `update` and `delete` therefore accepts a
+`create` from every authenticated principal. A service user with a static API key is such a
+principal.
+
+```js
+// payload/dist/collections/config/defaults.js:57-65 — an omitted operation gets defaultAccess
+collection.access = { create: defaultAccess, /* … */ ...collection.access || {} }
+// payload/dist/auth/defaultAccess.js:1
+export const defaultAccess = ({ req: { user } }) => Boolean(user)
+```
+
+A field rule does not prevent this. The field hook runs a rule only when that rule exists:
+
+```js
+// payload/dist/fields/hooks/beforeValidate/promise.js:217
+if (field.access && field.access[operation]) { /* … */ }
+```
+
+A `role` field that declares `access.update` alone still accepts a `role` on the create. `POST
+/api/users` with `role: 'admin'` then makes an admin. Declare `create` on the collection **and** on
+the `role` field, both as `({ req: { user } }) => isSuperAdmin(user)`.
+
+**An auth collection has five operations.** `defaults.js:62` also fills `unlock`. An undeclared
+`unlock` lets any authenticated principal clear the lockout that `maxLoginAttempts` sets. Declare
+all five.
+
+Payload reports no error for this defect. The admin panel still renders the role dropdown read-only
+for a principal who is not a super-admin. An OAuth2 login through `payload-oauth2` still works,
+because it creates the user with the Local API, which defaults to `overrideAccess: true`.
 
 ## Audit Logging
 
