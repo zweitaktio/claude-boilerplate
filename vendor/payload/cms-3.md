@@ -609,6 +609,9 @@ A field rule does not prevent this. The field hook runs a rule only when that ru
 if (field.access && field.access[operation]) { /* … */ }
 ```
 
+A rule that does exist strips the denied value without an error. § `data` in `beforeChange` is not
+the request body covers that second half.
+
 A `role` field that declares `access.update` alone still accepts a `role` on the create. `POST
 /api/users` with `role: 'admin'` then makes an admin. Declare `create` on the collection **and** on
 the `role` field, both as `({ req: { user } }) => isSuperAdmin(user)`.
