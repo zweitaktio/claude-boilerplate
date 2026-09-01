@@ -1,5 +1,5 @@
 ---
-version: 1.9.0
+version: 1.10.0
 applies: payload@3
 target: rules
 domain: backend
@@ -94,6 +94,31 @@ Key points:
 2. Always rollback on error
 3. Rethrow after rollback
 
+### A query inside a hook must pass `req`, or the row is invisible
+
+An `afterChange` hook on a create runs inside the create's transaction, before the row is committed.
+`req.payload.find`, `update` and `findByID` open a separate connection when you omit `req`. That
+connection cannot see the uncommitted row.
+
+```ts
+// ❌ runs outside the transaction. updateByID throws NotFound, the error leaves the hook,
+//    and the whole create fails with a 404.
+await req.payload.update({ collection: 'x', id: doc.id, data })
+
+// ✅ joins the current transaction
+await req.payload.update({ collection: 'x', id: doc.id, data, req })
+```
+
+`POST /api/<collection>` then answers `404 {"errors":[{"message":"Not Found"}]}`. The log shows
+`NotFound at updateByIDOperation` with the hook in the stack. The 404 names the collection you
+create, so it reads as a routing problem or an access problem.
+
+Compare a create that succeeds against one that answers 404. Check that difference against the hook's
+early-return condition.
+
+**A unit test cannot catch this.** A test stubs `req.payload`, so no transaction exists. Assert the
+option instead: `expect(update.mock.calls[0][0]).toMatchObject({ req })`.
+
 ### Never wrap external API calls in a transaction
 
 A transaction holds a Postgres connection in the `idle-in-transaction` state for the duration of every
@@ -129,6 +154,34 @@ const response = await fetch('/api/media', {
   credentials: 'include'
 })
 ```
+
+### `useTempFiles` hands every hook an empty `req.file.data`
+
+`useTempFiles: true` keeps a large upload out of RAM. Payload spools the body to disk and sets
+`tempFilePath`. Payload's own type states the consequence:
+
+```ts
+/** Path to the temp file on disk when useTempFiles is enabled.
+ *  In this case file.data will be an empty buffer. */
+tempFilePath?: string
+```
+
+`sharp(file.data)` then throws `Input Buffer is empty`. From a `beforeOperation` hook that throw
+rejects the create. The admin panel shows only "something went wrong".
+
+**The obvious guard does not work.** A zero-length `Buffer` is truthy, so `if (!file?.data) return`
+passes it. Check the length, and prefer the path:
+
+```ts
+const input = file.tempFilePath ?? (file.data.length > 0 ? file.data : null)
+if (!input) return args
+await sharp(input).metadata()   // sharp accepts a path or a buffer
+```
+
+Wrap the metadata read in `try`/`catch` and log the failure. A metadata read must never abort an
+upload.
+
+**The tell:** an error that names an empty buffer while the file is not empty on disk.
 
 ## Logging (Pino)
 
@@ -257,6 +310,31 @@ req.payload.jobs.runByID({ id: job.id }).catch((err) =>
 
 If you have a `crons:` config on the workflow, scheduled runs handle execution; otherwise treat `queue()` + `runByID()` as a single unit.
 
+### `autoRun` is dead config until a task or a workflow exists
+
+Payload derives `jobs.enabled` from array length, never from the presence of a `jobs` key:
+
+```js
+// payload/dist/config/sanitize.js:278
+config.jobs.enabled = Boolean(configWithDefaults.jobs?.tasks?.length
+                           || configWithDefaults.jobs?.workflows?.length)
+```
+
+`enabled` gates the `payload-jobs` collection and the cron scheduler. An `autoRun` entry beside
+`tasks: []` and `workflows: []` therefore schedules nothing, and no job table exists.
+
+**The tell:** `payload-types.ts` holds no `PayloadJob` type. That file passes through the same
+sanitize pipeline, so it reports `enabled` exactly. Register one task, regenerate, and the type
+appears.
+
+**The trap comes later.** `sanitizeAdminConfig` returns a shallow copy, so `config.jobs` and
+`configWithDefaults.jobs` are one object. `schedulePublish` on any collection makes sanitize push its
+own task into that shared array before line 278 runs, which flips `enabled` to true. The admin then
+enqueues onto the `default` queue. An `autoRun` entry that names another queue drains nothing, and a
+scheduled publish sits unrun with no error.
+
+Add `autoRun` and its queue name together with the real task. Never leave one without the other.
+
 ### An omitted `limit` is 10, not "unlimited"
 
 `find()` resolves a missing limit to 10. The code is
@@ -384,6 +462,27 @@ from the one the workflow now declares.
 
 With `users` + `admins`, `req.user` is typed `Admin | User`, and a types regen bakes a required `collection` discriminator into both. Permission helpers declaring `User | null` then fail to compile. **Widen the consuming signatures to `Admin | User | null`** — an existing `if (isAdmin(user)) return true` guard already narrows the rest — and add `collection: '<slug>'` to mock fixtures.
 
+### A dropped `payload-types` import can resolve to a DOM global
+
+`File` is both a common Payload collection type and a built-in DOM interface in `lib.dom.d.ts`. When
+somebody drops an apparently unused `File` import from `@/payload-types`, `tsc` does not report
+"Cannot find name". It binds the name to the DOM global, and it reports shape errors instead:
+
+```
+error TS2339: Property 'id' does not exist on type 'File'.
+```
+
+The errors point at the use sites, never at the removed import. They therefore read as a data-model
+problem.
+
+**The tell:** a Payload type that suddenly lacks `id`. Every Payload document type has `id`. When
+`tsc` says otherwise, the name resolves to something else. Check the import, never the model.
+
+Restore the import, or remove every reference in the file. Better, import the type under an alias:
+`import { type File as FileDocument } from '@/payload-types'`. Other collection names that collide
+with a DOM or a global type are `Document`, `Text`, `Range`, `Selection`, `Event`, `Notification`
+and `Image`.
+
 ### Payload caches its instance on `globalThis` across HMR
 
 Next dev HMR reloads a route module. It does **not** reload an already-registered Payload job handler or
@@ -409,6 +508,29 @@ passes.
 
 Reference an admin component through the `@/` path alias. Then re-run `generate:importmap`.
 
+A component absent from `importMap.js` fails to render even when the config path is correct. `yarn
+dev` regenerates the map at start. A server that already runs does not.
+
+### A global nests admin components under `elements`, a collection under `edit`
+
+Both entity types accept the same component slots, and each nests them differently:
+
+```ts
+// Collection (CollectionConfig)
+admin: { components: { edit: { beforeDocumentControls: ['@/…#Action'] } } }
+
+// Global (GlobalConfig) — elements, never edit
+admin: { components: { elements: { beforeDocumentControls: ['@/…#Action'] } } }
+```
+
+The collection form on a global type-errors on the unknown `edit` key. The reverse case is the
+dangerous one. An object at the wrong nesting level renders nothing, and it warns at neither build
+time nor run time.
+
+`GlobalAdminOptions.components.elements` also holds `Description`, `PreviewButton`, `SaveButton` and
+`PublishButton`. Read `payload/dist/globals/config/types.d.ts:127` rather than an assumption of
+parity with a collection.
+
 ### A native `Buffer` in a JSON column 500s the write
 
 A spread of `sharp.metadata()` into a JSON or JSONB column fails. `JSON.stringify` throws
@@ -423,6 +545,27 @@ non-serialisable value degrades to `null` instead of a failed write.
 
 `tsc`, ESLint and the unit tests all pass. A copy of the hook in plain Node also succeeds, because a
 single-realm process has no Buffer mismatch. Only the running server reproduces the failure.
+
+### `@payloadcms/storage-s3` spreads your `config` over its own defaults
+
+The plugin builds its client this way:
+
+```js
+// @payloadcms/storage-s3 dist/index.js:22-25
+new AWS.S3({ requestHandler: defaultRequestHandlerOpts, ...s3StorageOptions.config ?? {} })
+```
+
+`defaultRequestHandlerOpts` is `{ httpAgent: { keepAlive: true, maxSockets: 100 }, httpsAgent: same }`.
+Your `config` spreads after it. A `requestHandler` key therefore discards both agents, even when you
+pass it only to add `connectionTimeout` and `socketTimeout`. The pool falls back to `maxSockets: 50`,
+which is the default of `@smithy/node-http-handler`.
+
+Restate what you override. Carry the two agents alongside the timeouts, and name the reason in a
+comment.
+
+Nothing throws. A halved socket pool stays invisible until the pool saturates, and the diff reads as
+added hardening while it removes some. Read the merge order in a library's `dist` before you assume
+that a key is additive. `core/process/code-review` § Shared holds the general rule.
 
 ## Known Issues
 
@@ -623,6 +766,26 @@ all five.
 Payload reports no error for this defect. The admin panel still renders the role dropdown read-only
 for a principal who is not a super-admin. An OAuth2 login through `payload-oauth2` still works,
 because it creates the user with the Local API, which defaults to `overrideAccess: true`.
+
+### A rendering page does not prove the API key works
+
+Payload does not reject a **wrong** API key. It resolves the request to anonymous, and it continues.
+A `read` rule whose anonymous branch returns published rows then serves the same page for a dead key
+and for a live key.
+
+The failure appears only when the anonymous branch goes away. Every request answers 403 at that
+moment, and the deploy that changed the rule takes the blame.
+
+Confirm the key, never the page:
+
+```bash
+curl -s -H "Authorization: users API-Key $KEY" "$API_URL/api/users/me"
+# a live key returns the user; a dead key returns {"user":null}
+```
+
+A seed routine that sets `enableAPIKey: true` without `apiKey` makes Payload generate a random key.
+A database restore replaces that row, so a hand-pasted key stops matching. Run the command above in
+every environment, because an env-var check that only tests for an empty value passes a wrong one.
 
 ## Audit Logging
 
