@@ -17,6 +17,8 @@
   `.claude/hooks/** `
 - [manifest include globs match dotfiles, so config files ship as payload](.claude/rules/project/pitfalls/manifest-glob-matches-dotfiles.md)
   `manifest.json scripts/sync.sh .claude/hooks/** `
+- [A node upgrade mid-session kills every hook, and each guard then enforces nothing](.claude/rules/project/pitfalls/stale-path-kills-every-hook.md)
+  `.claude/hooks/run.sh .claude/hooks/** `
 - [A Stop hook that scans the final report fires on the report that documents it, unless it strips code spans first](.claude/rules/project/pitfalls/stop-guard-fires-on-its-own-documentation.md)
   `.claude/hooks/** `
 - [The settings merge deleted every hook entry another tool installed](.claude/rules/project/pitfalls/sync-deletes-third-party-hook-entries.md)
