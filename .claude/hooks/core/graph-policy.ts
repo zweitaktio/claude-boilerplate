@@ -1,6 +1,7 @@
 // Decides whether a shell command reads source code that the code graph should answer.
 // bash-guard applies this policy to the Bash tool. ctx-guard applies it to the context-mode
 // sandbox, which runs the same shell but never reaches the Bash hook.
+import { read } from './state.mjs'
 
 // The tool is trace_path. Verified against codebase-memory-mcp 0.10.8: `cli trace_call_path`
 // answers "unknown tool". The package's own README names trace_call_path and is wrong.
@@ -12,6 +13,19 @@ export const GRAPH_HATCH =
 
 export const GRAPH_SCOPE =
   'In a monorepo, pass file_pattern to search_graph so a name that exists in several workspaces returns only the one you own.'
+
+// session-context.ts checks the graph preconditions at SessionStart and writes this flag when one
+// fails. A session that cannot reach the graph must still read its own code, so each guard warns
+// instead of denies while the flag is set.
+export const GRAPH_STATE = 'graph-unavailable'
+
+export const GRAPH_DEGRADED =
+  'The code graph is unavailable this session, so this shell read is allowed. Keep it narrow, and name the graph failure in your answer:'
+
+/** Returns the SessionStart failure reason, or null when every precondition holds. */
+export function graphUnavailableReason(): string | null {
+  return read(GRAPH_STATE)
+}
 
 // Workspace directories that hold source. The layout is project-specific, so a project
 // overrides the list with WEBSTACK_CODE_DIRS as pipe-separated names. Entries are filtered

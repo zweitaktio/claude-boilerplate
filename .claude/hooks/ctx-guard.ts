@@ -1,10 +1,15 @@
-// version: 1.0.0
+// version: 1.1.0
 // Applies the graph-first lookup policy to the context-mode sandbox.
 // The sandbox runs the same shell as the Bash tool, so a grep on source reaches the model
 // through a path that bash-guard never sees.
 import { readStdin } from './core/stdin.mjs'
-import { deny, pass } from './core/output.mjs'
-import { cwdHint, graphPolicyViolation } from './core/graph-policy.ts'
+import { deny, inject, pass } from './core/output.mjs'
+import {
+  cwdHint,
+  GRAPH_DEGRADED,
+  graphPolicyViolation,
+  graphUnavailableReason,
+} from './core/graph-policy.ts'
 import type { HookInput } from './core/hook-types.ts'
 
 const input = JSON.parse(await readStdin()) as HookInput
@@ -28,9 +33,13 @@ if (Array.isArray(batch)) {
 }
 
 // The sandbox reports no working directory, so fall back to the hook's own cwd.
+const graphDown = graphUnavailableReason()
 for (const command of commands) {
   const violation = graphPolicyViolation(command, cwdHint(command) || (input.cwd ?? ''))
-  if (violation) deny('PreToolUse', `${violation} (core/mcp-tools § Code discovery)`)
+  if (violation) {
+    if (graphDown) inject('PreToolUse', `${GRAPH_DEGRADED} ${graphDown}`)
+    deny('PreToolUse', `${violation} (core/mcp-tools § Code discovery)`)
+  }
 }
 
 pass()

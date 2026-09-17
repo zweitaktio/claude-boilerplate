@@ -1,9 +1,13 @@
-// version: 1.4.0
+// version: 1.5.0
 // Blocks risky Bash: inline env vars, ad-hoc scripting, loops, linter isolation, dev servers, unsafe git.
 // Also routes source-code lookup to the code graph instead of shell text search.
 import { readStdin } from './core/stdin.mjs'
 import { deny, inject, pass } from './core/output.mjs'
-import { graphPolicyViolation } from './core/graph-policy.ts'
+import {
+  GRAPH_DEGRADED,
+  graphPolicyViolation,
+  graphUnavailableReason,
+} from './core/graph-policy.ts'
 import type { HookInput } from './core/hook-types.ts'
 
 const { cwd, tool_input } = JSON.parse(await readStdin()) as HookInput
@@ -149,7 +153,11 @@ if (/\$\{[^}]+(,,|^^)\}/.test(command))
 // bytes into context and cannot show call-graph structure. core/graph-policy.ts owns the decision,
 // so this hook and ctx-guard cannot drift apart.
 const graphViolation = graphPolicyViolation(command, cwd ?? '')
-if (graphViolation) block(`${graphViolation} (core/mcp-tools § Code discovery)`)
+if (graphViolation) {
+  const graphDown = graphUnavailableReason()
+  if (graphDown) warn(`${GRAPH_DEGRADED} ${graphDown}`)
+  else block(`${graphViolation} (core/mcp-tools § Code discovery)`)
+}
 
 // --- Payload-specific ---
 if (/payload-api\.sh/.test(trimmed)) {

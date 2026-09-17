@@ -1,6 +1,12 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
-import { cwdHint, graphPolicyViolation } from './graph-policy.ts'
+import {
+  cwdHint,
+  GRAPH_STATE,
+  graphPolicyViolation,
+  graphUnavailableReason,
+} from './graph-policy.ts'
+import { clear, write } from './state.mjs'
 
 describe('graphPolicyViolation', () => {
   test('blocks a grep over a source file', () => {
@@ -75,5 +81,18 @@ describe('cwdHint', () => {
 
   test('returns an empty string when there is no cd', () => {
     assert.equal(cwdHint('grep -r x .'), '')
+  })
+})
+
+describe('graphUnavailableReason', () => {
+  test('returns null when session-context wrote no flag', () => {
+    clear(GRAPH_STATE)
+    assert.equal(graphUnavailableReason(), null)
+  })
+
+  test('returns the reason session-context wrote', () => {
+    write(GRAPH_STATE, 'The binary is not on PATH.')
+    assert.equal(graphUnavailableReason(), 'The binary is not on PATH.')
+    clear(GRAPH_STATE)
   })
 })

@@ -1,10 +1,13 @@
-// version: 2.3.0
-// Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start.
+// version: 2.4.0
+// Injects branch, recent commits, uncommitted changes, wiki counts, code-graph health and the
+// multi-agent digest at session start.
 import { readStdin } from './core/stdin.mjs'
 import { inject, pass } from './core/output.mjs'
+import { clear as clearState, write as writeState } from './core/state.mjs'
+import { GRAPH_STATE } from './core/graph-policy.ts'
 import { execSync } from 'node:child_process'
-import { existsSync, readdirSync, realpathSync } from 'node:fs'
-import { basename, dirname, join } from 'node:path'
+import { existsSync, readdirSync, readFileSync, realpathSync } from 'node:fs'
+import { basename, dirname, isAbsolute, join } from 'node:path'
 
 await readStdin()
 
@@ -72,6 +75,59 @@ if (existsSync(projRules)) {
       `For an unfamiliar area, run \`.claude/scripts/wiki.sh find "<topic>"\`. ` +
       `Record new bugs/decisions/patterns with \`.claude/scripts/wiki.sh new <type> <slug>\` (core/process/knowledge-base).`
   }
+}
+
+// --- code graph health (codebase-memory-mcp) ---
+// A SessionStart hook cannot see the MCP tool registry, so it checks the three preconditions the
+// model cannot check for itself. bash-guard denies a shell read of source and points at the graph,
+// so a project that fails a precondition cannot read its own code. The flag degrades both guards
+// to a warning for this session.
+const graphFailures: string[] = []
+if (!run('command -v codebase-memory-mcp')) {
+  graphFailures.push(
+    'The binary is not on PATH. Run `npm install -g codebase-memory-mcp`, because a node version switch hides a global npm binary.',
+  )
+}
+const mcpConfig = join(projectDir, '.mcp.json')
+if (existsSync(mcpConfig)) {
+  try {
+    const parsed = JSON.parse(readFileSync(mcpConfig, 'utf8')) as {
+      mcpServers?: Record<string, { env?: Record<string, string> }>
+    }
+    const server = parsed.mcpServers?.['codebase-memory-mcp']
+    if (server) {
+      // The server resolves a relative path against its own working directory, never against
+      // .mcp.json, so a relative value points at a cache and a root nobody intended.
+      const cache = server.env?.CBM_CACHE_DIR ?? ''
+      const root = server.env?.CBM_ALLOWED_ROOT ?? ''
+      if (!isAbsolute(cache)) graphFailures.push('CBM_CACHE_DIR is missing or relative.')
+      if (isAbsolute(root)) {
+        if (realpathSync(root) !== realpathSync(projectDir))
+          graphFailures.push(`CBM_ALLOWED_ROOT points at ${root}, not at this project.`)
+      } else {
+        graphFailures.push('CBM_ALLOWED_ROOT is missing or relative.')
+      }
+    } else {
+      graphFailures.push('.mcp.json holds no `codebase-memory-mcp` block.')
+    }
+  } catch {
+    graphFailures.push('.mcp.json does not parse. Validate it with `jq -e . .mcp.json`.')
+  }
+} else {
+  graphFailures.push('The project has no .mcp.json, so no server is registered here.')
+}
+
+let graphContext = ''
+if (graphFailures.length > 0) {
+  writeState(GRAPH_STATE, graphFailures.join(' '))
+  graphContext =
+    `\n\n## Code graph: unavailable\n` +
+    graphFailures.map((failure) => `- ${failure}`).join('\n') +
+    `\nThe shell read guard warns instead of denies this session. Grep is the fallback. ` +
+    `Report the failure in your answer, and fix it with \`core/mcp-servers\` § codebase-memory-mcp.`
+} else {
+  clearState(GRAPH_STATE)
+  graphContext = `\n\nCode graph: ready. Locate code with search_graph and trace_path, not grep.`
 }
 
 // --- peer sessions on this same checkout ---
@@ -147,6 +203,6 @@ try {
   /* no socket dir, or an unreadable one — assume solo */
 }
 
-if (!gitContext && !wikiContext && !peerContext) pass()
+if (!gitContext && !wikiContext && !graphContext && !peerContext) pass()
 
-inject('SessionStart', '## Session context' + gitContext + wikiContext + peerContext)
+inject('SessionStart', '## Session context' + gitContext + wikiContext + graphContext + peerContext)

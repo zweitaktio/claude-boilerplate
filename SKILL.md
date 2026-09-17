@@ -235,7 +235,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | research-gate | `research-gate.ts` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, official docs, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
 | screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
-| session-context | `session-context.ts` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts and the multi-agent digest at session start. |
+| session-context | `session-context.ts` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts, code-graph health and the |
 | subagent-review | `subagent-review.ts` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
 | test-companion | `test-companion.ts` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
 | wiki-discipline | `wiki-discipline.ts` | PostToolUse / `Edit\|Write` | Reminds you to record durable knowledge as a path-scoped wiki page after several code edits. |

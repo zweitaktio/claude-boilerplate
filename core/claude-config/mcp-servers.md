@@ -1,5 +1,5 @@
 ---
-version: 6.0.0
+version: 6.1.0
 applies: Always
 target: rules
 paths:
@@ -145,6 +145,37 @@ the error never appears.
 
 **Remove one project from the shared cache with `delete_project`.** Never delete the cache directory.
 That wipes every other project too.
+
+### On 0.11.0 and later
+
+**The first index run after the upgrade rebuilds the whole graph.** 0.11.0 moves the on-disk index
+format, because a File node's qualified name now keeps the file extension. `auth.py` and `auth.ts`
+become two nodes instead of one collided node. The server detects the old format and runs one full
+reindex. Your ADRs and the index metadata survive it.
+
+Expect cold-index time on that run, not incremental seconds. A large monorepo takes minutes. Every
+later run is incremental. One `orphan_removed` line on that run is expected.
+
+**An index over the memory budget fails whole.** The run stops with `reason:"over_memory_budget"`,
+and the message names `budget_mb` and `peak_rss_mb`. The index that already serves the project stays
+byte-identical, so no query breaks. Raise the limit with `CBM_MEM_BUDGET_MB`.
+
+Source: the v0.11.0 release notes.
+
+### The session-start check
+
+`session-context.ts` checks three preconditions at every session start, and prints the verdict:
+
+- The binary resolves on `PATH`.
+- `.mcp.json` holds a `codebase-memory-mcp` block.
+- `CBM_CACHE_DIR` and `CBM_ALLOWED_ROOT` are absolute, and the root is this project.
+
+The hook cannot see the MCP tool registry, so it proves the preconditions, not the registration.
+
+A failure writes a session flag. `bash-guard` and `ctx-guard` then warn instead of deny, because a
+session that cannot reach the graph must still read its own code. A project without a registered
+server therefore gets no graph-first enforcement. Complete step 2 before you rely on the guard. Fix
+the failure that the hook names. The guard returns to a deny on the next session.
 
 ## Scope Model
 
