@@ -19,6 +19,8 @@
   `manifest.json scripts/sync.sh .claude/hooks/** `
 - [A Stop hook that scans the final report fires on the report that documents it, unless it strips code spans first](.claude/rules/project/pitfalls/stop-guard-fires-on-its-own-documentation.md)
   `.claude/hooks/** `
+- [The settings merge deleted every hook entry another tool installed](.claude/rules/project/pitfalls/sync-deletes-third-party-hook-entries.md)
+  `scripts/sync.sh .claude/settings.json `
 - [sync.sh treated any version difference as UPDATE and downgraded targets](.claude/rules/project/pitfalls/sync-downgrades-a-target-that-is-ahead.md)
   `scripts/sync.sh manifest.json `
 

@@ -10,7 +10,8 @@
       "mcp__codebase-memory-mcp__search_code",
       "mcp__codebase-memory-mcp__detect_changes",
       "mcp__codebase-memory-mcp__list_projects",
-      "mcp__codebase-memory-mcp__index_status"
+      "mcp__codebase-memory-mcp__index_status",
+      "Bash(npx fallow:*)"
     ]
   },
   "hooks": {
@@ -21,6 +22,16 @@
           {
             "type": "command",
             "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh bash-guard"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh fallow-gate",
+            "timeout": 90
           }
         ]
       },

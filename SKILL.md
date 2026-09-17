@@ -45,14 +45,14 @@ hand. Regenerate after adding or rescoping a template:
 | `process/interaction` | 144 | 7708 | interaction, language, ste, asd-ste100, questions, wizard, density |
 | `process/issue-tracking` | 170 | 9593 | issue-tracking, github, gh, workflow, process, definition-of-done |
 | `process/knowledge-base` | 284 | 14450 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 129 | 6489 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
+| `process/mcp-tools` | 134 | 6894 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
 | `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
 | `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1593** | **83600** (~81 KB) | per-turn baseline |
+| **Total** | **1598** | **84005** (~82 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 63120 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 63525 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -224,6 +224,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | dep-change-reminder | `dep-change-reminder.ts` | PostToolUse / `Bash` | Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up. |
 | edit-review | `edit-review.ts` | PostToolUse / `Edit\|Write` | Non-blocking self-review nudge after each code edit, debounced per file. |
 | failure-protocol | `failure-protocol.ts` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |
+| fallow-gate | `fallow-gate.ts` | PreToolUse / `Bash` | Blocks a commit when `fallow audit` fails on the staged workspaces; passes when fallow is absent. |
 | i18n-extract-reminder | `i18n-extract-reminder.ts` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
 | migration-guard | `migration-guard.ts` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
 | payload-guard | `payload-guard.ts` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |

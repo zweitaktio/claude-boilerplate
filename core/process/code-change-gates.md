@@ -1,5 +1,5 @@
 ---
-version: 1.4.2
+version: 1.5.0
 applies: Always
 target: rules
 priority: high
@@ -117,3 +117,31 @@ change never having run. Before believing any runtime result:
 This is never one session's problem: one process serves everyone, so a stale server can leave several
 sessions' changes dead at once with every workspace green. With other sessions attached, don't restart
 it yourself — ask, and name every change the restart revalidates.
+
+## Deletion and dead code
+
+"Unused" is a claim about the whole import graph. A grep cannot prove it and the type checker never
+sees it. **Trace the symbol before you delete it:**
+
+```bash
+npx fallow dead-code --trace <file>:<export> --format json --quiet   # one export
+npx fallow dead-code --trace-file <file> --format json --quiet       # a whole file
+```
+
+A re-export chain, an entry point or a `package.json` script can hold the symbol alive. The trace
+names which one, and a plain text search sees none of them. Delete only when the trace reports the
+symbol unreachable. `core/dependencies` § Unused-dependency tools covers the package case.
+
+A `fallow-gate` hook runs `npx fallow audit` on every staged workspace and blocks a fail verdict.
+The default gate counts only findings your change introduced, so a fail is your own. Fix it before
+you commit. Run `npx fallow fix --dry-run` before any `fallow fix`.
+
+**Some findings are correct and unfixable.** A config file names the export as a string, or a
+published package owns it. Suppress that one line and name the mechanism in the comment:
+
+```ts
+// fallow-ignore-next-line unused-export — vite.config.ts names this preset as a string
+```
+
+`npx fallow suppressions --format json --quiet` lists every marker, so the escape stays auditable.
+Never suppress a finding you have not traced.

@@ -331,7 +331,21 @@ const src = JSON.parse(fs.readFileSync(srcFile, "utf8"));
 let tgt = {};
 try { tgt = JSON.parse(fs.readFileSync(tgtFile, "utf8")); } catch(e) {}
 
-const isWs = cmd => cmd && cmd.includes(".claude/hooks/");
+// Every webstack hook entry invokes a file the skill ships under .claude/hooks — in practice the
+// run.sh dispatcher. An entry that points at a file the skill does not ship belongs to another tool
+// (fallow installs .claude/hooks/fallow-gate.sh), and the merge must keep it. A plain
+// `includes(".claude/hooks/")` test deleted every such entry on each apply.
+const path = require("path");
+let shipped = new Set();
+try { shipped = new Set(fs.readdirSync(path.join(path.dirname(srcFile), "hooks"))); } catch(e) {}
+const isWs = cmd => {
+  if (!cmd) return false;
+  const m = cmd.match(/\.claude\/hooks\/([A-Za-z0-9._-]+)/);
+  if (!m) return false;
+  // An unreadable hooks directory falls back to the old broad test, so a failed read never
+  // duplicates a webstack entry.
+  return shipped.size === 0 || shipped.has(m[1]);
+};
 const norm = e => JSON.stringify({ matcher: e.matcher === undefined ? null : e.matcher, hooks: e.hooks || [] });
 const stats = { added: 0, updated: 0, preserved: 0 };
 

@@ -1,5 +1,5 @@
 ---
-version: 1.0.1
+version: 1.1.0
 applies: Always
 target: rules
 paths:
@@ -50,6 +50,17 @@ any native-dependency conflict, map every chain that pulls the package in — a 
 `node_modules`. Pin with `resolutions` so one copy is shared.
 
 ## Unused-dependency tools reason over source imports only
+
+**Trace the package before you remove it.** `fallow` is the dead-code tool in these projects, and it
+answers the question directly:
+
+```bash
+npx fallow dead-code --trace-dependency <name> --format json --quiet
+```
+
+Read `is_used` and `used_in_scripts`. A package that only a `package.json` script or a CI file
+invokes reports `used_in_scripts: true`, and removing it breaks the build with a green type check.
+The binary is not on `PATH`, so every command starts with `npx fallow`.
 
 Before deleting anything a dead-code tool flags, grep installed manifests for a peer edge on that
 name, then run a real **build** — `tsc` never sees a dependency that nothing imports from source.

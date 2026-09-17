@@ -71,6 +71,10 @@ Read the change first, then the code around it. A defect lives at the seam, not 
    renamed export with a stale call site. An error path the change made unreachable.
 5. **Audit the four gates.** Run § Audit the forced artifacts above. Verify each line the parent passed,
    and record each gate the parent owed but did not write.
+6. **Run the machine pass.** In each changed workspace run
+   `npx fallow audit --base <ref> --format json --quiet`. Read `verdict` first, then `attribution` for
+   the new-versus-inherited split. Report only a finding with `introduced: true`; the rest is backlog
+   the change did not create. Exit 2 means fallow failed, so say so instead of reporting a pass.
 
 Write each candidate as a claim. A claim names one defect, one location, and one consequence.
 

@@ -1,5 +1,5 @@
 ---
-version: 5.3.0
+version: 5.4.0
 applies: Always
 target: rules
 priority: high
@@ -77,6 +77,11 @@ from a mention, it cannot follow a call, and it dumps raw bytes into your contex
 | Orient yourself in an unfamiliar area | **`get_architecture`** |
 | Ask a multi-hop structural question | **`query_graph`** (Cypher) |
 | Find a literal string, a config value, a comment marker, a `TODO` | **Grep** — text the graph does not model |
+| Decide whether a symbol, a file or a package is dead | **`npx fallow dead-code --trace`** — a verdict, not a location |
+
+**The two tools answer different questions.** codebase-memory-mcp finds a symbol and enumerates its
+callers. fallow judges whether code is dead, duplicated or risky to change. Locate with `trace_path`,
+then decide with fallow (`core/code-change-gates` § Deletion and dead code).
 
 The tool is `trace_path`, not `trace_call_path`. Verified against codebase-memory-mcp 0.10.8:
 `codebase-memory-mcp cli trace_call_path --help` answers `unknown tool`. The package's own bundled
