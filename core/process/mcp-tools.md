@@ -1,5 +1,5 @@
 ---
-version: 5.4.0
+version: 5.4.1
 applies: Always
 target: rules
 priority: high
@@ -113,7 +113,8 @@ does not index, and in a project that has not registered the server yet. Check `
 
 Project decisions, bug resolutions and conventions live in path-scoped Markdown under
 `.claude/rules/project/`. They auto-load when you read the files they concern.
-Full read/write rules, the tiered model, and the frontmatter schema are in `core/knowledge-base`.
+The write rule and the tiered model are in `core/knowledge-base`. The frontmatter schema and the
+proving procedure are in `core/knowledge-base-authoring`, which loads when you open a page.
 
 ---
 
