@@ -9,6 +9,8 @@
   `scripts/** **/*.sh `
 - [Bootstrap template fences reach CLAUDE.md still escaped](.claude/rules/project/pitfalls/bootstrap-template-fences-stay-escaped.md)
   `scripts/bootstrap-claude-md.sh references/bootstrap-template.md `
+- [sync.sh compare never previews a deletion, because the prune pass runs only under apply](.claude/rules/project/pitfalls/compare-hides-the-prune-pass.md)
+  `scripts/sync.sh manifest.json `
 - [A gate that names a remediation tool must read the same corpus that tool reads](.claude/rules/project/pitfalls/gate-and-measurer-read-different-corpora.md)
   `scripts/** `
 - [A grep that matches nothing inside $(...) aborts the script under set -e](.claude/rules/project/pitfalls/grep-in-command-substitution-aborts.md)
