@@ -28,5 +28,12 @@ export interface HookInput {
   /** SessionStart */
   source?: string
   cwd?: string
+  /** InstructionsLoaded. The event has no decision control and runs for observability only. */
+  file_path?: string
+  memory_type?: string
+  load_reason?: string
+  globs?: string[]
+  trigger_file_path?: string
+  parent_file_path?: string
   [key: string]: unknown
 }
