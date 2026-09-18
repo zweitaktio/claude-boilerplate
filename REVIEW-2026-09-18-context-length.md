@@ -149,6 +149,57 @@ Two risks to weigh before any migration:
 | `wc -l -c core/process/*.md` (the nine) | 1598 lines / 84005 bytes |
 | `grep -c '\*\*CRITICAL\|\*\*IMPORTANT'` (the nine) | 3 markers. Budget is 3 to 5 |
 
+## 8bis. Applied — 2026-09-18
+
+Four of the five ranks shipped. Rank 2 did not, and § "Rank 2 fails on evidence" gives the reason.
+
+| Measure | Before | After |
+|---------|--------|-------|
+| Always-loaded files | 9 | 6 |
+| Always-loaded lines | 1598 | 1030 |
+| Always-loaded bytes | 84005 | 55556 |
+| Per-turn in a target, with `CLAUDE.md` | 94635 bytes | 66591 bytes |
+
+The always-loaded set falls by 28449 bytes, which is 33.9%. A target session pays 29.6% less per turn.
+Each subagent pays the same reduction again.
+
+The set that remains: `engineering-discipline` (311), `tooling` (255), `code-review` (146),
+`interaction` (144), `mcp-tools` (135), `knowledge-base` (39).
+
+### What each rank did
+
+| Rank | Change | Trigger that replaces the always-load |
+|------|--------|---------------------------------------|
+| 3 | `knowledge-base.md` 284 lines to 39. The detail moved to `core/knowledge-base-authoring` | The new file is path-scoped to `.claude/rules/project/**`. `rules-guard` gates the write |
+| 5 | `security-checklist.md` gained a `paths:` key for server, API, route, auth, middleware and collection files | New `security-gate.ts` hook injects the checklist on a `Write` or `Edit` to such a file, once per file |
+| 1 | `issue-tracking.md` became `skills/issue-tracking/SKILL.md` | New `issue-gate.ts` hook fires on any `gh issue` command |
+| 4 | `requirements-engineering.md` became `skills/requirements-engineering/SKILL.md` | `requirements-gate.ts` already fired at `EnterPlanMode`. It now names the skill |
+
+### The skills mechanism
+
+Ranks 1 and 4 needed a deploy path that did not exist. `manifest.json` gained a `skills` group:
+source `skills/`, destination `.claude/skills/`, include `**/SKILL.md`, checksum versioning, no
+flatten. `sync.sh compare` resolves it and reports both skills as `CREATE`.
+
+The prune pass removes the two stale rules from a target on the next `apply`. `compare` does not
+preview a prune, because the prune runs only under `apply`. That is a gap in the dry-run, not a defect
+in this migration.
+
+### Rank 2 fails on evidence
+
+The plan said to move `core/code-review.md` into the `code-reviewer` subagent. Three facts reject it.
+
+- `agents/code-reviewer.md` line 11 states the agent's design: "Core conventions, tool discipline and
+  the engineering process auto-load from `.claude/rules/core/`. Follow them. Never duplicate them
+  here." The move is the duplication that line forbids.
+- About 100 of the 146 lines are authoring rules, not review procedure. § Code Smells opens with
+  "Don't write these in the first place". § Comments and § Domain Best Practices apply while you write.
+- `core/interaction` § Language is always-loaded and points to `core/code-review` § Comment language
+  and length. Moving the target of that pointer into a subagent breaks it for the main session.
+
+Only about 37 lines are review-time procedure. Moving them saves near 2300 bytes and splits a coherent
+document. `core/code-review.md` stays always-loaded.
+
 ## 8. How a migrated rule still loads
 
 A migrated rule must reach Claude at the moment it applies. Three mechanisms can do that, and they
