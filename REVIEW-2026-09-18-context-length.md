@@ -201,36 +201,38 @@ safety in `tooling.md` is one example. A rule that fires at a nameable moment is
 
 ### Measured: a write does not trigger a path-scoped rule
 
-I tested this on 2026-09-18 in this repository. `scripts/**` is a path pattern on four rules.
+I tested this on 2026-09-18 in this repository, with `instructions-log.ts` as the observer. The log
+is the evidence, not my reading of the context.
 
-| Step | Action | Result |
-|------|--------|--------|
-| 1 | `Write` a new file `scripts/probe-scope-test.sh` | No rule arrived |
-| 2 | `Read` the same file with the Read tool | Three matching rules arrived |
+| Step | Action | New `path_glob_match` entries |
+|------|--------|-------------------------------|
+| 1 | `Write` a new file `scripts/probe2.sh` | 0 |
+| 2 | `Read` the same file with the Read tool | 3, each with `trigger: probe2.sh` |
 
 The documentation wording holds: a path-scoped rule triggers on a read, not on a write. A `Bash`
-read with `cat`, `sed` or `grep` also does not trigger it. Both probe files are deleted.
+read with `cat`, `sed` or `grep` also does not trigger it. The probe file is deleted.
 
 **This changes rank 5.** `security-checklist.md` must fire when Claude writes a new auth handler.
 A `paths:` key cannot do that. Rank 5 needs a `PreToolUse` hook on `Write` and `Edit`, matched on
 the server, API and auth globs. Treat the same risk on every other candidate: a rule that only
 matters at write time needs a hook.
 
-### Unresolved: a matching rule does not always arrive
+### Measured: a rule loads once per session
 
-The same test exposed a second problem. Not every rule whose pattern matches did arrive.
+An earlier run of this test suggested that a matching rule sometimes fails to arrive. The log
+disproves that. A rule loads once per session, and a later matching read does not repeat it.
 
-| Read | Rules whose pattern matches | Rules that arrived |
-|------|----------------------------|--------------------|
-| `scripts/probe-scope-test.sh` | 4 | 3 |
-| `manifest.json` | 3 | 1 |
+| Read | Rule | Result |
+|------|------|--------|
+| `manifest.json` | `skill-architecture.md` | Loaded, `path_glob_match` |
+| `scripts/probe2.sh` | `skill-architecture.md` | Not repeated, although `scripts/**` matches |
 
-`.claude/rules/skill-architecture.md` matches both reads through `scripts/**` and `manifest.json`.
-It arrived on neither. `CLAUDE.md` states that this file loads when you open a script or
-`manifest.json`, so the intended behaviour did not happen.
+`.claude/rules/skill-architecture.md` works. The earlier reading was an artifact of the same
+once-per-session behaviour, observed without a log.
 
-I could not determine the cause from the outside. I have no log of what Claude Code evaluated.
-That is the exact gap the next section closes, and it must close before any migration.
+This matters for the migration. A rule arrives at the first matching read of a session. It does not
+arrive again later, even when the relevant moment comes an hour afterwards. A rule that must hold at
+a specific moment still needs a hook.
 
 ### The exit test
 
@@ -254,6 +256,11 @@ jq -s 'group_by(.reason) | map({reason: .[0].reason, count: length})' \
 
 Read the log after each migration step. A rule that never appears never reached the model.
 `REVIEW-2026-09-17.md` finding 7 recorded this event and can now close.
+
+**First run, 2026-09-18.** The logger recorded 5 `session_start` loads in this repository:
+`CLAUDE.md`, `interaction.md`, `fetching.md`, `git.md` and `writing-rules.md`. That matches the
+185 lines and 8853 bytes in § 1. The measurement agrees with the byte count, so the budget script
+and the log describe the same set.
 
 ## Sources
 
