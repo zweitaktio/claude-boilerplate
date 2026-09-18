@@ -104,7 +104,7 @@ if (!isVague && featurePattern.test(lower)) {
       '- Gather functional requirements (what it does, inputs, outputs, edge cases)\n' +
       '- Confirm scope boundaries (what is NOT included)\n' +
       '- Define acceptance criteria (how to verify it works)\n' +
-      '(core/process/requirements-engineering.md)',
+      '(Invoke the requirements-engineering skill for the full checklist.)',
   )
 }
 

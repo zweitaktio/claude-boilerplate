@@ -43,6 +43,16 @@
       "_comment": "Claude Code agent frontmatter is name/description/model/tools \u2014 no version: field, so compare by checksum rather than frontmatter."
     },
     {
+      "name": "skills",
+      "src": "skills",
+      "dest": ".claude/skills",
+      "include": [
+        "**/SKILL.md"
+      ],
+      "versioning": "checksum",
+      "_comment": "A skill lives at .claude/skills/<name>/SKILL.md, so this group must NOT flatten. Claude Code skill frontmatter is name/description only — no version: field, so compare by checksum like agents."
+    },
+    {
       "name": "wiki-scripts",
       "src": "scripts",
       "dest": ".claude/scripts",

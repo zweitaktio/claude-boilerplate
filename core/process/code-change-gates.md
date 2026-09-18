@@ -1,5 +1,5 @@
 ---
-version: 1.5.0
+version: 1.5.1
 applies: Always
 target: rules
 priority: high
@@ -55,7 +55,7 @@ a copy-pasted expression — is a Grep search, and Grep is correct here. A misus
 search: run `trace_path` on it to find every call site (`core/mcp-tools` § Code discovery).
 
 **Fix them.** Listing is the fallback for a site you are genuinely blocked on, not the default —
-a twin you found and left is a known defect with nobody assigned (`core/issue-tracking` § Fix it now).
+a twin you found and left is a known defect with nobody assigned (the `issue-tracking` skill § Fix it now).
 "Fixed everywhere" with no search behind it is not verification.
 
 **A grep returning 0 is not evidence of absence until you check the command.** The classic is an

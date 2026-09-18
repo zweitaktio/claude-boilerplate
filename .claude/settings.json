@@ -36,6 +36,15 @@
         ]
       },
       {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh issue-gate"
+          }
+        ]
+      },
+      {
         "matcher": "mcp__plugin_context-mode_context-mode__ctx_(execute|batch_execute)",
         "hooks": [
           {

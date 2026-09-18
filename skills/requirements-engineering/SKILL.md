@@ -1,9 +1,8 @@
 ---
-version: 1.1.1
-applies: Always
-target: rules
-priority: high
-tags: [requirements, planning, process]
+name: requirements-engineering
+description: The questions to settle with the user before you design a solution — functional requirements, non-functional requirements, scope boundaries, dependencies, testable acceptance criteria and risks. Use before planning any feature, before entering plan mode, and whenever a request is ambiguous enough that two readings would produce different work.
+---
+
 ---
 
 # Requirements Engineering

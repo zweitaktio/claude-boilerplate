@@ -19,7 +19,7 @@ if (tool_name === 'EnterPlanMode') {
 
 Do NOT proceed to solution design until you have clear answers to questions 1-2.
 If the user's request already answers these, state your understanding and confirm.
-(core/process/requirements-engineering.md)`,
+(Invoke the requirements-engineering skill for the full checklist.)`,
   )
 }
 

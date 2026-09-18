@@ -1,9 +1,8 @@
 ---
-version: 1.2.0
-applies: Always
-target: rules
-tags: [issue-tracking, github, gh, workflow, process, definition-of-done]
+name: issue-tracking
+description: How to create, write, scope, label, split, verify and close an issue in the project tracker, and how to link it from a commit or pull request. Use when you run any gh issue command, when the user asks to file, groom, split or close an issue, or when you must decide whether a problem you found becomes an issue or an immediate fix. Covers the Definition of Done structure and comment length limits.
 ---
+
 
 # Issue Tracking
 
