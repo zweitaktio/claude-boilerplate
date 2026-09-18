@@ -72,6 +72,15 @@
         ]
       },
       {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh security-gate"
+          }
+        ]
+      },
+      {
         "matcher": "mcp__playwright__browser_(take_screenshot|pdf_save|storage_state)",
         "hooks": [
           {

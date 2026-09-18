@@ -1,13 +1,24 @@
 ---
-version: 1.3.2
+version: 2.0.0
 applies: Always
 target: rules
+paths:
+  - "**/server/**"
+  - "**/api/**"
+  - "**/routes/**"
+  - "**/auth/**"
+  - "**/middleware/**"
+  - "**/collections/**"
+  - "**/*.server.ts"
 tags: [security, auth, validation, XSS, CSRF, injection]
 ---
 
 # Security Review Checklist
 
 Check every section during code review and before committing code that handles user input, auth, or external data.
+
+This file loads when you open a server, API, route, auth, middleware or collection file. A write to a
+new file triggers no path-scoped rule, so the `security-gate` hook covers that moment.
 
 ## Input Validation
 - Validate all user input at system boundaries (routes, API endpoints)

@@ -1,5 +1,5 @@
 ---
-version: 1.10.1
+version: 1.10.2
 applies: Always
 target: rules
 tags: [code-review, review, security, quality, validation, smells, comments, ste, best-practices]
@@ -135,7 +135,7 @@ Load these before reviewing code that touches their domain:
 | React components | `core/react-components` (auto-loaded) | Arrow functions, Props typing, named exports |
 | Translations | `core/i18n` (auto-loaded) | Static keys, English defaults, no JSON edits |
 | SSR/hydration | `core/ssr-hydration` (auto-loaded) | Client guards, no timers in render |
-| Security | `core/security-checklist` (auto-loaded) | Input validation, cookie settings, rate limits |
+| Security | `core/security-checklist` (loads on a server, API, route or auth file) | Input validation, cookie settings, rate limits |
 | UI/styling | `vendor/daisyui-5`, `vendor/tailwind-4` (auto-loaded) | DaisyUI classes, v5 form patterns |
 | Tailwind | `vendor/tailwind-4` (auto-loaded) | CVA patterns, twMerge usage |
 | Routing/loaders | `vendor/react-router-8/` rules (auto-loaded) | Route IDs, loader types, fetcher patterns |
