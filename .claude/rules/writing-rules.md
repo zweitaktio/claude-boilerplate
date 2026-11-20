@@ -36,7 +36,7 @@ Every template you edit deploys to another project. A defect here reaches every 
 | `node scripts/ste-check.ts --filler` | Lists rule 11 candidates. Judge each with the deletion test |
 | `node scripts/dupe-check.ts` | No repeated instruction between two files that load together |
 | `node scripts/wiki-review.ts` | Which project pages to retire, fix, merge or review |
-| `./scripts/gen-inventory.sh --check` | The SKILL.md tables match the templates on disk |
+| `./scripts/gen-inventory.sh --check` | The SKILL.md tables match the templates on disk, and the body is under 500 lines |
 | `./scripts/context-budget.sh` | The always-loaded byte cost. It parses frontmatter, so trust it |
 | `cd .claude/hooks && bun run check` | The hooks and `scripts/*.ts` typecheck, lint and format |
 

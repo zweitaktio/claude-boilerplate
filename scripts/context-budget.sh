@@ -1,7 +1,8 @@
 #!/bin/bash
-# version: 1.0.0
+# version: 1.1.0
 # Measures per-turn context cost of always-loaded content in a target project.
 # Outputs JSON with always_loaded, path_scoped, claude_md, and totals.
+# Exits 2 when it finds nothing to measure. A scan over zero files is never a pass.
 #
 # Usage:
 #   context-budget.sh <project-path>
@@ -9,6 +10,11 @@
 # Compatible with Bash 3.2+ (macOS and Linux). Requires jq.
 
 set -euo pipefail
+
+# A paths: value is a glob for Claude Code, not for this shell. Without noglob, `for p in $paths`
+# expands `scripts/**` against the working directory and the report prints matched filenames
+# instead of the pattern. The broad-pattern test then compares the wrong strings.
+set -f
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   cat <<'EOF'
@@ -46,6 +52,13 @@ fi
 
 # Resolve to absolute path
 PROJECT=$(cd "$PROJECT" && pwd)
+
+# A scan over zero files is a failed run, never a pass. The maintenance flow trusts this
+# verdict, so an unconfigured root must fail instead of reporting PASS on empty totals.
+if [ ! -d "$PROJECT/.claude/rules" ] && [ ! -f "$PROJECT/CLAUDE.md" ]; then
+  echo "Error: $PROJECT has no .claude/rules/ directory and no CLAUDE.md. Nothing to measure." >&2
+  exit 2
+fi
 
 BUDGET_LINES=850
 BUDGET_BYTES=20480
@@ -254,3 +267,12 @@ jq -n \
   --argjson cm "$CLAUDE_MD_JSON" \
   --argjson totals "$TOTALS" \
   '{always_loaded: $al, path_scoped: $ps, claude_md: $cm, totals: $totals}'
+
+# The directory can exist and hold nothing. The JSON is still printed, so a caller keeps the
+# detail, and the exit code still reports the failed scan.
+scanned=$(echo "$ALWAYS_LOADED" | jq 'length')
+scoped_count=$(echo "$PATH_SCOPED" | jq 'length')
+if [ "$scanned" -eq 0 ] && [ "$scoped_count" -eq 0 ] && [ ! -f "$CLAUDE_MD" ]; then
+  echo "Error: $PROJECT holds no rule file and no CLAUDE.md. Nothing to measure." >&2
+  exit 2
+fi

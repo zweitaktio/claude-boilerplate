@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.0.0
+# version: 1.1.0
 # Regenerates the template and hook inventories embedded in SKILL.md.
 #
 # SKILL.md used to hand-maintain four tables covering ~50 files (always-loaded rules,
@@ -11,7 +11,7 @@
 # Usage:
 #   gen-inventory.sh            # print the generated blocks to stdout
 #   gen-inventory.sh --write    # rewrite the marked blocks in SKILL.md in place
-#   gen-inventory.sh --check    # exit 1 if SKILL.md is out of date (for CI)
+#   gen-inventory.sh --check    # exit 1 if SKILL.md is out of date or over 500 lines (for CI)
 #
 # Blocks in SKILL.md are delimited by:
 #   <!-- generated:<name> --> ... <!-- /generated:<name> -->
@@ -24,6 +24,10 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 SKILL_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 SKILL_MD="$SKILL_DIR/SKILL.md"
 SETTINGS="$SKILL_DIR/.claude/settings.json"
+
+# The skill authoring guidance caps the SKILL.md body at 500 lines. Claude Code keeps only the
+# first 5,000 tokens of an invoked skill after compaction, so a longer body loses its tail.
+SKILL_MD_LINE_LIMIT=500
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
   sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//'
@@ -208,13 +212,26 @@ for b in $BLOCKS; do
 done
 
 if [ "$MODE" = "--check" ]; then
+  CHECK_STATUS=0
+
   if cmp -s "$TMP" "$SKILL_MD"; then
     echo "SKILL.md inventories are up to date."
-    exit 0
+  else
+    echo "SKILL.md inventories are STALE. Run: scripts/gen-inventory.sh --write" >&2
+    diff -u "$SKILL_MD" "$TMP" | head -40 >&2 || true
+    CHECK_STATUS=1
   fi
-  echo "SKILL.md inventories are STALE. Run: scripts/gen-inventory.sh --write" >&2
-  diff -u "$SKILL_MD" "$TMP" | head -40 >&2 || true
-  exit 1
+
+  skill_lines=$(wc -l < "$SKILL_MD" | tr -d ' ')
+  if [ "$skill_lines" -gt "$SKILL_MD_LINE_LIMIT" ]; then
+    echo "Error: SKILL.md is $skill_lines lines and the limit is $SKILL_MD_LINE_LIMIT." >&2
+    echo "Move a section to references/ and dispatch to it." >&2
+    CHECK_STATUS=1
+  else
+    echo "SKILL.md is $skill_lines lines (limit $SKILL_MD_LINE_LIMIT)."
+  fi
+
+  exit "$CHECK_STATUS"
 fi
 
 if [ "$MODE" = "--write" ]; then

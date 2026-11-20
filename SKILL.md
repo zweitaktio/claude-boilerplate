@@ -40,19 +40,16 @@ hand. Regenerate after adding or rescoping a template:
 <!-- generated:budget -->
 | Rule | Lines | Bytes | Tags |
 |------|-------|-------|------|
-| `process/code-review` | 146 | 8049 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
+| `process/code-review` | 146 | 8080 | code-review, review, security, quality, validation, smells, comments, ste, best-practices |
 | `process/engineering-discipline` | 311 | 17746 | engineering, process, planning, verification, discipline, workflow |
 | `process/interaction` | 144 | 7708 | interaction, language, ste, asd-ste100, questions, wizard, density |
-| `process/issue-tracking` | 170 | 9593 | issue-tracking, github, gh, workflow, process, definition-of-done |
-| `process/knowledge-base` | 284 | 14450 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
-| `process/mcp-tools` | 134 | 6894 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
-| `process/requirements-engineering` | 93 | 4279 | requirements, planning, process |
-| `process/security-checklist` | 61 | 2025 | security, auth, validation, XSS, CSRF, injection |
+| `process/knowledge-base` | 39 | 1776 | knowledge, wiki, memory, rules, atomicity, pitfalls, decisions |
+| `process/mcp-tools` | 135 | 6985 | mcp, docs-lookup, codebase-memory, code-discovery, knowledge-base, tools, workflow |
 | `process/tooling` | 255 | 13261 | tooling, yarn, check, typescript, eslint, biome, verification |
-| **Total** | **1598** | **84005** (~82 KB) | per-turn baseline |
+| **Total** | **1030** | **55556** (~54 KB) | per-turn baseline |
 
 Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
-**Currently over budget** by 63525 bytes. Path-scope or trim before adding more.
+**Currently over budget** by 35076 bytes. Path-scope or trim before adding more.
 <!-- /generated:budget -->
 
 **Path-scoped:**
@@ -71,10 +68,12 @@ Budget in `scripts/context-budget.sh`: 850 lines / 20480 bytes.
 | `process/backporting` | `.claude/rules/project/**, .claude/docs/**, CLAUDE.md` |
 | `process/code-change-gates` | `**/*.ts, **/*.tsx, **/*.js, **/*.jsx, **/*.py, **/*.go, **/*.rs` |
 | `process/dependencies` | `**/package.json, **/tsconfig*.json, **/eslint.config.*, **/.eslintrc*, **/.fallowrc*, **/yarn.lock, **/package-lock.json, **/pnpm-lock.yaml` |
+| `process/knowledge-base-authoring` | `.claude/rules/project/**, .claude/docs/**, .claude/scripts/wiki.sh` |
 | `process/monorepo` | `packages/**, apps/**, services/**, backend/**, frontend/**, scripts/**, docker-compose*, dev.sh, install.sh` |
 | `process/multi-agent` | `.claude/rules/core/multi-agent.md` |
 | `process/payload-api` | `backend/**` |
 | `process/scripting` | `scripts/**, **/*.sh, .claude/hooks/**` |
+| `process/security-checklist` | `**/server/**, **/api/**, **/routes/**, **/auth/**, **/middleware/**, **/collections/**, **/*.server.ts` |
 | `testing/browser-verification` | `**/*.tsx, **/*.jsx, **/*.vue, **/*.svelte, **/routes/**, **/routes.ts` |
 | `testing/e2e-testing` | `**/*.test.*, **/*.spec.*, **/tests/**, **/e2e/**, **/playwright*, backend/**, frontend/**, **/api/**, **/routes/**` |
 | `testing/e2e-validation` | `**/*.spec.*, **/e2e/**, **/playwright*, backend/**, frontend/**, **/routes/**` |
@@ -226,6 +225,8 @@ one-sentence description, which is where the Purpose column below comes from.
 | failure-protocol | `failure-protocol.ts` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |
 | fallow-gate | `fallow-gate.ts` | PreToolUse / `Bash` | Blocks a commit when `fallow audit` fails on the staged workspaces; passes when fallow is absent. |
 | i18n-extract-reminder | `i18n-extract-reminder.ts` | PostToolUse / `Edit\|Write` | Reminds you to run `yarn i18n:extract` after adding t() calls, so locale files stay in sync. |
+| instructions-log | `instructions-log.ts` | InstructionsLoaded / `—` | Records every CLAUDE.md and .claude/rules/*.md load to a per-session log, for the context budget review. |
+| issue-gate | `issue-gate.ts` | PreToolUse / `Bash` | Points at the issue-tracking skill when you run a gh issue command. |
 | migration-guard | `migration-guard.ts` | PreToolUse / `Write\|Edit` | On writes to migration or schema files, injects the reversibility and data-loss checks to run first. |
 | payload-guard | `payload-guard.ts` | PreToolUse / `mcp__payload__*` | Checks Payload MCP calls for the missing data wrapper, empty objects, and null enum fields. |
 | peer-message-guard | `peer-message-guard.ts` | PostToolUse / `SendMessage` | Keeps peer messages terse and in Simplified Technical English, and blocks relaying the exchange |
@@ -235,6 +236,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | research-gate | `research-gate.ts` | PreToolUse / `EnterPlanMode\|ExitPlanMode\|Agent\|Task` | Before planning or delegating, injects the research checklist: wiki find, official docs, WebSearch. |
 | rules-guard | `rules-guard.ts` | PreToolUse / `Write\|Edit` | Write-time quality gate for .claude/rules/**: frontmatter, non-empty paths:, upstream-edit warning, bloat. |
 | screenshot-guard | `screenshot-guard.ts` | PreToolUse / `mcp__playwright__browser_(take_screenshot\|pdf_save\|storage_state)` | Keeps browser artifacts small AND inside the configured output directory. |
+| security-gate | `security-gate.ts` | PreToolUse / `Write\|Edit` | Injects the security checklist when you write a server, API, auth or collection file. |
 | session-context | `session-context.ts` | SessionStart / `—` | Injects branch, recent commits, uncommitted changes, wiki counts, code-graph health and the |
 | subagent-review | `subagent-review.ts` | SubagentStop / `—` | Flags a subagent that returned nothing, so an empty result is not mistaken for a clean one. |
 | test-companion | `test-companion.ts` | PostToolUse / `Edit\|Write` | Reminds you once per source file to add its companion .test.ts. |
@@ -287,168 +289,16 @@ In addition to per-template version comparison, the skill records the boilerplat
 
 **Check the argument:** `$ARGUMENTS` will be `init`, `update`, or `maintenance`. If not provided, ask the user which mode to use.
 
-### On a new project (`/webstack init`)
+**Then read the flow file for that mode.** This section holds the dispatch. The flow files hold the
+steps. Read the file before you run the first step. Never work from memory of an earlier session.
 
-**CRITICAL: Use scripts for all file operations.** Never manually copy, write, or edit files in `.claude/rules/core/`, `.claude/hooks/`, or `.claude/settings.json`. The scripts handle stack detection, version tracking, and settings merging deterministically.
+| `$ARGUMENTS` | Read this file first |
+|--------------|----------------------|
+| `init` | `references/init.md` |
+| `update` | `references/update.md` |
+| `maintenance` | `references/maintenance.md` |
 
-0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
-
-1. **Bootstrap CLAUDE.md:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/bootstrap-claude-md.sh /path/to/project
-   ```
-   Show the user what was created/added.
-
-2. **Detect stack** — read `package.json` (dependencies + devDependencies), note frameworks and exact versions.
-
-3. **Run deployment comparison:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project
-   ```
-   Present the JSON action table to the user as a formatted table.
-
-4. **Wait for user approval**
-
-5. **Deploy file-based assets:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project
-   ```
-   Do NOT manually write any files that this command handles. It deploys rules, hooks, configs, merges settings, and records `.claude/webstack.sha`.
-
-   **MCP scope note:** Playwright MCP is project-scoped (installed here). Plugins are user-scoped — see "User Environment Setup" above. `sync.sh apply` also deploys `wiki.sh`, `wiki-review.ts`, `ste-check.ts` and `dupe-check.ts` to `.claude/scripts/` (the `wiki-scripts` group) and the subagent definitions to `.claude/agents/` (the `agents` group).
-
-   **Payload projects:** If the project uses Payload CMS (has `payload` in dependencies), set up the Payload MCP server:
-   ```bash
-   claude mcp add payload --transport http --scope project --header "Authorization: Bearer MCP-USER-API-KEY" -- http://localhost:3000/api/mcp
-   ```
-   This requires `@payloadcms/plugin-mcp` in the backend's Payload config and a running backend. Add `"mcp__payload__*"` to the project's `.claude/settings.json` allow list.
-
-6. **Seed the project wiki skeleton** — create the directory structure the project will grow its own
-   knowledge into. Vendor docs need no registration step: they are file-deployed path-scoped rules that
-   auto-load on their own.
-
-   ```bash
-   mkdir -p /path/to/project/.claude/rules/project/{pitfalls,decisions,conventions,domains} \
-            /path/to/project/.claude/docs/systems
-   ```
-
-   Nothing else to record. As the project accrues findings, they become pages via
-   `.claude/scripts/wiki.sh new <type> <slug>` (see `core/process/knowledge-base`). Run
-   `.claude/scripts/wiki.sh sync` after adding pages to refresh `WIKI.md`.
-
-   **Hooks inventory** — see the generated table under "Hooks" below.
-
-7. **Fill in the Vendor Knowledge table** in CLAUDE.md. List the vendor rules that were deployed,
-   grouped by domain. Read the `domain:` and `paths:` frontmatter from each deployed
-   `.claude/rules/vendor/*.md` and write one row per domain: `| <domain> | <what the rules auto-load on> |`.
-   No script — it's a short table the bootstrap template scaffolds with a commented example.
-
-8. **Scaffold project infrastructure** (optional):
-    - Ask user: "Deploy scaffold files (dev scripts, Docker, sync tools, CI/CD)?"
-    - Preview available files:
-      ```bash
-      ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project --group scaffold
-      ```
-    - If approved, deploy:
-      ```bash
-      ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project --group scaffold
-      ```
-    - Existing files are never overwritten (no-clobber)
-    - Ask user for their project name, then replace `myproject` placeholders in `dev.sh` (session name) and any other scaffold files
-    - Remind user to copy `.env.example` to `.env` and fill in credentials
-    - **Stripe CLI** is optional — `dev.sh` includes a commented-out tmux pane for `stripe listen`. Only uncomment if the project uses Stripe webhooks.
-
-### On an existing project (`/webstack update`)
-
-**CRITICAL: Use scripts for all file operations.** Never manually copy, write, or edit files in `.claude/rules/core/`, `.claude/hooks/`, or `.claude/settings.json`. The scripts handle version comparison, stack detection, and settings merging deterministically. Manual operations cause version drift, duplicate hooks, and settings corruption.
-
-0. **Run preflight check** — see "Requirements" section above. Stop if any dependency is missing.
-
-1. **Run CLAUDE.md drift check:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/drift-check.sh /path/to/project
-   ```
-   Show results to user. If S0 FAIL (missing), suggest `/webstack init`. If S1 MISSING, fix with `bootstrap-claude-md.sh`. Continue — informational, not blocking.
-
-1a. **Check MCP wiring:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/check-mcp-wiring.sh /path/to/project
-   ```
-   Deploying `.claude/playwright-mcp.config.json` does **not** make it take effect — nothing reads it
-   unless `.mcp.json` passes `--config`, and a relative `outputDir`/`--output-dir` resolves against the
-   MCP server's cwd rather than the project, so artifacts land wherever Claude Code was launched from.
-   The skill does not manage `.mcp.json`, so this must be verified rather than assumed. Report any
-   `ERROR` findings and offer the exact `.mcp.json` fix; they are one-line edits.
-
-2. **Run deployment comparison:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/sync.sh compare /path/to/project
-   ```
-   Outputs JSON action table. Present it to the user as a formatted table.
-
-3. **The project wiki is preserved automatically.** Everything under `.claude/rules/project/` and
-   `.claude/docs/` is project-owned files that `sync.sh apply` never prunes. There is nothing to
-   detect or migrate.
-
-4. **Lint the project wiki** (knowledge health):
-   ```bash
-   /path/to/project/.claude/scripts/wiki.sh lint --root /path/to/project
-   ```
-   Report schema errors, pages missing `paths:`, glob collisions, staleness, and unreachable docs.
-   Present unified findings from steps 1 and 4.
-
-5. **Wait for user approval**
-
-6. **Deploy file-based updates:**
-   ```bash
-   ~/.claude/skills/webstack/scripts/sync.sh apply /path/to/project
-   ```
-   This single command deploys all rules, hooks, configs, merges settings, prunes stale files, and records `.claude/webstack.sha`. Do NOT manually write any files that this command handles. Report any `PRUNE` actions to the user — these are files removed because they no longer exist in the skill.
-
-   **Safe directories:** `.claude/rules/project/` is never touched — pruning is scoped to `core/` and `vendor/` only. Project-specific rules are always preserved.
-
-7. **Regenerate the wiki index:**
-   ```bash
-   /path/to/project/.claude/scripts/wiki.sh sync --root /path/to/project
-   ```
-   Refreshes `WIKI.md` and backlinks from the project pages' frontmatter.
-
-8. **Cleanup legacy artifacts:** rules and hooks are pruned automatically by `sync.sh apply` (action
-   `PRUNE`). `.claude/rules/project/` and `.claude/docs/` are never pruned. No manual KG cleanup exists.
-
-9. **Scan for backport candidates** — knowledge worth contributing back to the skill. `core/process/backporting`
-    tells the working agent to flag generalizable findings with `backport: true` frontmatter. Find them:
-    ```bash
-    # Candidates are pages flagged for backport that have NOT already been carried upstream.
-    # `backported:` records the skill sha a page landed in — without excluding it, every past
-    # backport re-proposes forever and the scan stops being a work list.
-    grep -rl "backport: true" /path/to/project/.claude/rules/project \
-      | xargs grep -L "^backported:"
-    ```
-    For each, and for any project pitfall whose root cause is in a library (not project business logic),
-    present a candidate:
-    ```
-    ### Backport Candidates
-    | Page | Type | Content | Action |
-    |------|------|---------|--------|
-    | pitfalls/clientloader-ssr.md | pitfall | clientLoader SSR behavior | Add to vendor/react-router-8/routing.md |
-    | pitfalls/date-hydration.md | pitfall | Date.now() server/client divergence | Add to vendor/react-router-8/routing.md Known Issues |
-    ```
-    Also check `.claude/rules/` for project rule files outside `core/`/`vendor/`/`project/` that encode
-    generalizable patterns — candidates for new core templates.
-
-    **After a candidate lands upstream, stamp its page** with the skill commit that carried it —
-    `backported: <sha>` in the page's frontmatter, alongside the existing `backport: true`. Do this in
-    the same pass that lands it; a page stamped without the content upstream is worse than an unstamped
-    one, because the next scan skips it silently.
-
-    If the user approves:
-    1. Read the skill source: `~/.claude/skills/webstack/vendor/{file}.md` or `core/{subdir}/{file}.md`
-    2. Add the pitfall/content to the appropriate section
-    3. Bump the template's version (patch for pitfall additions)
-    4. Note that subsequent `/webstack update` on other projects picks up the change
-
-    This step is informational — skip silently if no candidates are found.
+The paths are relative to the skill install root, next to this file.
 
 ### Periodic health check (`/webstack maintenance`)
 
@@ -552,7 +402,7 @@ On `/webstack init`, if no CLAUDE.md exists: create it from the template. If it 
 
 ### Update: CLAUDE.md Drift Checks
 
-On `/webstack update`, step 1 runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C7).
+On `/webstack update`, step 1 of `references/update.md` runs drift detection against the bootstrap template invariants. Read `references/drift-checks.md` for the full check specification (IDs S1-S2, C1-C7).
 
 Key rules:
 - The drift report is informational, not blocking — always continue with template updates

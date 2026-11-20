@@ -37,33 +37,55 @@ const CODE_DIRS = (process.env.WEBSTACK_CODE_DIRS ?? 'backend|frontend|services|
 
 const DIRS = CODE_DIRS.join('|')
 
+// A reader counts at the start of a shell command: after a newline, `;`, `&`, `||`, `(` or
+// `xargs`. A single pipe is left out, because `cmd | grep x` filters output and reads no file.
+const SEGMENT = String.raw`(^|[;&\n(]\s*|\|\|\s*|\bxargs\s+)`
+
 const READERS = [
-  { pattern: /(^|[;&]\s*)(grep|rg|ag|ack)\s/, reason: 'Text-searching source with grep/rg.' },
   {
-    pattern: /(^|[;&]\s*)(cat|head|tail|less|more|bat)\s/,
+    pattern: new RegExp(String.raw`${SEGMENT}(grep|rg|ag|ack)\s`),
+    reason: 'Text-searching source with grep/rg.',
+  },
+  {
+    pattern: new RegExp(String.raw`${SEGMENT}git\s+(-C\s+\S+\s+)?grep\s`),
+    reason: 'Text-searching source with git grep.',
+  },
+  {
+    pattern: new RegExp(String.raw`${SEGMENT}(cat|head|tail|less|more|bat)\s`),
     reason: 'Reading source through a shell pager.',
   },
-  { pattern: /(^|[;&]\s*)sed\s+-n\b/, reason: 'Reading source line ranges with sed.' },
+  {
+    pattern: new RegExp(String.raw`${SEGMENT}sed\s+-n\b`),
+    reason: 'Reading source line ranges with sed.',
+  },
 ]
 
-/** Returns a deny reason, or null when the command may run. */
-export function graphPolicyViolation(command: string, cwd: string): string | null {
-  if (command.length === 0) return null
-  if (/#\s*graph-miss:\s*\S/.test(command)) return null
-  if (/^(git|yarn|npm|npx|pnpm|docker|jq)\b/.test(command.trim())) return null
-  if (/(\.claude\/|node_modules|\.logs|\bscripts\/)/.test(command)) return null
+// File reads in the sandbox languages that are not a shell.
+const CODE_READERS =
+  /\b(readFileSync|readFile|readdirSync|readdir|createReadStream|read_text|read_bytes|File\.read|Bun\.file)\s*\(|(^|[^.\w])open\s*\(/
 
+function isExempt(text: string): boolean {
+  if (/#\s*graph-miss:\s*\S/.test(text)) return true
+  return /(\.claude\/|node_modules|\.logs|\bscripts\/)/.test(text)
+}
+
+/** True when the text names source code: a code extension, or a workspace directory. */
+function isCodeTarget(text: string, cwd: string): boolean {
   const isNonCodeTarget = /(package\.json|\.(md|jsonc?|ya?ml|env|lock|log|css|txt|sql)\b)/.test(
-    command,
+    text,
   )
-  const hasCodeExt = /\.(ts|tsx|js|jsx|mjs|cjs)\b/.test(command)
+  const hasCodeExt = /\.(ts|tsx|js|jsx|mjs|cjs)\b/.test(text)
   // A bare workspace directory counts only when nothing non-code is named, so that
   // `grep '"react"' frontend/package.json` stays allowed.
   const hasDirs = DIRS.length > 0
   const isInWorkspace = hasDirs && new RegExp(`/(${DIRS})(/|$)`).test(cwd)
-  const isCodeDir = hasDirs && new RegExp(String.raw`\b(${DIRS})/`).test(command)
-  const isCodeTarget = hasCodeExt || ((isCodeDir || isInWorkspace) && !isNonCodeTarget)
-  if (!isCodeTarget) return null
+  const isCodeDir = hasDirs && new RegExp(String.raw`\b(${DIRS})/`).test(text)
+  return hasCodeExt || ((isCodeDir || isInWorkspace) && !isNonCodeTarget)
+}
+
+/** Returns a deny reason, or null when the command may run. */
+export function graphPolicyViolation(command: string, cwd: string): string | null {
+  if (command.length === 0 || isExempt(command) || !isCodeTarget(command, cwd)) return null
 
   for (const reader of READERS) {
     if (reader.pattern.test(command)) {
@@ -71,6 +93,16 @@ export function graphPolicyViolation(command: string, cwd: string): string | nul
     }
   }
   return null
+}
+
+/**
+ * The policy for sandbox code in a language that is not a shell. A script that reads files and
+ * names a workspace directory or a code extension reads source that the graph answers.
+ */
+export function sandboxReadViolation(code: string, cwd: string): string | null {
+  if (code.length === 0 || isExempt(code) || !isCodeTarget(code, cwd)) return null
+  if (!CODE_READERS.test(code)) return null
+  return `Reading source with a sandbox script. ${GRAPH_TOOLS} ${GRAPH_SCOPE} ${GRAPH_HATCH}`
 }
 
 /** The sandbox carries no working directory, so a leading `cd <path>` is the only hint. */
