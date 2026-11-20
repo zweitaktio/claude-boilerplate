@@ -38,20 +38,25 @@ const CODE_DIRS = (process.env.WEBSTACK_CODE_DIRS ?? 'backend|frontend|services|
 const DIRS = CODE_DIRS.join('|')
 
 // A reader counts at the start of a shell command: after a newline, `;`, `&`, `||`, `(` or
-// `xargs`. A single pipe is left out, because `cmd | grep x` filters output and reads no file.
-const SEGMENT = String.raw`(^|[;&\n(]\s*|\|\|\s*|\bxargs\s+)`
+// `xargs` and its flags. A pipe is left out, because `cmd | grep x` and `cmd |& tail` filter
+// output and read no file. A flag such as `-n 1` or `-I {}` may carry one value.
+const XARGS = String.raw`\bxargs(\s+-\S+(\s+[^-\s]\S*)?)*\s+`
+const SEGMENT = String.raw`(^|[;\n(]\s*|(?<!\|)&\s*|\|\|\s*|${XARGS})`
 
 const READERS = [
   {
-    pattern: new RegExp(String.raw`${SEGMENT}(grep|rg|ag|ack)\s`),
+    pattern: new RegExp(String.raw`${SEGMENT}(grep|rg|ag|ack)(\s|$)`),
     reason: 'Text-searching source with grep/rg.',
   },
   {
-    pattern: new RegExp(String.raw`${SEGMENT}git\s+(-C\s+\S+\s+)?grep\s`),
+    // git takes global options before the subcommand: `-C dir`, `-c key=value`, `--no-pager`.
+    pattern: new RegExp(
+      String.raw`${SEGMENT}git\s+(-[cC]\s+\S+\s+|--?[\w-]+(=\S+)?\s+)*grep(\s|$)`,
+    ),
     reason: 'Text-searching source with git grep.',
   },
   {
-    pattern: new RegExp(String.raw`${SEGMENT}(cat|head|tail|less|more|bat)\s`),
+    pattern: new RegExp(String.raw`${SEGMENT}(cat|head|tail|less|more|bat)(\s|$)`),
     reason: 'Reading source through a shell pager.',
   },
   {
@@ -71,9 +76,9 @@ function isExempt(text: string): boolean {
 
 /** True when the text names source code: a code extension, or a workspace directory. */
 function isCodeTarget(text: string, cwd: string): boolean {
-  const isNonCodeTarget = /(package\.json|\.(md|jsonc?|ya?ml|env|lock|log|css|txt|sql)\b)/.test(
-    text,
-  )
+  // The extension must end a file name. `console.log(` is a call, not a log file.
+  const isNonCodeTarget =
+    /(package\.json|\.(md|jsonc?|ya?ml|env|lock|log|css|txt|sql)(?=$|[\s'"`,;:)\]}]))/.test(text)
   const hasCodeExt = /\.(ts|tsx|js|jsx|mjs|cjs)\b/.test(text)
   // A bare workspace directory counts only when nothing non-code is named, so that
   // `grep '"react"' frontend/package.json` stays allowed.
@@ -83,16 +88,28 @@ function isCodeTarget(text: string, cwd: string): boolean {
   return hasCodeExt || ((isCodeDir || isInWorkspace) && !isNonCodeTarget)
 }
 
+// Calls that start a shell process from a script in another language.
+const PROCESS_CALLS =
+  /\b(exec|execSync|execFile|execFileSync|spawn|spawnSync|system|popen|check_output|check_call|Popen|capture2e?|capture3)\s*\(|\bsubprocess\.(run|call)\s*\(|\$`/
+
+const STRING_LITERAL = /(['"`])((?:\\.|(?!\1)[^\\])*)\1/g
+
+function readerReason(text: string): string | null {
+  for (const reader of READERS) {
+    if (reader.pattern.test(text)) return reader.reason
+  }
+  return null
+}
+
+function violation(reason: string): string {
+  return `${reason} ${GRAPH_TOOLS} ${GRAPH_SCOPE} ${GRAPH_HATCH}`
+}
+
 /** Returns a deny reason, or null when the command may run. */
 export function graphPolicyViolation(command: string, cwd: string): string | null {
   if (command.length === 0 || isExempt(command) || !isCodeTarget(command, cwd)) return null
-
-  for (const reader of READERS) {
-    if (reader.pattern.test(command)) {
-      return `${reader.reason} ${GRAPH_TOOLS} ${GRAPH_SCOPE} ${GRAPH_HATCH}`
-    }
-  }
-  return null
+  const reason = readerReason(command)
+  return reason ? violation(reason) : null
 }
 
 /**
@@ -101,8 +118,20 @@ export function graphPolicyViolation(command: string, cwd: string): string | nul
  */
 export function sandboxReadViolation(code: string, cwd: string): string | null {
   if (code.length === 0 || isExempt(code) || !isCodeTarget(code, cwd)) return null
-  if (!CODE_READERS.test(code)) return null
-  return `Reading source with a sandbox script. ${GRAPH_TOOLS} ${GRAPH_SCOPE} ${GRAPH_HATCH}`
+  if (CODE_READERS.test(code)) return violation('Reading source with a sandbox script.')
+  if (!PROCESS_CALLS.test(code)) return null
+  // Each string literal starts a line, so the reader check sees `grep -rn x` in one literal and
+  // the argument list `['cat', 'app/root.tsx']` as `cat` followed by its argument.
+  const literals = [...code.matchAll(STRING_LITERAL)].map((match) => match[2])
+  const reason = readerReason(literals.join('\n'))
+  return reason ? violation(`${reason} The script starts it as a shell process.`) : null
+}
+
+/** ctx_execute_file loads a file into the script as FILE_CONTENT, so the path is the read. */
+export function sandboxFileViolation(path: string, code: string, cwd: string): string | null {
+  if (path.length === 0 || isExempt(path) || isExempt(code)) return null
+  if (!isCodeTarget(path, cwd)) return null
+  return violation('Reading source into a sandbox script.')
 }
 
 /** The sandbox carries no working directory, so a leading `cd <path>` is the only hint. */

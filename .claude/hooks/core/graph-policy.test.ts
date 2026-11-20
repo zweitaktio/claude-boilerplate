@@ -5,6 +5,7 @@ import {
   GRAPH_STATE,
   graphPolicyViolation,
   graphUnavailableReason,
+  sandboxFileViolation,
   sandboxReadViolation,
 } from './graph-policy.ts'
 import { clear, write } from './state.mjs'
@@ -73,6 +74,22 @@ describe('graphPolicyViolation', () => {
     assert.notEqual(graphPolicyViolation('cd /repo\ngrep -rn useAuth backend/src', ''), null)
   })
 
+  test('blocks a reader after xargs flags and git global options', () => {
+    assert.notEqual(graphPolicyViolation('ls backend/src | xargs -0 grep -n useAuth', ''), null)
+    assert.notEqual(graphPolicyViolation('find backend/src | xargs -I{} cat {}', ''), null)
+    assert.notEqual(graphPolicyViolation('find backend/src | xargs -n 1 cat', ''), null)
+    assert.notEqual(graphPolicyViolation('git --no-pager grep -n useAuth -- backend/src', ''), null)
+    assert.notEqual(
+      graphPolicyViolation('git -c color.ui=never grep useAuth backend/src', ''),
+      null,
+    )
+  })
+
+  test('allows a pager that filters stderr and stdout with |&', () => {
+    assert.equal(graphPolicyViolation('yarn vitest run app/a.test.ts |& tail -20', ''), null)
+    assert.notEqual(graphPolicyViolation('yarn build & grep -rn useAuth backend/src', ''), null)
+  })
+
   test('exempts .claude and scripts paths', () => {
     assert.equal(graphPolicyViolation('cat .claude/hooks/run.sh', ''), null)
     assert.equal(graphPolicyViolation('grep -n version scripts/sync.sh', ''), null)
@@ -118,6 +135,38 @@ describe('sandboxReadViolation', () => {
     assert.equal(sandboxReadViolation(`fs.readFileSync('frontend/package.json')`, ''), null)
     const hatch = `fs.readFileSync('backend/gen/types.ts') // # graph-miss: generated file`
     assert.equal(sandboxReadViolation(hatch, ''), null)
+  })
+
+  test('blocks a script that starts a shell reader as a process', () => {
+    const js = `const { execSync } = require('child_process'); execSync('grep -rn useAuth backend/src')`
+    assert.match(String(sandboxReadViolation(js, '')), /shell process/)
+    const py = `import subprocess\nsubprocess.run(['cat', 'frontend/app/root.tsx'])`
+    assert.notEqual(sandboxReadViolation(py, ''), null)
+  })
+
+  test('does not read console.log as a log file', () => {
+    const js = `const fs = require('fs'); console.log(fs.readdirSync('backend/src'))`
+    assert.notEqual(sandboxReadViolation(js, ''), null)
+    const spawn = `console.log(execSync('grep -rn useAuth backend/src').toString())`
+    assert.notEqual(sandboxReadViolation(spawn, ''), null)
+  })
+
+  test('allows a process call that runs no reader', () => {
+    const js = `execSync('yarn vitest run backend/src/auth.test.ts')`
+    assert.equal(sandboxReadViolation(js, ''), null)
+  })
+})
+
+describe('sandboxFileViolation', () => {
+  test('blocks a source file loaded as FILE_CONTENT', () => {
+    assert.notEqual(sandboxFileViolation('frontend/app/root.tsx', 'print(FILE_CONTENT)', ''), null)
+  })
+
+  test('allows a non-code file, an exempt path and the escape hatch', () => {
+    assert.equal(sandboxFileViolation('/tmp/build.log', 'print(FILE_CONTENT)', ''), null)
+    assert.equal(sandboxFileViolation('.claude/hooks/run.sh', 'print(FILE_CONTENT)', ''), null)
+    const hatch = 'print(FILE_CONTENT) # graph-miss: generated file'
+    assert.equal(sandboxFileViolation('backend/gen/types.ts', hatch, ''), null)
   })
 })
 

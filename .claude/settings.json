@@ -45,7 +45,7 @@
         ]
       },
       {
-        "matcher": "mcp__plugin_context-mode_context-mode__ctx_(execute|batch_execute)",
+        "matcher": "^mcp__plugin_context-mode_context-mode__ctx_(execute|batch_execute|execute_file)$",
         "hooks": [
           {
             "type": "command",

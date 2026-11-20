@@ -219,7 +219,7 @@ one-sentence description, which is where the Purpose column below comes from.
 | code-guard | `code-guard.ts` | PreToolUse / `Write\|Edit` | Content gate on writes (React.FC, default exports, .test.tsx, i18n, shell compat, comment length); tracks session-edited files for completion-gate. |
 | compact-preservation | `compact-preservation.ts` | PreCompact / `—` | Tells the compaction summary what to keep: requirements, decisions and rationale, risks. |
 | completion-gate | `completion-gate.ts` | Stop / `—` | Stop gate: checks for unfinished markers, incomplete-work signals, relayed peer traffic, and triggers review on session-edited files. |
-| ctx-guard | `ctx-guard.ts` | PreToolUse / `mcp__plugin_context-mode_context-mode__ctx_(execute\|batch_execute)` | Applies the graph-first lookup policy to the context-mode sandbox. |
+| ctx-guard | `ctx-guard.ts` | PreToolUse / `^mcp__plugin_context-mode_context-mode__ctx_(execute\|batch_execute\|execute_file)$` | Applies the graph-first lookup policy to the context-mode sandbox. |
 | dep-change-reminder | `dep-change-reminder.ts` | PostToolUse / `Bash` | Reminds you to install after a dependency manifest changes, so the lockfile and node_modules keep up. |
 | edit-review | `edit-review.ts` | PostToolUse / `Edit\|Write` | Non-blocking self-review nudge after each code edit, debounced per file. |
 | failure-protocol | `failure-protocol.ts` | PostToolUseFailure / `—` | After 2 consecutive tool failures, injects a diagnose-before-retry checklist instead of letting the loop run. |
