@@ -278,3 +278,12 @@ user approved.
     ```
 
     **No SHA update** — maintenance does not deploy templates, so the SHA stays unchanged. The SHA only updates on `/webstack init` and `/webstack update`.
+
+## Claude Code baseline
+
+The templates in this repository match Claude Code 2.1.329. The last check ran on 2026-11-20.
+
+A Claude Code release can change how rules, hooks, skills and settings behave. Read the changelog
+entries after this version before the next template review. Then update the version and the date here.
+
+Changelog: https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md
