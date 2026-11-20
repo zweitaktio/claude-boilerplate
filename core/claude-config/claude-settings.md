@@ -1,5 +1,5 @@
 ---
-version: 1.6.0
+version: 1.7.0
 applies: Always
 target: rules
 paths:
@@ -92,7 +92,23 @@ Project settings override user settings for that project.
 | Plugin **installations** | User scope | Each developer installs with `claude plugin install` |
 | **Project-specific** MCP servers, such as `playwright` and `payload` | Project scope | Only this project uses them |
 
+**A headless run can drop every project rule.** Claude Code skips the project rules in
+`.claude/rules/` when you exclude `project` from `--setting-sources`. From v2.1.211 this also covers
+the path-scoped rules and the rules in a nested `.claude/rules/` directory. An earlier version loaded
+those anyway. A CI job or an SDK run that sets `--setting-sources` must name `project`, or the deployed
+conventions never reach the agent.
+
+**A hook that fails lets the action through.** A command hook that cannot start, times out or exits
+with an unexpected code is non-blocking. Add `"onFailure": "block"` to a guard that must refuse when it
+fails. Claude Code 2.1.295 or later reads the key. Never set it on a hook that only injects context,
+because it then blocks the tool and protects nothing. Never set it on a guard for `Bash`, `Write` or
+`Edit`. A broken runtime stops every hook at once, and the session then cannot run a command or edit a
+file to repair it.
+
 ## Adding MCP Permissions
+
+An allow rule matches only the server it names. Write `mcp__<server>__*` with the whole normalized
+server name. From Claude Code 2.1.299, `mcp__a` no longer allows a server named `a__b`.
 
 For MCP tools, add to the allow list in project `.claude/settings.json`:
 
@@ -131,6 +147,17 @@ a criterion is advisory and a cap is not.
   unless a workflow needs nesting.
 - `CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS` caps how many run at once.
 - Both need Claude Code 2.1.217 or later.
+
+Three frontmatter keys in `.claude/agents/*.md` also limit what a subagent costs:
+
+| Key | Effect | Version |
+|-----|--------|---------|
+| `omitClaudeMd: true` | The subagent runs without the user, project and local `CLAUDE.md` files. Managed policy files still load | 2.1.271 |
+| `autoCompactWindow` | The subagent compacts earlier than the main conversation | 2.1.296 |
+| `experimental.cacheTtl` | The prompt cache TTL for this agent, `"5m"` or `"1h"`. A subagent TTL setting overrides it | 2.1.248 |
+
+Use `omitClaudeMd` only for an agent that needs no project convention. A subagent without `CLAUDE.md`
+does not know the commands and the architecture of the project.
 
 Claude Code adds its own delegation instruction on Opus 5 only under the `claude_code` system prompt
 preset. A custom or omitted system prompt gets no such instruction, so the rule and the cap carry the

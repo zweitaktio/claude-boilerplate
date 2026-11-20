@@ -49,7 +49,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh ctx-guard"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh ctx-guard",
+            "onFailure": "block"
           }
         ]
       },
@@ -94,7 +95,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh screenshot-guard"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/run.sh screenshot-guard",
+            "onFailure": "block"
           }
         ]
       },

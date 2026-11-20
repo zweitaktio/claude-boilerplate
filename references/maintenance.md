@@ -124,6 +124,12 @@ user approved.
 
    **d) Stale references** — rules referencing commands (`yarn xyz`), file paths (`app/features/...`), or tool names that no longer exist in the project. Check against `package.json` scripts, file system, and available MCP tools.
 
+   **e) Prompt patterns for older models** — ask the user to run `/doctor prompt-audit` in the target
+   project. It needs Claude Code 2.1.283 or later. It audits the CLAUDE.md files, skills, agents and
+   commands. Claude cannot start a built-in slash command, so the user runs it and pastes the result.
+   List each finding in a separate table with the columns `File | Pattern | Fix`. A finding in a
+   deployed template is a fix for this repository, not for the target.
+
    Output:
    ```
    | File A | File B | Topic | Conflict |

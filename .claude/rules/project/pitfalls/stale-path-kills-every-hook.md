@@ -39,6 +39,14 @@ ls -1d "$HOME"/.nvm/versions/node/*/bin/node |
   sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | sed 's|^[^ ]* ||'
 ```
 
+**Let a guard fail closed only where a block cannot lock the session.** From Claude Code 2.1.295, a
+command hook with `"onFailure": "block"` blocks the action when it cannot start, times out or exits
+with an unexpected code. A dead runtime stops every hook at once. A guard on `Bash` or `Write|Edit`
+with this key then blocks every command or every edit, and the session cannot repair itself. A hook
+that only injects context protects nothing when it fails, so it must never block. Only `ctx-guard` and
+`screenshot-guard` meet both conditions: they deny, and they guard other tools. The guards on `Bash`
+and `Write|Edit` stay fail-open and depend on the runtime lookup above.
+
 **Test with a fake home.** Symlink the real `.nvm` into a scratch directory. Run the hook with
 `HOME` there and with an empty `NVM_BIN` and `BUN_INSTALL`, or the test resolves `node` from `PATH`.
 

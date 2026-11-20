@@ -1,5 +1,5 @@
 #!/bin/bash
-# version: 1.1.0
+# version: 1.2.0
 # Bootstraps CLAUDE.md in target projects from the template.
 # Creates if missing, appends missing sections if exists.
 #
@@ -94,12 +94,21 @@ extract_section() {
 
 # ─── Create from scratch ──
 if [ ! -f "$CLAUDE_MD" ]; then
-  if [ "$DRY_RUN" = "true" ]; then
-    echo '{"action":"CREATE","sections_added":["## How you answer","## Working with other sessions","## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
-  else
-    echo "$TEMPLATE_CONTENT" > "$CLAUDE_MD"
-    echo '{"action":"CREATE","sections_added":["## How you answer","## Working with other sessions","## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[]}'
+  # Claude Code reads AGENTS.md only while no CLAUDE.md exists. A new CLAUDE.md must import it,
+  # or the instructions in AGENTS.md stop loading without a warning.
+  AGENTS_IMPORT="false"
+  if [ -f "$PROJECT/AGENTS.md" ]; then
+    AGENTS_IMPORT="true"
+    TEMPLATE_CONTENT="$TEMPLATE_CONTENT
+
+## Shared agent instructions
+
+@AGENTS.md"
   fi
+  if [ "$DRY_RUN" != "true" ]; then
+    echo "$TEMPLATE_CONTENT" > "$CLAUDE_MD"
+  fi
+  echo '{"action":"CREATE","sections_added":["## How you answer","## Working with other sessions","## Commands","## Architecture","## Rules","## Vendor Knowledge","### Knowledge accumulation"],"sections_existing":[],"agents_md_imported":'"$AGENTS_IMPORT"'}'
   exit 0
 fi
 
